@@ -1,0 +1,12 @@
+.artist-container {
+    height: 40vh;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+    display: flex;
+    align-items: start;
+    .artist-img {
+        width: 100%;
+        height: auto;
+        
+    }
+}

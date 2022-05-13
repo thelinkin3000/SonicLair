@@ -1,0 +1,21 @@
+@import "../Styles/colors.scss";
+
+.artist-image {
+    margin: 10 10 10 0;
+}
+
+.artist-item {
+    transition: 0.3s;
+    background-color: $items-color !important;
+    width: 200px;
+    img {
+        max-width:180px;
+        max-height:180px;
+        width:auto;
+        height:auto;
+        display:block;
+    }
+    &:hover{
+        background-color: $items-color-hover !important;
+    }
+}

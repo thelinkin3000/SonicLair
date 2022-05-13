@@ -1,0 +1,9 @@
+.album-header{
+    height: 20vh;
+    overflow: hidden;
+    .album-img {
+        max-height: 20vh;
+        height: auto; 
+        width: auto;
+    }
+}
