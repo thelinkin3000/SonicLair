@@ -8,18 +8,25 @@ import { IAppContext, IAudioContext } from './Models/AppContext';
 import Artists from './Components/Artists';
 import Artist from './Components/Artist';
 import Album from './Components/Album';
-import { AudioContext, AudioContextDefValue } from './AudioContext';
+import { CurrentTrackContext, CurrentTrackContextDefValue } from './AudioContext';
+import AudioControl from './Components/AudioControl';
+import { IAlbumSongResponse } from './Models/API/Responses/IArtistResponse';
 
 
 
 function App() {
   const [context, setContext] = useState<IAppContext>(AppContextDefValue);
-  const [audioContext, setAudioContext] = useState<IAudioContext>(AudioContextDefValue);
+  const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
+  const [playlist, setPlaylist] = useState<IAlbumSongResponse[]>([CurrentTrackContextDefValue]);
+  const setPlaylistAndPlay = (p: IAlbumSongResponse[], track:number ) => {
+    setPlaylist(p);
+    setCurrentTrack(p[track]);
+  }; 
   const [tried, setTried] = useState<boolean>(false);
   const contextValue = React.useMemo(() => ({
     context, setContext
   }), [context]);
-  const audioContextValue = React.useMemo(() => ({ audioContext, setAudioContext }), [audioContext]);
+  const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
     if (!tried) {
       const storagedCreds = localStorage.getItem('serverCreds');
@@ -31,19 +38,22 @@ function App() {
 
   }, [tried]);
 
+
+
   return (
     <div className="App container">
-      <AppContext.Provider value={contextValue}>
-        <AudioContext.Provider value={audioContextValue}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/playtest" element={<PlayTest />} />
-            <Route path="/artists" element={<Artists />} />
-            <Route path="/artist" element={<Artist />} />
-            <Route path="/album" element={<Album />} />
-          </Routes>
-        </AudioContext.Provider>
-      </AppContext.Provider>
+      <CurrentTrackContext.Provider value={currentTrackContextValue}>
+        <AppContext.Provider value={contextValue}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/playtest" element={<PlayTest />} />
+              <Route path="/artists" element={<Artists />} />
+              <Route path="/artist" element={<Artist />} />
+              <Route path="/album" element={<Album />} />
+            </Routes>
+            <AudioControl />
+        </AppContext.Provider>
+      </CurrentTrackContext.Provider>
     </div>
   );
 }

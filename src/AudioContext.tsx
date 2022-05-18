@@ -1,11 +1,19 @@
 import React, { useState, useMemo, SetStateAction, Dispatch } from "react";
+import { IAlbumSongResponse } from "./Models/API/Responses/IArtistResponse";
 import { IAppContext, IAudioContext } from "./Models/AppContext";
 
-export const AudioContextDefValue: IAudioContext = {
-    audio: new Audio()
-};
 
 
+export const CurrentTrackContextDefValue: IAlbumSongResponse = {
+    duration: 0, id: 0, parent: 0, title: "", track: 0, artist: "", coverArt: ""
+}
 
-export const AudioContext = React.createContext<{ audioContext: IAudioContext, setAudioContext: Dispatch<SetStateAction<IAudioContext>> }>
-    ({ audioContext: AudioContextDefValue, setAudioContext: (c) => { } });
+export const CurrentTrackContext = React.createContext<
+    {
+        currentTrack: IAlbumSongResponse,
+        setCurrentTrack: Dispatch<SetStateAction<IAlbumSongResponse>>,
+        playlist: IAlbumSongResponse[],
+        setPlaylist: Dispatch<SetStateAction<IAlbumSongResponse[]>>,
+        setPlaylistAndPlay: (p: IAlbumSongResponse[], track:number) => void
+    }>
+    ({ currentTrack: CurrentTrackContextDefValue, setCurrentTrack: (c) => { }, playlist: [], setPlaylist: (c) => { }, setPlaylistAndPlay: (a,c) => {} });

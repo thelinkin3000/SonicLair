@@ -1,0 +1,11 @@
+.current-track-header{
+    height: 10vh;
+    overflow: hidden;
+    margin: 0 0 0.5rem 0;
+    .current-track-img {
+        max-height: 10vh;
+        height: auto; 
+        width: auto;
+        margin: 0 0.5rem 0 0;
+    }
+}

@@ -38,5 +38,7 @@ export interface IAlbumSongResponse {
     title: string;
     duration: number;
     track: number;
+    artist: string;
+    coverArt: string;
 }
 

@@ -42,8 +42,11 @@ export default function Artists() {
                 <input className="form-control" placeholder="Search..." onKeyUp={search} />
             </div>
         </div>
-        <div className="grid-list">
-            {filteredArtists.map(s => <ArtistCard item={s} />)}
+        <div className="grid-list-container scrollable">
+            <div className="grid-list">
+                {filteredArtists.map(s => <ArtistCard item={s} />)}
+            </div>
+
         </div>
     </>
 

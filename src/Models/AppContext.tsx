@@ -1,3 +1,6 @@
+import { Dispatch, SetStateAction } from "react";
+import { IAlbumSongResponse } from "./API/Responses/IArtistResponse";
+
 export interface IAppContext {
     username: string;
     password: string;
@@ -6,4 +9,5 @@ export interface IAppContext {
 
 export interface IAudioContext{
     audio: HTMLAudioElement;
+    
 }

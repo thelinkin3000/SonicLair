@@ -6,7 +6,6 @@ import GetArtist from "../Api/GetArtist";
 import GetArtistInfo from "../Api/GetArtistInfo";
 import GetBasicParams from "../Api/GetBasicParams";
 import { AppContext } from "../AppContext";
-import { AudioContext } from "../AudioContext";
 import { GetAsParams } from "../Helpers";
 import { IArtistInfoResponse } from "../Models/API/Responses/IArtistInfoResponse";
 import { IAlbumResponse, IArtistResponse } from "../Models/API/Responses/IArtistResponse";
@@ -21,7 +20,6 @@ export default function Album() {
     const [albumFetched, setAlbumFetched] = useState<boolean>();
     const [albumInfoFetched, setAlbumInfoFetched] = useState<boolean>();
     const { context } = useContext(AppContext);
-    const { audioContext } = useContext(AudioContext);
     const { state }: any = useLocation();
     const getCoverArtParams = () => {
         return GetAsParams({ ...GetBasicParams(context), id: state.id });
@@ -32,7 +30,6 @@ export default function Album() {
                 setAlbumFetched(true);
                 return;
             }
-            debugger;
             const ret = await GetAlbum(context, state.id);
 
             setAlbum(ret);
@@ -65,10 +62,9 @@ export default function Album() {
                 <span style={{ color: "white" }}>by {album?.album.artist}</span>
             </div>
         </div>
-        <div className="scrollable" style={{ height: "60vh", overflow: "scroll" }}>
-
+        <div className="scrollable" style={{ height: "60vh", overflow: "auto" }}>
             <div className="list-group" >
-                {album && album?.album.song.map(s => <SongItem item={s} context={context} audioContext={audioContext} />)}
+                {album && album?.album.song.map(s => <SongItem item={s} album={album.album.song}/>)}
             </div>
         </div>
     </>

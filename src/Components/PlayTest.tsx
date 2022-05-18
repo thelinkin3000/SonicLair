@@ -3,7 +3,7 @@ import md5 from 'js-md5';
 import { useForm } from "react-hook-form";
 import axios from 'axios';
 import { AppContext } from '../AppContext';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { IBasicParams } from '../Models/API/Requests/BasicParams';
 import { ISubsonicResponse } from '../Models/API/Responses/SubsonicResponse';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,7 @@ interface FormData {
 export default function PlayTest() {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
+    const [error, setError] = useState<string>("");
     useEffect(() => {
         if (context.url.length > 0) {
             navigate("/artists");
@@ -25,6 +26,7 @@ export default function PlayTest() {
     }, [context]);
 
     const hash = async (data: FormData) => {
+        setError("handling");
         const uuid = uuidv4();
         const hash = md5(`${data.password}${uuid}`);
         const basicParams: IBasicParams = {
@@ -37,6 +39,7 @@ export default function PlayTest() {
         };
         const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${data.url}/rest/getArtists`, { params: basicParams });
         if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
+            setError("handled");
             console.log(ret.data);
             const creds = { username: data.username, password: data.password, url: data.url };
             setContext(creds);
@@ -44,7 +47,7 @@ export default function PlayTest() {
             navigate("/artists");
         }
         else {
-            // TODO DISPLAY MESSAGE ERROR
+            setError("errored");
         }
     }
     const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
@@ -67,6 +70,7 @@ export default function PlayTest() {
                 {errors && errors.url && <div className="col-12 text-danger">{errors.url.message}</div>}
 
                 <button type="submit" className={"btn btn-primary"}>ClickMe!</button>
+                <span className="text-primary">{error}</span>
             </form>
         </div>
     )

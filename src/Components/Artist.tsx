@@ -56,7 +56,7 @@ export default function Artist() {
         <div className="artist-container">
             {artistInfo && (<img className="artist-img" src={artistInfo.artistInfo.largeImageUrl}></img>)}
         </div>
-        <div className="scrollable" style={{ height: "60vh", overflow:"scroll" }}>
+        <div className="scrollable" style={{ height: "60vh", overflow:"auto" }}>
 
             <div className="grid-list" >
                 {artist && artist?.artist.album.map(s => <AlbumCard item={s} />)}

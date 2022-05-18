@@ -3,28 +3,26 @@ import "../Styles/colors.scss";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 import { GetAsParams, SecondsToHHSS } from "../Helpers";
 // With the Tauri API npm package:
-import { invoke } from '@tauri-apps/api/tauri'
-import { IAppContext, IAudioContext } from "../Models/AppContext";
-import GetBasicParams from "../Api/GetBasicParams";
-import PlayTest from "./PlayTest";
+import { useContext } from "react";
+import { CurrentTrackContext } from "../AudioContext";
+import classNames from "classnames";
+import "./SongItem.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 
-export default function SongItem({ item, context, audioContext }: { item: IAlbumSongResponse, context: IAppContext, audioContext: IAudioContext }) {
-    const getParams = () => {
-        return GetAsParams({ ...GetBasicParams(context), id: item.id });
-    };
+
+export default function SongItem({ item, album }: { item: IAlbumSongResponse, album: IAlbumSongResponse[] }) {
+    const { currentTrack, setPlaylistAndPlay } = useContext(CurrentTrackContext);
     const play = () => {
-        audioContext.audio.pause();
-        audioContext.audio.src = `${context.url}/rest/stream?${getParams()}`;
-        audioContext.audio.play();
+        setPlaylistAndPlay(album, album.indexOf(item));
     }
     return (
-        <div className="list-group-item" onClick={() => play()}>
+        <div className={classNames("list-group-item", currentTrack.id === item.id && "highlight")} onClick={() => play()}>
             <div className="row">
                 <div className="col-auto">{item.track}</div>
-                <div className="col">{item.title}</div>
+                <div className="col">{currentTrack.id === item.id && <FontAwesomeIcon icon={faVolumeHigh}/>}  {item.title}</div>
                 <div className="col-auto">{SecondsToHHSS(item.duration)}</div>
             </div>
-
         </div>
     )
 }
