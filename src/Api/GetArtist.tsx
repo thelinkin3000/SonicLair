@@ -7,7 +7,6 @@ export default async function GetArtist(context: IAppContext, id: string): Promi
     const params = {...GetBasicParams(context), id: id};
     const ret = await axios.get<{"subsonic-response":IArtistResponse}>(`${context.url}/rest/getArtist`,{params: params});
         if(ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok"){
-            console.log(ret.data);
             return Promise.resolve(ret.data["subsonic-response"]);
             // useNavigate("/artists");
         }

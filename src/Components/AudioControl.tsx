@@ -8,7 +8,7 @@ import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import _, { forEach, identity, indexOf } from 'lodash';
-import ReactJkMusicPlayer, { ReactJkMusicPlayerAudioListProps, ReactJkMusicPlayerInstance } from "react-jinke-music-player";
+import { useNavigate } from "react-router-dom";
 
 interface IListener {
     event: string;
@@ -24,7 +24,7 @@ export default function AudioControl({ }) {
     const [coverArt, setCoverArt] = useState<string>("");
     const [audioInstance, setAudioInstance] = useState<HTMLAudioElement>(new Audio());
     const listeners = useRef<IListener[]>([]);
-
+    const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
 
     const changeVolume = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
@@ -132,11 +132,13 @@ export default function AudioControl({ }) {
             console.log(audioInstance);
         }
     }, [audioInstance]);
-
+    const goToAlbum = useCallback(() => {
+        navigate(`/album`,{ state: { id: currentTrack.parent} });
+    },[currentTrack]);
     return (
         <div className="row">
-            <div className="col-6">
-                <div className="current-track-header d-flex flex-row align-items-center justify-content-start">
+            <div className="col-6" onClick={goToAlbum}>
+                <div className={`current-track-header flex-row align-items-center justify-content-start ${currentTrack.id === 0 ? "d-none" : "d-flex"}`}>
                     <img className={"current-track-img"} src={coverArt}></img>
                     <div className="ml-2 h-100 d-flex flex-column align-items-start justify-content-end text-start">
                         <span className="text-white" style={{maxHeight:"50%", overflow:"hidden", textOverflow:"ellipsis", fontWeight:800}}>{currentTrack.title}</span>
@@ -161,7 +163,6 @@ export default function AudioControl({ }) {
                         </button>
                     </div>
                     <div className="hide-mobile">
-
                         <FontAwesomeIcon icon={faVolumeLow} className="text-white" />
                         <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => changeVolume(e)} className="mx-2"></input>
                         <FontAwesomeIcon icon={faVolumeHigh} className="text-white" />

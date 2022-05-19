@@ -4,7 +4,8 @@ import md5 from "js-md5";
 import { IBasicParams } from "../Models/API/Requests/BasicParams";
 
 export default function GetBasicParams(context:IAppContext) : IBasicParams {
-    const uuid = uuidv4();
+    // const uuid = uuidv4();
+    const uuid = "abclknasd";
     const hash = md5(`${context.password}${uuid}`);
     const basicParams : IBasicParams = {
         u: context.username,

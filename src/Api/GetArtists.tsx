@@ -7,7 +7,6 @@ import GetBasicParams from "./GetBasicParams";
 export default async function GetArtists(context: IAppContext): Promise<IArtistsResponse> {
     const ret = await axios.get<{"subsonic-response":IArtistsResponse}>(`${context.url}/rest/getArtists`,{params: GetBasicParams(context)});
         if(ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok"){
-            console.log(ret.data);
             return Promise.resolve(ret.data["subsonic-response"]);
             // useNavigate("/artists");
         }

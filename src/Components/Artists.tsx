@@ -4,6 +4,7 @@ import { AppContext } from "../AppContext";
 import { IArtist } from "../Models/API/Responses/IArtist";
 import ArtistCard from "./ArtistCard";
 import "./Artists.scss";
+import Loading from "./Loading";
 
 export default function Artists() {
     const [artists, setArtists] = useState<IArtist[]>([]);
@@ -13,6 +14,7 @@ export default function Artists() {
     useEffect(() => {
         const fetch = async () => {
             const ar = (await GetArtists(context));
+            console.log(ar);
             const ret = ar.artists.index.reduce<IArtist[]>((previous, s) => { return [...previous, ...(s.artist)] }, []);
             setArtists(ret);
             setFilteredArtists(ret);
@@ -31,17 +33,17 @@ export default function Artists() {
 
     if (artists.length === 0) {
         return (<div className="row">
-            <div className="col-12 text-center">
-                Cargando artistas...
-            </div>
-        </div>);
+        <div className="col-12 d-flex align-items-center justify-content-center" style={{height:"80vh"}}>
+            <Loading />
+        </div>
+    </div>);
     }
     return (<>
         <div className="artist-container d-flex flex-column">
             <input className="form-control" placeholder="Search..." onKeyUp={search} />
             <div className="grid-list-container scrollable">
                 <div className="grid-list">
-                    {filteredArtists.map(s => <ArtistCard item={s} />)}
+                    {filteredArtists.map(s => <ArtistCard item={s} key={s.id}/>)}
                 </div>
             </div>
         </div>

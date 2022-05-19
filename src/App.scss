@@ -48,7 +48,8 @@
   border: none;
   /* border: 1px solid #000; */
   padding: 2px 0;
-  background-color: #404040;
+  // background-color: #404040;
+  background-color: transparent;
 }
 
 .scrollable::-webkit-scrollbar {
@@ -69,22 +70,43 @@
 }
 
 .list-group-item {
-  background-color: $items-color !important;
-  color: $color-text-primary !important;
+  background-color: $items-color  !important;
+  color: $color-text-primary  !important;
   transition: 0.3s;
 
   &:hover {
-    background-color: $items-color-hover !important;
+    background-color: $items-color-hover  !important;
 
   }
 }
 
-.hide-mobile {
+.hide-mobile-flex {
+  display: flex;
+
   @media (max-width: 576px) {
     display: none;
   }
 }
 
-.text-white{
-  color: $color-text-primary !important;
+.hide-desktop-flex {
+  display: flex;
+
+  @media (min-width: 576px) {
+    display: none;
+  }
+}
+
+.text-white {
+  color: $color-text-primary  !important;
+}
+
+.text-header {
+  font-size: 3rem;
+  transition: 0.3s;
+}
+
+.text-header-mobile {
+  transition: 0.3s;
+  font-size: 1.5rem;
+  font-weight: 600;
 }

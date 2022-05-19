@@ -18,4 +18,8 @@
     &:hover{
         background-color: $items-color-hover !important;
     }
+    .no-overflow{
+        height: 3.5rem;
+        overflow:hidden;
+    }
 }

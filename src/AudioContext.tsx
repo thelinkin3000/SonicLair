@@ -5,7 +5,7 @@ import { IAppContext, IAudioContext } from "./Models/AppContext";
 
 
 export const CurrentTrackContextDefValue: IAlbumSongResponse = {
-    duration: 0, id: 0, parent: 0, title: "", track: 0, artist: "", coverArt: ""
+    duration: 0, id: 0, parent: "", title: "", track: 0, artist: "", coverArt: ""
 }
 
 export const CurrentTrackContext = React.createContext<

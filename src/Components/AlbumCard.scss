@@ -8,6 +8,7 @@
     transition: 0.3s;
     background-color: $items-color !important;
     width: 170px;
+    height:220px;
     img {
         max-width:150px;
         max-height:150px;
@@ -17,5 +18,9 @@
     }
     &:hover{
         background-color: $items-color-hover !important;
+    }
+    .no-overflow{
+        height: 3.5rem;
+        overflow:hidden;
     }
 }
