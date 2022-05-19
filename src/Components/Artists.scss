@@ -1,10 +1,16 @@
-.grid-list-container {
+.artist-container{
     height: 80vh;
-    overflow: auto;
+    .grid-list-container {
+        height:75vh;
+        width:100%;
+        overflow: auto;
+    }
 }
 .grid-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-gap: 2rem;
-
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-gap: 15px;
+    // @media (max-width: 576px) {
+    //     grid-gap: 0;
+    // }
 }

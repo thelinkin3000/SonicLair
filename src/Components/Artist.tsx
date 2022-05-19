@@ -53,13 +53,13 @@ export default function Artist() {
 
     }, [artistFetched, context]);
     return (<>
-        <div className="artist-container">
+        <div className="artist-container d-flex flex-column" >
             {artistInfo && (<img className="artist-img" src={artistInfo.artistInfo.largeImageUrl}></img>)}
-        </div>
-        <div className="scrollable" style={{ height: "60vh", overflow:"auto" }}>
-
-            <div className="grid-list" >
-                {artist && artist?.artist.album.map(s => <AlbumCard item={s} />)}
+            <div className="text-white d-flex flex-column align-items-start justify-content-end artist-name-container">{artist && artist.artist.name}</div>
+            <div className="scrollable" style={{ width:"100%",overflow: "auto" }}>
+                <div className="grid-list" >
+                    {artist && artist?.artist.album.map(s => <AlbumCard item={s} />)}
+                </div>
             </div>
         </div>
     </>

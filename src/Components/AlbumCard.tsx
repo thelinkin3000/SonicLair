@@ -20,7 +20,7 @@ export default function AlbumCard({ item }: { item: IAlbumArtistResponse}) {
                 <img src={`${context.url}/rest/getCoverArt?${getCoverArtParams()}`} className="album-image"></img>
 
             </div>
-            <div className="text-center text-primary">{item.name}</div>
+            <div className="text-center text-white">{item.name}</div>
         </div>
     )
 }

@@ -37,16 +37,13 @@ export default function Artists() {
         </div>);
     }
     return (<>
-        <div className="row">
-            <div className="col-12">
-                <input className="form-control" placeholder="Search..." onKeyUp={search} />
+        <div className="artist-container d-flex flex-column">
+            <input className="form-control" placeholder="Search..." onKeyUp={search} />
+            <div className="grid-list-container scrollable">
+                <div className="grid-list">
+                    {filteredArtists.map(s => <ArtistCard item={s} />)}
+                </div>
             </div>
-        </div>
-        <div className="grid-list-container scrollable">
-            <div className="grid-list">
-                {filteredArtists.map(s => <ArtistCard item={s} />)}
-            </div>
-
         </div>
     </>
 

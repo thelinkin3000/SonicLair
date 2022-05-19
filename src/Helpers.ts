@@ -3,6 +3,12 @@ export function GetAsParams(data:any):string{
 }
 
 export function SecondsToHHSS(data:number){
-    return new Date(data * 1000).toISOString().substr(14, 5);
+    try{
+        return new Date(data * 1000).toISOString().substr(14, 5);
+
+    }
+    catch{
+        return "00:00";
+    }
 
 }

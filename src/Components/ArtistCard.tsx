@@ -12,7 +12,7 @@ export default function ArtistCard({ item }: { item: IArtist }) {
                 <img src={item.artistImageUrl} className="artist-image"></img>
 
             </div>
-            <div className="text-center text-primary">{item.name}</div>
+            <div className="text-center text-white">{item.name}</div>
         </div>
     )
 }

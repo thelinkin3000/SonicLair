@@ -58,8 +58,8 @@ export default function Album() {
         <div className="album-header d-flex flex-row align-items-center justify-content-start">
             <img className={"album-img"} src={`${context.url}/rest/getCoverArt?${getCoverArtParams()}`}></img>
             <div className="ml-2 h-100 d-flex flex-column align-items-start justify-content-end">
-                <span style={{ color: "white" }}>{album?.album.name}</span>
-                <span style={{ color: "white" }}>by {album?.album.artist}</span>
+                <span className="text-white">{album?.album.name}</span>
+                <span className="text-white">by {album?.album.artist}</span>
             </div>
         </div>
         <div className="scrollable" style={{ height: "60vh", overflow: "auto" }}>
