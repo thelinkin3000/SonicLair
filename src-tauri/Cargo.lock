@@ -61,7 +61,6 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
- "vlc-static",
 ]
 
 [[package]]
@@ -1537,15 +1536,6 @@ name = "libc"
 version = "0.2.125"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
-
-[[package]]
-name = "libloading-mini"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29209934c0715bfb13cec639c4584b564540471cb8f27fefb1e430576811ef7b"
-dependencies = [
- "winapi",
-]
 
 [[package]]
 name = "lock_api"
@@ -3511,14 +3501,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "vlc-static"
-version = "0.1.0"
-dependencies = [
- "libc",
- "libloading-mini",
-]
 
 [[package]]
 name = "waker-fn"

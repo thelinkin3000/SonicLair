@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Helmet } from "react-helmet";
 import { useLocation, useParams } from "react-router-dom";
-import { Virtuoso, VirtuosoGrid } from "react-virtuoso";
 import { isTemplateExpression } from "typescript";
 import GetArtist from "../Api/GetArtist";
 import GetArtistInfo from "../Api/GetArtistInfo";
@@ -104,6 +104,9 @@ export default function Artist() {
     }
 
     return (<>
+        <Helmet>
+            <title>{artist.artist.name} - SonicLair</title>
+        </Helmet>
         <div className="artist-container d-flex flex-column">
             {artistInfo && (
                 <>

@@ -13,6 +13,7 @@ import "./Album.scss";
 import SongItem from "./SongItem";
 import { IAlbumInfoResponse } from "../Models/API/Responses/IAlbumInfoResponse";
 import Loading from "./Loading";
+import { Helmet } from "react-helmet";
 
 
 export default function Album() {
@@ -65,6 +66,9 @@ export default function Album() {
     </div>);
     }
     return (<>
+        <Helmet>
+            <title>{album?.album.name} - SonicLair</title>
+        </Helmet>
         <div className="album-header d-flex flex-row align-items-center justify-content-start">
             <img className="album-img"src={`${context.url}/rest/getCoverArt?${getCoverArtParams()}`} style={{ ...imgDimentions }} onLoad={onLoadImage}></img>
             

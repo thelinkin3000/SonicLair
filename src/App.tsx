@@ -11,17 +11,17 @@ import Album from './Components/Album';
 import { CurrentTrackContext, CurrentTrackContextDefValue } from './AudioContext';
 import AudioControl from './Components/AudioControl';
 import { IAlbumSongResponse } from './Models/API/Responses/IArtistResponse';
-
+import { Helmet } from 'react-helmet';
 
 
 function App() {
   const [context, setContext] = useState<IAppContext>(AppContextDefValue);
   const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
   const [playlist, setPlaylist] = useState<IAlbumSongResponse[]>([CurrentTrackContextDefValue]);
-  const setPlaylistAndPlay = (p: IAlbumSongResponse[], track:number ) => {
+  const setPlaylistAndPlay = (p: IAlbumSongResponse[], track: number) => {
     setPlaylist(p);
     setCurrentTrack(p[track]);
-  }; 
+  };
   const [tried, setTried] = useState<boolean>(false);
   const contextValue = React.useMemo(() => ({
     context, setContext
@@ -42,16 +42,19 @@ function App() {
 
   return (
     <div className="App container">
+      <Helmet>
+        <title>SonicLair</title>
+      </Helmet>
       <CurrentTrackContext.Provider value={currentTrackContextValue}>
         <AppContext.Provider value={contextValue}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/playtest" element={<PlayTest />} />
-              <Route path="/artists" element={<Artists />} />
-              <Route path="/artist" element={<Artist />} />
-              <Route path="/album" element={<Album />} />
-            </Routes>
-            <AudioControl />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/playtest" element={<PlayTest />} />
+            <Route path="/artists" element={<Artists />} />
+            <Route path="/artist" element={<Artist />} />
+            <Route path="/album" element={<Album />} />
+          </Routes>
+          <AudioControl />
         </AppContext.Provider>
       </CurrentTrackContext.Provider>
     </div>
