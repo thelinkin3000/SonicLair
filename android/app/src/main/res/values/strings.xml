@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SonicLair</string>
+    <string name="title_activity_main">SonicLair</string>
+    <string name="package_name">tech.logica10.soniclair</string>
+    <string name="custom_url_scheme">tech.logica10.soniclair</string>
+</resources>

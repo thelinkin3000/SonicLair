@@ -1,0 +1,6 @@
+{
+	"appId": "tech.logica10.soniclair",
+	"appName": "SonicLair",
+	"webDir": "build",
+	"bundledWebRuntime": false
+}

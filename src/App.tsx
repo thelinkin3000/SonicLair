@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import './App.scss';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import Home from './Components/Home';
 import PlayTest from './Components/PlayTest';
 import { AppContext, AppContextDefValue } from './AppContext';
@@ -18,6 +18,7 @@ function App() {
   const [context, setContext] = useState<IAppContext>(AppContextDefValue);
   const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
   const [playlist, setPlaylist] = useState<IAlbumSongResponse[]>([CurrentTrackContextDefValue]);
+  const [backEvent, setBackEvent] = useState<boolean>(false);
   const setPlaylistAndPlay = (p: IAlbumSongResponse[], track: number) => {
     setPlaylist(p);
     setCurrentTrack(p[track]);
@@ -26,6 +27,7 @@ function App() {
   const contextValue = React.useMemo(() => ({
     context, setContext
   }), [context]);
+  const navigate = useNavigate();
   const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
     if (!tried) {
@@ -35,8 +37,21 @@ function App() {
       }
       setTried(true);
     }
-
   }, [tried]);
+
+  useEffect(() => {
+    if(!backEvent){
+      console.log("registered");
+      setBackEvent(true);
+      document.addEventListener('ionBackButton', (ev:any) => {
+        ev.detail.register(10, () => {
+          console.log('Back was called!');
+          navigate(-1);
+        });
+      });
+    }
+
+  },[]);
 
 
 
