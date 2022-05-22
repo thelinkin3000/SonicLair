@@ -97,7 +97,7 @@ export default function Artist() {
     if(!artist){
 
         return(<div className="row">
-        <div className="col-12 d-flex align-items-center justify-content-center" style={{height:"80vh"}}>
+        <div className="col-12 d-flex align-items-center justify-content-center" style={{height:"100%"}}>
             <Loading />
         </div>
     </div>);
@@ -110,7 +110,7 @@ export default function Artist() {
         <div className="artist-container d-flex flex-column">
             {artistInfo && (
                 <>
-                    <img className="artist-img" src={artistInfo.artistInfo.largeImageUrl} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
+                    <img className="artist-img" src={artistInfo.artistInfo2.largeImageUrl} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
                 <div className="artist-image-container">
                 </div>
                 </>

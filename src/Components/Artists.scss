@@ -1,7 +1,9 @@
-.artist-container{
-    height: 80vh;
+.artist-list-container{
+    height: 100%;
+    overflow: hidden;
+    align-items: start;
+    position: relative;
     .grid-list-container {
-        height:75vh;
         width:100%;
         overflow: auto;
     }
@@ -13,4 +15,8 @@
     // @media (max-width: 576px) {
     //     grid-gap: 0;
     // }
+    .list-group-item {
+        margin: 0 auto;
+    }
+    
 }

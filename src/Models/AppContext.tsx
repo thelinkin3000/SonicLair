@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction } from "react";
 import { IAlbumSongResponse } from "./API/Responses/IArtistResponse";
 
 export interface IAppContext {
-    username: string;
+    username: string | null;
     password: string;
     url: string;
 }

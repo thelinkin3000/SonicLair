@@ -9,6 +9,7 @@ import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import _, { forEach, identity, indexOf } from 'lodash';
 import { useNavigate } from "react-router-dom";
+import classnames from "classnames";
 
 interface IListener {
     event: string;
@@ -93,7 +94,6 @@ export default function AudioControl({ }) {
             listeners.current.splice(listeners.current.indexOf(listener), 1);
         });
         const progressFunc = (ev: any) => {
-            console.log(ev.path[0].currentTime);
             setPlayTime(parseFloat(ev.path[0].currentTime) / currentTrack.duration);
         }
         audioInstance.addEventListener("timeupdate", progressFunc);
@@ -135,18 +135,19 @@ export default function AudioControl({ }) {
     const goToAlbum = useCallback(() => {
         navigate(`/album`,{ state: { id: currentTrack.parent} });
     },[currentTrack]);
+    
     return (
-        <div className="row">
-            <div className="col-6" onClick={goToAlbum}>
+        <div className={classnames("row","mt-3", currentTrack.id === 0 ? "d-none" : "")}>
+            <div className="col-8" onClick={goToAlbum}>
                 <div className={`current-track-header flex-row align-items-center justify-content-start ${currentTrack.id === 0 ? "d-none" : "d-flex"}`}>
                     <img className={"current-track-img"} src={coverArt}></img>
-                    <div className="ml-2 h-100 d-flex flex-column align-items-start justify-content-end text-start">
-                        <span className="text-white" style={{maxHeight:"50%", overflow:"hidden", textOverflow:"ellipsis", fontWeight:800}}>{currentTrack.title}</span>
-                        <span className="text-white mb-0" style={{maxHeight:"50%", overflow:"hidden", textOverflow:"ellipsis"}}>by {currentTrack.artist}</span>
+                    <div className="ml-2 h-100 d-flex flex-column align-items-start justify-content-end text-start fade-right w-100">
+                        <span className="text-white no-wrap" style={{maxHeight:"50%", overflow:"hidden", textOverflow:"ellipsis", fontWeight:800}}>{currentTrack.title}</span>
+                        <span className="text-white no-wrap mb-0" style={{maxHeight:"50%", overflow:"hidden", textOverflow:"ellipsis"}}>by {currentTrack.artist}</span>
                     </div>
                 </div>
             </div>
-            <div className="col-6 d-flex flex-column align-items-end justify-content-end">
+            <div className="col-4 d-flex flex-column align-items-end justify-content-end">
                 <div className="d-flex flex-column align-items-center justify-content-end">
                     <div>
                         <button type="button" className="btn btn-link text-white" onClick={playPrev}>

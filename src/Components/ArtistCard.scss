@@ -6,20 +6,32 @@
 
 .artist-item {
     transition: 0.3s;
-    background-color: $items-color !important;
-    width: 170px;
-    img {
-        max-width:150px;
-        max-height:150px;
-        width:auto;
-        height:auto;
-        display:block;
+    background-color: $item-background-translucid !important;
+    // background-color: $items-color !important;
+    border-radius: 5% !important;
+    width:170px;
+    height: 240px;
+    margin: auto;
+    .artist-image-container{
+        width: 150px;
+        height: 150px;
+        img {
+            max-width:150px;
+            max-height:150px;
+            width:auto;
+            height:auto;
+            display:block;
+        }
     }
+
     &:hover{
         background-color: $items-color-hover !important;
     }
     .no-overflow{
+        width:150px;
         height: 3.5rem;
         overflow:hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 }

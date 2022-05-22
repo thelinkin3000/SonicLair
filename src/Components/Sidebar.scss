@@ -1,0 +1,61 @@
+@import "../Styles/colors.scss";
+
+.sidebar {
+    width: 5rem !important;
+    background-color: $items-color-highlight !important;
+    height: 80vh;
+    position: absolute;
+    left: calc(100vw - 5.3rem);
+    top: 0;
+    transition: ease 0.3s;
+    margin: 10vh 0 0 0;
+    border-radius: 10px;
+    z-index:3000;
+    .sidebar-item {
+        width: 4rem;
+        height: 4rem;
+        background-color: $items-color;
+        border-radius: 10%;
+        margin-top: 0.5rem;
+        transition: ease 0.3s;
+
+        &:hover {
+            background-color: $items-color-hover;
+        }
+
+        svg {
+            font-size: 2.5rem;
+        }
+    }
+    .last-item{
+        margin-top:auto;
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-item-borderless {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 10%;
+        margin-bottom: 0.5rem;
+        transition: ease 0.3s;
+
+        &:hover {
+            background-color: $items-color-hover;
+        }
+
+        svg {
+            font-size: 2.5rem;
+        }
+    }
+}
+
+.modal-cover{
+    position:fixed;
+    left:0;
+    top:0;
+    background-color: $item-background-translucid;
+    width:100vw;
+    height:100vh;
+    z-index: 2000;
+    transition: ease 0.1s;
+}

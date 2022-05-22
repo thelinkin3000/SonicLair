@@ -20,7 +20,7 @@ export interface IAlbumArtistResponse {
     duration: number;
     artist: string;
     artistId: number;
-    year:number;
+    year: number;
 }
 
 export interface IAlbumResponse extends ISubsonicResponse {
@@ -30,6 +30,7 @@ export interface IAlbumResponse extends ISubsonicResponse {
 export interface IInnerAlbumResponse extends IAlbumArtistResponse {
     song: IAlbumSongResponse[];
 }
+
 
 
 export interface IAlbumSongResponse {

@@ -8,7 +8,7 @@ export default function GetBasicParams(context:IAppContext) : IBasicParams {
     const uuid = "abclknasd";
     const hash = md5(`${context.password}${uuid}`);
     const basicParams : IBasicParams = {
-        u: context.username,
+        u: context.username!,
         t: hash,
         s: uuid,
         v: "1.16.1",

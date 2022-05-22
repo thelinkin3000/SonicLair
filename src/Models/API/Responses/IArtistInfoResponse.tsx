@@ -2,7 +2,7 @@ import { ISubsonicResponse } from "./SubsonicResponse";
 
 
 export interface IArtistInfoResponse extends ISubsonicResponse {
-    artistInfo: {
+    artistInfo2: {
         biography: string;
         largeImageUrl: string;
         smallImageUrl: string;

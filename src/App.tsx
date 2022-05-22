@@ -12,6 +12,13 @@ import { CurrentTrackContext, CurrentTrackContextDefValue } from './AudioContext
 import AudioControl from './Components/AudioControl';
 import { IAlbumSongResponse } from './Models/API/Responses/IArtistResponse';
 import { Helmet } from 'react-helmet';
+import logo from "./logo.svg";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import Sidebar from './Components/Sidebar';
+import Navbar from './Components/Navbar';
+import Albums from './Components/Albums';
 
 
 function App() {
@@ -31,43 +38,36 @@ function App() {
   const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
     if (!tried) {
+      StatusBar.setBackgroundColor({color: "282c34"});
       const storagedCreds = localStorage.getItem('serverCreds');
       if (storagedCreds) {
         setContext(JSON.parse(storagedCreds));
       }
+      else {
+        setContext({ username: null, password: "", url: "" })
+      }
       setTried(true);
     }
   }, [tried]);
-
-  useEffect(() => {
-    if(!backEvent){
-      console.log("registered");
-      setBackEvent(true);
-      document.addEventListener('ionBackButton', (ev:any) => {
-        ev.detail.register(10, () => {
-          console.log('Back was called!');
-          navigate(-1);
-        });
-      });
-    }
-
-  },[]);
-
+  const [navbarCollapsed, setNavbarCollapsed] = useState<boolean>(false);
 
 
   return (
-    <div className="App container">
+    <div className="App container d-flex flex-column justify-content-between">
       <Helmet>
         <title>SonicLair</title>
       </Helmet>
       <CurrentTrackContext.Provider value={currentTrackContextValue}>
         <AppContext.Provider value={contextValue}>
+          <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed}/>
+          <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed}/>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/playtest" element={<PlayTest />} />
+            {/* <Route path="/" element={<Home />} /> */}
+            <Route path="/" element={<PlayTest />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/artist" element={<Artist />} />
             <Route path="/album" element={<Album />} />
+            <Route path="/albums" element={<Albums />} />
           </Routes>
           <AudioControl />
         </AppContext.Provider>

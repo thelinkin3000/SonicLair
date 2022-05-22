@@ -1,9 +1,13 @@
 .album-header{
-    height: 20vh;
-    overflow: hidden;
     position:relative;
+    max-height: 20vh;
     .album-img {
         margin: 0 0.5rem 0 0;
     }
-    
+    div{
+        span{
+            overflow: hidden;
+
+        }
+    }
 }
