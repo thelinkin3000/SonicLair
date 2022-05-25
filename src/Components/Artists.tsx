@@ -11,6 +11,7 @@ import Loading from "./Loading";
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeGrid as Grid, FixedSizeGridProps, GridChildComponentProps } from 'react-window';
 import { floor } from "lodash";
+import useAutoFill from "../Hooks/useAutoFill";
 
 export default function Artists() {
     const [artists, setArtists] = useState<IArtist[]>([]);
@@ -23,13 +24,12 @@ export default function Artists() {
     useEffect(() => {
         const fetch = async () => {
             const ar = (await GetArtists(context));
-            console.log(ar);
             const ret = ar.artists.index.reduce<IArtist[]>((previous, s) => { return [...previous, ...(s.artist)] }, []);
             setArtists(ret);
             setFilteredArtists(ret);
             setFetched(true);
         }
-        if (!fetched) {
+        if (!fetched && context.activeAccount.username !== "") {
             fetch();
         }
     }, [fetched]);
@@ -46,37 +46,33 @@ export default function Artists() {
         }
     }, [canSearch]);
 
-
-
-
     const toggleSearch = () => {
         setCanSearch(!canSearch);
-
     }
 
-    const [width, setWidth] = useState<number>(0);
-    const [height, setHeight] = useState<number>(0);
-    const [columnWidth, setColumnWidth] = useState<number>(190);
+    const { width, height, columnWidth, gridProps, autoFillRef, columnCount } = useAutoFill(filteredArtists);
 
     const ArtistCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IArtist[]>) => {
-        const index = rowIndex * floor(width / columnWidth) + columnIndex;
-        console.log("item", index);
+        const index = rowIndex * columnCount + columnIndex;
         if (data[index] === undefined) {
             return (<></>);
         }
-        return (<div style={{...style}}>
-            <ArtistCard item={data[index]} />
-        </div>
+        return (
+            <div style={{ ...style }} id={"index"} >
+                <ArtistCard item={data[index]} />
+            </div>
         )
-    }, [width, columnWidth]);
+    }, [columnCount]);
 
     if (artists.length === 0) {
-        return (<div className="row">
-            <div className="col-12 d-flex align-items-center justify-content-center" style={{ height: "100%" }}>
-                <Loading />
-            </div>
-        </div>);
+        return (
+            <div className="row">
+                <div className="col-12 d-flex align-items-center justify-content-center" style={{ height: "100%" }}>
+                    <Loading />
+                </div>
+            </div>);
     }
+
     return (<>
         <div className=" artist-list-container d-flex flex-column">
             <div className="d-flex flex-row align-items-center justify-content-between w-100">
@@ -86,29 +82,16 @@ export default function Artists() {
                 </button>
             </div>
             <input ref={searchRef} className={classNames("form-control", "mb-2", canSearch ? "" : "d-none")} placeholder="Search..." onKeyUp={search} />
-            <AutoSizer>
-                {({ width, height }) => {
-                    setWidth(width);
-                    setHeight(height);
-                    const columns = floor(width / 190);
-                    const w = 190 + (width%190/columns);
-                    setColumnWidth(w);
-                    return (
-                        <Grid
-                            columnCount={width / w}
-                            columnWidth={w}
-                            height={height}
-                            rowCount={filteredArtists.length / floor(width / w)}
-                            rowHeight={260}
-                            width={width}
-                            className={"scrollable"}
-                            itemData={filteredArtists}
-                        >
-                            {ArtistCardWrapper}
-                        </Grid>
-                    )
-                }}
-            </AutoSizer>
+            <div style={{ height: "100%", width: "100%" }} ref={autoFillRef}>
+                <Grid
+                    {...gridProps}
+                    itemData={filteredArtists}
+                >
+                    {ArtistCardWrapper}
+                </Grid>
+
+            </div>
+
         </div>
     </>
 

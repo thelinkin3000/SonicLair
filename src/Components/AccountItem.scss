@@ -1,0 +1,27 @@
+@import "../Styles/colors.scss";
+
+.account-item {
+    max-width: 80vw;
+    width: 350px;
+    background-color: $items-color-hover;
+    // padding: 10px;
+    border-radius: 10px;
+    margin: 0 0 10px 0;
+    overflow: hidden;
+    .account-icon {
+        margin: 10px;
+    }
+
+    .account-info {
+        max-width: 70vw;
+        width: 100%;
+        overflow:hidden;
+        margin: 10px;
+    }
+
+    .delete{
+        background-color: #dc3545;
+        padding:20px;
+        height: 100%;
+    }
+}

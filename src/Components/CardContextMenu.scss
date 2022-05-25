@@ -1,0 +1,8 @@
+@import "../Styles/colors.scss";
+
+.context-menu {
+    position: absolute;
+    padding: 10px;
+    background-color: $items-color-hover;
+    border-radius: 10px;
+}

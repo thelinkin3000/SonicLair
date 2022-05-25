@@ -1,26 +1,28 @@
 @import "../Styles/colors.scss";
 
-.artist-image {
-    margin: 10 10 10 0;
-}
 
 .artist-item {
     transition: 0.3s;
     background-color: $item-background-translucid !important;
     // background-color: $items-color !important;
     border-radius: 5% !important;
-    width:170px;
-    height: 240px;
-    margin: auto;
+    // max-width:170px;
+    max-width:170px;
+    width: calc(100% - 20px);
+    // min-height: calc(190px + 2.5em);
+    height: calc(100% - 20px);
+    margin: 10px;
+    padding:10px !important;
     .artist-image-container{
-        width: 150px;
-        height: 150px;
+        overflow:hidden;
         img {
-            max-width:150px;
-            max-height:150px;
+            max-width: 100%;
+            max-height:100%;
+
             width:auto;
             height:auto;
             display:block;
+            border-radius: 5%;
         }
     }
 

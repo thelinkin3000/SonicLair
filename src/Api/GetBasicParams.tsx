@@ -6,9 +6,9 @@ import { IBasicParams } from "../Models/API/Requests/BasicParams";
 export default function GetBasicParams(context:IAppContext) : IBasicParams {
     // const uuid = uuidv4();
     const uuid = "abclknasd";
-    const hash = md5(`${context.password}${uuid}`);
+    const hash = md5(`${context.activeAccount.password}${uuid}`);
     const basicParams : IBasicParams = {
-        u: context.username!,
+        u: context.activeAccount.username!,
         t: hash,
         s: uuid,
         v: "1.16.1",

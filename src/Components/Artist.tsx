@@ -1,10 +1,15 @@
+import { floor } from "lodash";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
-import { useLocation, useParams } from "react-router-dom";
-import { isTemplateExpression } from "typescript";
+import { useLocation } from "react-router-dom";
+import { FixedSizeGrid as Grid } from "react-window";
+import { GridChildComponentProps } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
+
 import GetArtist from "../Api/GetArtist";
 import GetArtistInfo from "../Api/GetArtistInfo";
 import GetBasicParams from "../Api/GetBasicParams";
+import GetSpotifyArtist from "../Api/GetSpotifyArtist";
 import { AppContext } from "../AppContext";
 import { GetAsParams } from "../Helpers";
 import useWindowSize from "../Hooks/useWindowSize";
@@ -13,14 +18,17 @@ import { IAlbumArtistResponse, IArtistResponse } from "../Models/API/Responses/I
 import AlbumCard from "./AlbumCard";
 import "./Artist.scss";
 import Loading from "./Loading";
+import useAutoFill from "../Hooks/useAutoFill";
+import ScrollFade from '@benestudioco/react-scrollfade';
 
 
 export default function Artist() {
     const [artist, setArtist] = useState<IArtistResponse>();
-    const [artistInfo, setArtistInfo] = useState<IArtistInfoResponse>();
+    const [coverArt, setCoverArt] = useState<string>("");
     const [artistFetched, setArtistFetched] = useState<boolean>();
     const [artistInfoFetched, setArtistInfoFetched] = useState<boolean>();
     const [imgDimentions, setImgDimentions] = useState<any>({});
+    const [albums, setAlbums] = useState<IAlbumArtistResponse[]>([]);
     const { context } = useContext(AppContext);
     const { state }: any = useLocation();
     const [width, height] = useWindowSize();
@@ -31,6 +39,7 @@ export default function Artist() {
     };
     useEffect(() => {
         const fetch = async () => {
+
             if (state.id === 0 || !state.id) {
                 setArtistFetched(true);
                 return;
@@ -38,9 +47,11 @@ export default function Artist() {
             const ret = await GetArtist(context, state.id);
 
             setArtist(ret);
+            setAlbums(ret.artist.album);
+            console.log(ret.artist.album);
             setArtistFetched(true);
         }
-        if (!artistFetched && context.url !== "") {
+        if (!artistFetched && context.activeAccount.url !== "") {
             fetch();
         }
 
@@ -51,16 +62,32 @@ export default function Artist() {
                 setArtistInfoFetched(true);
                 return;
             }
-            const ret = await GetArtistInfo(context, state.id);
+            try {
+                const items = await GetSpotifyArtist(context.spotifyToken, artist!.artist.name);
+                if (items.length > 0 && items[0].name === artist!.artist.name) {
+                    if (items[0].images.length > 1) {
+                        setCoverArt(items[0].images[1].url);
+                    }
+                    else {
+                        setCoverArt(items[0].images[0].url);
 
-            setArtistInfo(ret);
+                    }
+                }
+                else {
+                    const ret = await GetArtistInfo(context, artist!.artist.id);
+                    setCoverArt(ret.artistInfo2.largeImageUrl);
+                }
+            }
+            catch (e) {
+            }
             setArtistInfoFetched(true);
+
         }
-        if (!artistInfoFetched && context.url !== "") {
+        if (!artistInfoFetched && artistFetched && artist !== undefined && context.activeAccount.url !== "" && context.spotifyToken !== "") {
             fetch();
         }
 
-    }, [artistFetched, context]);
+    }, [artistFetched, artistInfoFetched, artist, context]);
 
     const onLoadImage = useCallback((ev: any) => {
         if (ev.target.height >= ev.target.width || width > ev.target.width) {
@@ -94,13 +121,29 @@ export default function Artist() {
         }
 
     }, [width, height]);
-    if(!artist){
 
-        return(<div className="row">
-        <div className="col-12 d-flex align-items-center justify-content-center" style={{height:"100%"}}>
-            <Loading />
+    const { width: listWidth, height: listHeight, columnWidth, gridProps, autoFillRef, columnCount } = useAutoFill(albums);
+
+    const AlbumCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IAlbumArtistResponse[]>) => {
+        const index = rowIndex * columnCount + columnIndex;
+        if (data[index] === undefined) {
+            return (<div style={{ ...style }}>
+
+            </div>);
+        }
+        return (<div style={{ ...style }}>
+            <AlbumCard key={`albumcard-${index}`} item={data[index]} forceWidth={false} />
         </div>
-    </div>);
+        )
+    }, [columnCount]);
+
+    if (!artist) {
+
+        return (<div className="row">
+            <div className="col-12 d-flex align-items-center justify-content-center" style={{ height: "100%" }}>
+                <Loading />
+            </div>
+        </div>);
     }
 
     return (<>
@@ -108,20 +151,25 @@ export default function Artist() {
             <title>{artist.artist.name} - SonicLair</title>
         </Helmet>
         <div className="artist-container d-flex flex-column">
-            {artistInfo && (
+            {coverArt !== "" && (
                 <>
-                    <img className="artist-img" src={artistInfo.artistInfo2.largeImageUrl} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
-                <div className="artist-image-container">
-                </div>
+                    <img className="artist-img" src={coverArt} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
+                    <div className="artist-image-container">
+                    </div>
                 </>
             )}
-            <div className="text-white d-flex flex-column align-items-start justify-content-end artist-name-container">{artist && artist.artist.name}</div>
-            <div className="scrollable" style={{ width: "100%", overflow: "auto" }}>
-                <div className="grid-list" >
-                    {artist && artist?.artist.album.map(s => <AlbumCard item={s} key={s.id} />)}
-                </div>
+            <div className="text-white d-flex flex-column align-items-start justify-content-end artist-name-container">
+                {artist && artist.artist.name}
             </div>
-            
+            <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
+                <Grid
+                    {...gridProps}
+                    itemData={albums}
+                >
+                    {AlbumCardWrapper}
+                </Grid>
+            </div>
+
         </div>
     </>
     )

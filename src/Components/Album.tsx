@@ -1,26 +1,18 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { isTemplateExpression } from "typescript";
+import { useLocation } from "react-router-dom";
 import GetAlbum from "../Api/GetAlbum";
-import GetArtist from "../Api/GetArtist";
 import GetBasicParams from "../Api/GetBasicParams";
 import { AppContext } from "../AppContext";
 import { GetAsParams, SecondsToHHSS } from "../Helpers";
-import { IArtistInfoResponse } from "../Models/API/Responses/IArtistInfoResponse";
-import { IAlbumResponse, IArtistResponse } from "../Models/API/Responses/IArtistResponse";
-import AlbumCard from "./AlbumCard";
+import { IAlbumResponse } from "../Models/API/Responses/IArtistResponse";
 import "./Album.scss";
 import SongItem from "./SongItem";
-import { IAlbumInfoResponse } from "../Models/API/Responses/IAlbumInfoResponse";
 import Loading from "./Loading";
 import { Helmet } from "react-helmet";
-import LinesEllipsis from 'react-lines-ellipsis';
 
 export default function Album() {
     const [album, setAlbum] = useState<IAlbumResponse>();
-    const [albumInfo, setAlbumInfo] = useState<IAlbumInfoResponse>();
     const [albumFetched, setAlbumFetched] = useState<boolean>();
-    const [albumInfoFetched, setAlbumInfoFetched] = useState<boolean>();
     const { context } = useContext(AppContext);
     const { state }: any = useLocation();
     const [imgDimentions, setImgDimentions] = useState<any>();
@@ -34,13 +26,10 @@ export default function Album() {
                 return;
             }
             const ret = await GetAlbum(context, state.id);
-            console.log(ret);
             setAlbumFetched(true);
             setAlbum(ret);
         }
-        if (!albumFetched && context.url !== "") {
-            fetch();
-        }
+        fetch();
 
     }, [albumFetched, context, state]);
 
@@ -70,7 +59,7 @@ export default function Album() {
             <title>{album?.album.name} - SonicLair</title>
         </Helmet>
         <div className="album-header d-flex flex-row align-items-center justify-content-start">
-            <img className="album-img" src={`${context.url}/rest/getCoverArt?${getCoverArtParams()}`} style={{ ...imgDimentions }} onLoad={onLoadImage}></img>
+            <img className="album-img" src={`${context.activeAccount.url}/rest/getCoverArt?${getCoverArtParams()}`} style={{ ...imgDimentions }} onLoad={onLoadImage}></img>
 
             <div className="ml-2 mb-2 h-100 flex-column align-items-start justify-content-end hide-desktop-flex">
                 <span className="text-white text-start text-header-mobile">{album?.album.name}</span>

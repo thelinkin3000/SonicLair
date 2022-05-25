@@ -5,7 +5,7 @@ import { IAppContext, IAudioContext } from "./Models/AppContext";
 
 
 export const CurrentTrackContextDefValue: IAlbumSongResponse = {
-    duration: 0, id: 0, parent: "", title: "", track: 0, artist: "", coverArt: ""
+    duration: 0, id: "", parent: "", title: "", track: 0, artist: "", coverArt: "", album: "", albumId: ""
 }
 
 export const CurrentTrackContext = React.createContext<
@@ -14,6 +14,6 @@ export const CurrentTrackContext = React.createContext<
         setCurrentTrack: Dispatch<SetStateAction<IAlbumSongResponse>>,
         playlist: IAlbumSongResponse[],
         setPlaylist: Dispatch<SetStateAction<IAlbumSongResponse[]>>,
-        setPlaylistAndPlay: (p: IAlbumSongResponse[], track:number) => void
+        setPlaylistAndPlay: (p: IAlbumSongResponse[], track: number) => void
     }>
-    ({ currentTrack: CurrentTrackContextDefValue, setCurrentTrack: (c) => { }, playlist: [], setPlaylist: (c) => { }, setPlaylistAndPlay: (a,c) => {} });
+    ({ currentTrack: CurrentTrackContextDefValue, setCurrentTrack: (c) => { }, playlist: [], setPlaylist: (c) => { }, setPlaylistAndPlay: (a, c) => { } });

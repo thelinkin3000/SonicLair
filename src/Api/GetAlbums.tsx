@@ -11,7 +11,7 @@ export default async function GetAlbums(context: IAppContext): Promise<IAlbumsRe
     const params = GetBasicParams(context);
     let page = 0;
     while (more) {
-        const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${context.url}/rest/getAlbumList2`, { params: { ...params, type: "alphabeticalByName", size: 500, offset: page * 500 } });
+        const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${context.activeAccount.url}/rest/getAlbumList2`, { params: { ...params, type: "alphabeticalByName", size: 500, offset: page * 500 } });
         if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
             if (albumsResponse === null) {
                 albumsResponse = ret.data["subsonic-response"];

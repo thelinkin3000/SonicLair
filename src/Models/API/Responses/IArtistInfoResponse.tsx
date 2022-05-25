@@ -1,3 +1,5 @@
+import { IArtist } from "./IArtist";
+import { IAlbumArtistResponse, IAlbumResponse, IAlbumSongResponse, IInnerArtistResponse } from "./IArtistResponse";
 import { ISubsonicResponse } from "./SubsonicResponse";
 
 
@@ -11,3 +13,10 @@ export interface IArtistInfoResponse extends ISubsonicResponse {
 }
 
 
+export interface ISearchResponse extends ISubsonicResponse {
+    searchResult3: {
+        album?: IAlbumArtistResponse[];
+        artist?: IArtist[];
+        song?: IAlbumSongResponse[];
+    }
+}

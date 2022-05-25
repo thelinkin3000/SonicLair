@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.scss';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import Home from './Components/Home';
 import PlayTest from './Components/PlayTest';
-import { AppContext, AppContextDefValue } from './AppContext';
-import { IAppContext, IAudioContext } from './Models/AppContext';
+import { AppContext, AppContextDefValue, MenuContextDefValue, IMenuContext, MenuContext } from './AppContext';
+import { IAppContext } from './Models/AppContext';
 import Artists from './Components/Artists';
 import Artist from './Components/Artist';
 import Album from './Components/Album';
@@ -12,66 +12,136 @@ import { CurrentTrackContext, CurrentTrackContextDefValue } from './AudioContext
 import AudioControl from './Components/AudioControl';
 import { IAlbumSongResponse } from './Models/API/Responses/IArtistResponse';
 import { Helmet } from 'react-helmet';
-import logo from "./logo.svg";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleChevronLeft } from '@fortawesome/free-solid-svg-icons';
-import { StatusBar, Style } from '@capacitor/status-bar';
+import { StatusBar } from '@capacitor/status-bar';
 import Sidebar from './Components/Sidebar';
 import Navbar from './Components/Navbar';
 import Albums from './Components/Albums';
+import Account from './Components/Account';
+import GetSpotifyToken from "./Api/GetSpotifyToken";
+import Loading from './Components/Loading';
+import CardContextMenu from './Components/CardContextMenu';
+import axios from 'axios';
+import { ISubsonicResponse } from './Models/API/Responses/SubsonicResponse';
+import GetBasicParams from './Api/GetBasicParams';
+import { Toast } from '@capacitor/toast';
+import { Capacitor } from '@capacitor/core';
+import Search from './Components/Search';
 
 
 function App() {
   const [context, setContext] = useState<IAppContext>(AppContextDefValue);
   const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
   const [playlist, setPlaylist] = useState<IAlbumSongResponse[]>([CurrentTrackContextDefValue]);
-  const [backEvent, setBackEvent] = useState<boolean>(false);
+  const [menuContext, setMenuContext] = useState<IMenuContext>(MenuContextDefValue);
   const setPlaylistAndPlay = (p: IAlbumSongResponse[], track: number) => {
     setPlaylist(p);
     setCurrentTrack(p[track]);
   };
+  const navigate = useNavigate();
   const [tried, setTried] = useState<boolean>(false);
   const contextValue = React.useMemo(() => ({
     context, setContext
   }), [context]);
-  const navigate = useNavigate();
+
+  const menuContextValue = React.useMemo(() => ({
+    menuContext, setMenuContext
+  }), [menuContext]);
   const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
-    if (!tried) {
-      StatusBar.setBackgroundColor({color: "282c34"});
+    const fetch = async () => {
+      let token = "";
+      try{
+        token = await GetSpotifyToken();
+      }
+      catch(e){
+        console.log("spotifyerr");
+        await Toast.show({
+          text: 'There was an error obtaining a token from spotify. Artist images may look off.',
+        });
+      }
+
+      if(Capacitor.getPlatform() == "android" ){
+        StatusBar.setBackgroundColor({ color: "282c34" });
+      }
+        
       const storagedCreds = localStorage.getItem('serverCreds');
       if (storagedCreds) {
-        setContext(JSON.parse(storagedCreds));
+        const cr: IAppContext = JSON.parse(storagedCreds);
+        if (cr.activeAccount.username != null) {
+          try {
+            const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${cr.activeAccount.url}/rest/getArtists`, { params: GetBasicParams(cr) });
+            if (ret?.status !== 200 || ret?.data["subsonic-response"]?.status !== "ok") {
+              await Toast.show({
+                text: 'There was an error connecting to your preferred server. Please check your connection.',
+              });
+              setContext({ ...cr, spotifyToken: token, activeAccount: { username: null, password: "", url: "", type: "" } });
+            }
+            else {
+              setContext({ ...cr, spotifyToken: token });
+            }
+
+          }
+          catch (e) {
+            setContext({ ...cr, spotifyToken: token, activeAccount: { username: null, password: "", url: "", type: "" } });
+
+          }
+        }
       }
       else {
-        setContext({ username: null, password: "", url: "" })
+        setContext({ activeAccount: { username: null, password: "", url: "", type: "" }, accounts: [], spotifyToken: token });
+
       }
       setTried(true);
+      document.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      });
+      document.addEventListener("click", () => { setMenuContext({ body: "", show: false, x: 0, y: 0 }) });
+    }
+    if (!tried) {
+      fetch();
     }
   }, [tried]);
-  const [navbarCollapsed, setNavbarCollapsed] = useState<boolean>(false);
+  const [navbarCollapsed, setNavbarCollapsed] = useState<boolean>(true);
 
 
   return (
-    <div className="App container d-flex flex-column justify-content-between">
+    <div className="App container-fluid d-flex flex-column justify-content-between">
       <Helmet>
         <title>SonicLair</title>
       </Helmet>
-      <CurrentTrackContext.Provider value={currentTrackContextValue}>
-        <AppContext.Provider value={contextValue}>
-          <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed}/>
-          <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed}/>
-          <Routes>
-            {/* <Route path="/" element={<Home />} /> */}
-            <Route path="/" element={<PlayTest />} />
-            <Route path="/artists" element={<Artists />} />
-            <Route path="/artist" element={<Artist />} />
-            <Route path="/album" element={<Album />} />
-            <Route path="/albums" element={<Albums />} />
-          </Routes>
-          <AudioControl />
-        </AppContext.Provider>
-      </CurrentTrackContext.Provider>
+      <MenuContext.Provider value={menuContextValue}>
+        <CurrentTrackContext.Provider value={currentTrackContextValue}>
+          <AppContext.Provider value={contextValue}>
+            <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+            <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+            {
+              context.activeAccount.username === "" &&
+              <div className="h-100 w-100 d-flex align-items-center justify-content-center">
+                <Loading />
+                </div>
+            }
+            {
+              context.activeAccount.username === null && <PlayTest />
+            }
+            {context.activeAccount.username !== "" && context.activeAccount.username !== null &&
+              <>
+                <Routes>
+                  <Route path="/" element={<PlayTest />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/artists" element={<Artists />} />
+                  <Route path="/artist" element={<Artist />} />
+                  <Route path="/album" element={<Album />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/albums" element={<Albums />} />
+                  <Route path="/search" element={<Search />} />
+                </Routes>
+                <AudioControl />
+                <CardContextMenu {...menuContext} />
+              </>
+            }
+          </AppContext.Provider>
+        </CurrentTrackContext.Provider>
+      </MenuContext.Provider>
     </div>
   );
 }

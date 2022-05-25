@@ -5,7 +5,7 @@ import GetBasicParams from "./GetBasicParams";
 
 export default async function GetAlbum(context: IAppContext, id: string): Promise<IAlbumResponse> {
     const params = {...GetBasicParams(context), id: id};
-    const ret = await axios.get<{"subsonic-response":IAlbumResponse}>(`${context.url}/rest/getAlbum`,{params: params});
+    const ret = await axios.get<{"subsonic-response":IAlbumResponse}>(`${context.activeAccount.url}/rest/getAlbum`,{params: params});
         if(ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok"){
             return Promise.resolve(ret.data["subsonic-response"]);
             // useNavigate("/artists");

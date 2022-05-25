@@ -1,14 +1,24 @@
 import { ISubsonicResponse } from "./SubsonicResponse";
 
 export interface IArtistResponse extends ISubsonicResponse {
-    artist: {
-        id: number;
-        name: string;
-        coverArt: string;
-        albumCount: number;
-        album: IAlbumArtistResponse[];
-    }
+    artist: IInnerArtistResponse
 
+}
+
+export interface IInnerArtistResponse {
+    id: string;
+    name: string;
+    coverArt: string;
+    albumCount: number;
+    album: IAlbumArtistResponse[];
+}
+
+export interface IRandomSongsResponse extends ISubsonicResponse {
+    randomSongs: { song: IAlbumSongResponse[] };
+}
+
+export interface ISimilarSongsResponse extends ISubsonicResponse {
+    similarSongs2: { song: IAlbumSongResponse[] };
 }
 
 export interface IAlbumArtistResponse {
@@ -34,12 +44,14 @@ export interface IInnerAlbumResponse extends IAlbumArtistResponse {
 
 
 export interface IAlbumSongResponse {
-    id: number;
+    id: string;
     parent: string;
     title: string;
     duration: number;
     track: number;
     artist: string;
+    album: string;
+    albumId: string;
     coverArt: string;
 }
 

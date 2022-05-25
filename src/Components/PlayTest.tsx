@@ -9,6 +9,10 @@ import { ISubsonicResponse } from '../Models/API/Responses/SubsonicResponse';
 import { useNavigate } from 'react-router-dom';
 import logo from '../logo.svg';
 import { motion, useAnimation } from 'framer-motion';
+import { Toast } from '@capacitor/toast';
+import AccountItem from './AccountItem';
+import { IAppContext } from '../Models/AppContext';
+
 
 interface FormData {
     username: string;
@@ -16,22 +20,26 @@ interface FormData {
     url: string;
 }
 
+function removeTrailingSlash(str: string) {
+    return str.replace(/\/+$/, '');
+}
+
+
 export default function PlayTest() {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const [error, setError] = useState<string>("");
     const controls = useAnimation();
     useEffect(() => {
-        
+
         setTimeout(() => {
-            if (context.username !== "" && context.username !== null) {
-                navigate("/artists")
+            if (context.activeAccount.username !== "" && context.activeAccount.username !== null) {
+                navigate("/home")
             }
-            else if(context.username === null) {
+            else if (context.activeAccount.username === null) {
                 controls.start({ rotate: 0, scale: 1 });
             }
-        
-        },1000);
+        }, 1000);
     }, [context]);
 
     const hash = async (data: FormData) => {
@@ -46,19 +54,53 @@ export default function PlayTest() {
             c: "soniclair",
             f: "json"
         };
-        const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${data.url}/rest/getArtists`, { params: basicParams });
-        console.log(ret);
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            setError("handled");
-            console.log(ret.data);
-            const creds = { username: data.username, password: data.password, url: data.url };
-            setContext(creds);
-            localStorage.setItem('serverCreds', JSON.stringify(creds));
-            navigate("/artists");
+        try {
+            const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${data.url}/rest/getArtists`, { params: basicParams });
+            if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
+                const creds = {
+                    username: data.username,
+                    password: data.password,
+                    url: removeTrailingSlash(data.url),
+                    type: ret.data['subsonic-response'].type,
+                };
+                if (context.accounts.filter(s => s.url === data.url).length === 1) {
+                    const newContext: IAppContext = {
+                        activeAccount: creds,
+                        accounts: [
+                            ...context.accounts.filter(s => s.url !== data.url),
+                            creds],
+                        spotifyToken: context.spotifyToken,
+
+                    };
+                    setContext(newContext);
+                    localStorage.setItem('serverCreds', JSON.stringify(newContext));
+                }
+                else {
+                    const newContext: IAppContext = {
+                        activeAccount: creds,
+                        accounts: [
+                            ...context.accounts,
+                            creds],
+                        spotifyToken: context.spotifyToken
+                    };
+                    setContext(newContext);
+                    localStorage.setItem('serverCreds', JSON.stringify(newContext));
+                }
+                navigate("/home");
+            }
+            else {
+                if (ret?.data["subsonic-response"]?.status === "failed")
+                    await Toast.show({
+                        text: ret?.data["subsonic-response"]?.error?.message!
+                    });
+            }
         }
-        else {
-            setError("errored");
+        catch (e) {
+            await Toast.show({
+                text: "Ocurrió un error comunicándonos con el servidor"
+            });
         }
+
     }
     const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
     const onSubmit = handleSubmit(hash);
@@ -69,7 +111,7 @@ export default function PlayTest() {
                 <motion.div
                     className="container"
                     initial={{ scale: 0, y: 125 }}
-                    animate={{ rotate: 0, scale: 1, y:0 }}
+                    animate={{ rotate: 0, scale: 1, y: 0 }}
                     transition={{
                         type: "spring",
                         stiffness: 150,
@@ -104,7 +146,10 @@ export default function PlayTest() {
                     </div>
                     {errors && errors.url && <div className="col-12 text-danger">{errors.url.message}</div>}
 
-                    <button type="submit" className={"btn btn-primary"}>Log In!</button>
+                    <button type="submit" className={"btn btn-primary mb-3"}>Log In!</button>
+                    {context.accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">
+                        {context.accounts.map(s => (<AccountItem account={s} />))}
+                    </div>}
                 </motion.div>
             </form>
         </div>
