@@ -216,7 +216,7 @@ export default function AudioControl({ }) {
                 <span>{SecondsToHHSS((playTime ?? 0) * (currentTrack?.duration ?? 0))}</span>
                 <span>{SecondsToHHSS(currentTrack.duration)}</span>
             </div>
-            <div className="w-100">
+            <div className="w-100 mb-3">
                 <input type="range" className="w-100" min={0} max={1} step={0.01} value={playTime} onChange={(e) => changePlayTime(e)}></input>
             </div>
         </div>
