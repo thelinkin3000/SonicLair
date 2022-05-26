@@ -32,7 +32,7 @@ export default function AudioControl({ }) {
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
     const vlcListeners = useRef<any[]>([]);
-
+    const mediaListeners = useRef<any[]>([]);
     const play = (track: IAlbumSongResponse) => {
         try {
             VLC.play({ uri: `${context.activeAccount.url}/rest/stream?${getSongParams(track)}` });
@@ -131,22 +131,31 @@ export default function AudioControl({ }) {
                 setIsPlaying(false);
             }),
             (VLC as any).addListener('stopped', (info: any) => {
-                console.log("stopped", JSON.stringify(playlist));
                 setIsPlaying(false);
                 if (playlist.indexOf(currentTrack) !== (playlist.length - 1)) {
                     setCurrentTrack(playlist[playlist.indexOf(currentTrack) + 1]);
                 }
             }),
             (VLC as any).addListener('progress', (info: any) => {
-                console.log(info.time);
                 setPlayTime(info.time);
             })];
+            mediaListeners.current.forEach(s => (MediaSession as any).removeListener(s));
+            // I'm sorry typescript gods.
+            mediaListeners.current = [
+                (MediaSession as any).addListener('pause', (info: any) => {
+                    if (isPlaying) {
+                        VLC.pause();
+                    }
+                    else {
+                        VLC.play({ uri: null });
+                    }
+                })];
 
         return () => {
             // setCurrentTrack(CurrentTrackContextDefValue);
             // setPlaylist([]);
         }
-    }, [playlist, currentTrack, setIsPlaying, setCurrentTrack]);
+    }, [playlist, currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
 
     const goToAlbum = useCallback(() => {
         navigate(`/album`, { state: { id: currentTrack.parent } });
