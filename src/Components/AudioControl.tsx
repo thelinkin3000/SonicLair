@@ -149,11 +149,17 @@ export default function AudioControl({ }) {
                     else {
                         VLC.play({ uri: null });
                     }
-                })];
+                }),
+                (MediaSession as any).addListener('next', (info: any) => {
+                    playNext();
+                }),
+                (MediaSession as any).addListener('prev', (info: any) => {
+                    playPrev();
+                }),];
 
         return () => {
-            // setCurrentTrack(CurrentTrackContextDefValue);
-            // setPlaylist([]);
+            setCurrentTrack(CurrentTrackContextDefValue);
+            setPlaylist([]);
         }
     }, [playlist, currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
 

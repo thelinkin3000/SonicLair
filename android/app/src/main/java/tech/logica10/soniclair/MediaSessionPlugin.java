@@ -1,43 +1,29 @@
 package tech.logica10.soniclair;
-import static android.content.Context.NOTIFICATION_SERVICE;
+
 import static androidx.core.content.ContextCompat.getSystemService;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Icon;
 import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-
 import android.net.Uri;
-import android.provider.MediaStore;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.util.Log;
+import android.view.KeyEvent;
 
-
-import androidx.core.app.NotificationCompat;
-
-import com.getcapacitor.AndroidProtocolHandler;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.FutureTarget;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.android.gms.cast.framework.media.NotificationAction;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 @CapacitorPlugin(name = "MediaSession")
 public class MediaSessionPlugin extends Plugin implements BroadcastObserver {
@@ -49,78 +35,103 @@ public class MediaSessionPlugin extends Plugin implements BroadcastObserver {
     private MediaMetadata.Builder metadataBuilder;
     private PlaybackState.Builder stateBuilder;
     private NotificationChannel channel;
-    @Override
-    public void load(){
-        // Create a media session. NotificationCompat.MediaStyle
-// PlayerService is your own Service or Activity responsible for media playback.
-        mediaSession = new MediaSession(MainActivity.context, "PlayerService");
 
+    @Override
+    public void load() {
+        // Create a media session. NotificationCompat.MediaStyle
+        // PlayerService is your own Service or Activity responsible for media playback.
+        mediaSession = new MediaSession(MainActivity.context, "Soniclair");
+        mediaSession.setCallback(new SonicLairSessionCallbacks());
 
         notificationBuilder = new Notification.Builder(MainActivity.context, "soniclairr");
-// Create a Notification which is styled by your MediaStyle object.
-// This connects your media session to the media controls.
-// Don't forget to include a small icon.
+        // Create a Notification which is styled by your MediaStyle object.
+        // This connects your media session to the media controls.
+        // Don't forget to include a small icon.
         mediaStyle = new Notification.MediaStyle()
-                .setMediaSession(mediaSession.getSessionToken());
+                .setMediaSession(mediaSession.getSessionToken())
+                .setShowActionsInCompactView(1);
 
-// Specify any actions which your users can perform, such as pausing and skipping to the next track.
+        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
 
         metadataBuilder = new MediaMetadata.Builder();
 
-        notificationManager = (NotificationManager)getSystemService(MainActivity.context,NotificationManager.class);
+        notificationManager = (NotificationManager) getSystemService(MainActivity.context, NotificationManager.class);
         stateBuilder = new PlaybackState.Builder();
 
         channel = new NotificationChannel(
                 "soniclair",
                 "Soniclair",
-                NotificationManager.IMPORTANCE_HIGH);
+                NotificationManager.IMPORTANCE_MIN);
         notificationManager.createNotificationChannel(channel);
 
 
+        // ********* PREV ********
         //This is the intent of PendingIntent
-        Intent intentAction = new Intent(MainActivity.context,NotificationBroadcastReceiver.class);
-
-        PendingIntent pIntentlogin = PendingIntent.getBroadcast(MainActivity.context,1,intentAction,PendingIntent.FLAG_UPDATE_CURRENT);
-
+        Intent prevIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
+        prevIntent.setAction("SLPREV");
+        PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(MainActivity.context, 1, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        Notification.Action.Builder builder = new Notification.Action.Builder(android.R.drawable.ic_media_play,"Play",pIntentlogin);
+        Notification.Action.Builder builder = new Notification.Action.Builder(android.R.drawable.ic_media_previous, "PREV", pendingPrevIntent);
+        Notification.Action prevAction = builder.build();
+        notificationBuilder.addAction(prevAction);
+
+        // ********* PAUSE ********
+        //This is the intent of PendingIntent
+        Intent pauseIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
+        pauseIntent.setAction("SLPAUSE");
+        PendingIntent pendingPauseIntent = PendingIntent.getBroadcast(MainActivity.context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
+        builder = new Notification.Action.Builder(android.R.drawable.ic_media_pause, "PAUSE", pendingPauseIntent);
         Notification.Action pauseAction = builder.build();
         notificationBuilder.addAction(pauseAction);
-        IntentFilter filter = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
-        filter.addAction(Intent.ACTION_MEDIA_BUTTON);
+
+        // ********* NEXT ********
+        //This is the intent of PendingIntent
+        Intent nextIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
+        nextIntent.setAction("SLNEXT");
+        PendingIntent pendingNextIntent = PendingIntent.getBroadcast(MainActivity.context, 1, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
+        builder = new Notification.Action.Builder(android.R.drawable.ic_media_next, "NEXT", pendingNextIntent);
+        Notification.Action nextAction = builder.build();
+        notificationBuilder.addAction(nextAction);
         Globals.RegisterObserver(this);
     }
 
     @PluginMethod()
-    public void play(PluginCall call){
-        stateBuilder.setState(PlaybackState.STATE_PLAYING, 0,1);
+    public void play(PluginCall call) {
+        stateBuilder.setState(PlaybackState.STATE_PLAYING, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
+        mediaSession.setPlaybackState(stateBuilder.build());
+        mediaSession.setActive(true);
+        call.resolve();
+    }
+
+    public void pause(PluginCall call) {
+        stateBuilder.setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
         mediaSession.setPlaybackState(stateBuilder.build());
         mediaSession.setActive(true);
         call.resolve();
     }
 
     @PluginMethod()
-    public void updateMedia(PluginCall call) {
+    public void updateMedia(PluginCall call) throws ExecutionException, InterruptedException {
         JSObject ret = new JSObject();
         metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, call.getString("album"));
-        Uri albumart = Uri.parse(call.getString("albumImage"));
-        metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, String.valueOf(albumart));
+        Uri albumArtUri = Uri.parse(call.getString("albumImage"));
+        FutureTarget<Bitmap> futureBitmap = Glide.with(MainActivity.context)
+                .asBitmap()
+                .load(albumArtUri)
+                .submit();
+        Bitmap albumArtBitmap = futureBitmap.get();
+        metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART,albumArtBitmap);
         metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, call.getString("artist"));
         metadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, call.getString("artist"));
         metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, call.getString("song"));
         mediaSession.setMetadata(metadataBuilder.build());
         notificationBuilder.setSmallIcon(R.mipmap.ic_launcher);
+        notificationBuilder.setLargeIcon(albumArtBitmap);
         notificationBuilder.setContentTitle(call.getString("song"));
         notificationBuilder.setContentText(call.getString("album"));
         notificationBuilder.setStyle(mediaStyle);
-        try{
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(MainActivity.context.getContentResolver(), albumart);
-            notificationBuilder.setLargeIcon(bitmap);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         notificationBuilder.setChannelId("soniclair");
         notificationManager.notify("SonicLair", 1, notificationBuilder.build());
         ret.put("status", "ok");
@@ -129,21 +140,54 @@ public class MediaSessionPlugin extends Plugin implements BroadcastObserver {
 
     @Override
     public void update(String action) {
-        if(action == "PAUSE"){
-            notifyListeners("pause",null);
+        if (action.startsWith("SL")) {
+            notifyListeners(action.replace("SL", "").toLowerCase(Locale.ROOT), null);
         }
     }
 
 
-    private class MySessionCallback extends MediaSession.Callback {
+    private class SonicLairSessionCallbacks extends MediaSession.Callback {
         @Override
-        public void onPlay(){
-
+        public void onPlay() {
+            super.onPlay();
+            Globals.NotifyObservers("SLPAUSE");
         }
 
+        public void onPause() {
+            super.onPause();
+            Globals.NotifyObservers("SLPAUSE");
+        }
+
+        @Override
+        public void onSkipToNext() {
+            super.onSkipToNext();
+            Globals.NotifyObservers("SLNEXT");
+        }
+
+        @Override
+        public void onSkipToPrevious() {
+            super.onSkipToPrevious();
+            Globals.NotifyObservers("SLPREV");
+        }
+
+        @Override
+        public boolean onMediaButtonEvent(Intent mediaButtonIntent){
+            KeyEvent ke = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+            if (ke != null && ke.getAction() == KeyEvent.ACTION_DOWN) {
+                int keyCode = ke.getKeyCode();
+                if(keyCode == KeyEvent.KEYCODE_MEDIA_PLAY || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE){
+                    Globals.NotifyObservers("SLPAUSE");
+                }
+                else if(keyCode == KeyEvent.KEYCODE_MEDIA_NEXT){
+                    Globals.NotifyObservers("SLNEXT");
+                }
+                else if(keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS){
+                    Globals.NotifyObservers("SLPREV");
+                }
+            }
+            return true;
+        }
     }
-
-
 
 
 }
