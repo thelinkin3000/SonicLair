@@ -88,6 +88,10 @@
   border: none;
 }
 
+::-webkit-scrollbar-corner {
+  background: rgba(0,0,0,0);
+}
+
 .btn {
   transition: 0.3s !important;
 }

@@ -28,7 +28,12 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, VlcPlugin {
         }
         this.audio.ontimeupdate = (ev: any) => {
             if (this.listeners["progress"]) {
-                this.notifyListeners("progress", {time: ev.path[0].currentTime / ev.path[0].duration});
+                this.notifyListeners("progress", { time: ev.path[0].currentTime / ev.path[0].duration });
+            }
+        }
+        this.audio.onended = () => {
+            if (this.listeners["stopped"]) {
+                this.notifyListeners("stopped", null);
             }
         }
     }
