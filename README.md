@@ -1,9 +1,11 @@
 # Soniclair
-## An album-centered subsonic client for PWA, Android and Desktop
 <div style="text-align:center, width:100%">
    <img src="./logo.svg">
 </div>
-Soniclair is a minimal, mobile-ready, album-centered music client for subsonic compatible music servers built on top of [Capacitor] and [Tauri]
+
+## An album-centered subsonic client for PWA, Android and Desktop
+
+SonicLair is a minimal, mobile-ready, album-centered music client for subsonic compatible music servers built on top of [Capacitor] and [Tauri]
 
 ## Features
 
@@ -22,6 +24,8 @@ Soniclair is a minimal, mobile-ready, album-centered music client for subsonic c
 
 Soniclair is built upon
 
+- [Capacitor] (used to run the app on Android devices)
+- [Tauri] (used to run the app as a native desktop app)
 - [React JS]
 - [React Window]
 - [React Helmet]
@@ -36,7 +40,7 @@ Soon, though.
 
 ## License
 
-MIT
+MIT, you can do whatever you want with this.
 
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
 
