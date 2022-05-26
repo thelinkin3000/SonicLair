@@ -14,6 +14,8 @@ import axios from "axios";
 import { Toast } from "@capacitor/toast";
 import VLC from "../Plugins/VLC";
 import MediaSession from "../Plugins/MediaSession";
+import { Capacitor } from "@capacitor/core";
+import { VLCWeb } from "../Plugins/Audio";
 
 interface IListener {
     event: string;
@@ -27,8 +29,8 @@ export default function AudioControl({ }) {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [playTime, setPlayTime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
-    const [audioInstance, setAudioInstance] = useState<HTMLAudioElement>(new Audio());
-    const listeners = useRef<IListener[]>([]);
+    const audioInstance = useRef<VLCWeb>(new VLCWeb());
+
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
     const vlcListeners = useRef<any[]>([]);
@@ -36,7 +38,12 @@ export default function AudioControl({ }) {
     const play = (track: IAlbumSongResponse) => {
         try {
             VLC.play({ uri: `${context.activeAccount.url}/rest/stream?${getSongParams(track)}` });
-            MediaSession.play();
+
+
+            if (Capacitor.isPluginAvailable('MediaSession')) {
+
+                MediaSession.play();
+            }
         }
         catch (e: any) {
             if (typeof (e) === typeof (DOMException)) {
@@ -87,7 +94,7 @@ export default function AudioControl({ }) {
             scrobble();
         }
         play(currentTrack);
-        if (coverArt !== "") {
+        if (coverArt !== "" && Capacitor.isPluginAvailable('MediaSession')) {
             MediaSession.updateMedia({
                 album: currentTrack.album,
                 artist: currentTrack.artist,
@@ -121,45 +128,49 @@ export default function AudioControl({ }) {
     };
 
     useEffect(() => {
-        vlcListeners.current.forEach(s => (VLC as any).removeListener(s));
+        (VLC as any).removeAllListeners();
         // I'm sorry typescript gods.
-        vlcListeners.current = [
-            (VLC as any).addListener('play', (info: any) => {
-                setIsPlaying(true);
-            }),
-            (VLC as any).addListener('paused', (info: any) => {
-                setIsPlaying(false);
-            }),
-            (VLC as any).addListener('stopped', (info: any) => {
-                setIsPlaying(false);
-                if (playlist.indexOf(currentTrack) !== (playlist.length - 1)) {
-                    setCurrentTrack(playlist[playlist.indexOf(currentTrack) + 1]);
-                }
-            }),
-            (VLC as any).addListener('progress', (info: any) => {
-                setPlayTime(info.time);
-            })];
-            mediaListeners.current.forEach(s => (MediaSession as any).removeListener(s));
+
+        (VLC as any).addListener('play', (info: any) => {
+            console.log("LAKNSDLAKSNDLKANSD");
+            setIsPlaying(true);
+        });
+        (VLC as any).addListener('paused', (info: any) => {
+            setIsPlaying(false);
+        });
+        (VLC as any).addListener('stopped', (info: any) => {
+            setIsPlaying(false);
+            if (playlist.indexOf(currentTrack) !== (playlist.length - 1)) {
+                setCurrentTrack(playlist[playlist.indexOf(currentTrack) + 1]);
+            }
+        });
+        (VLC as any).addListener('progress', (info: any) => {
+            setPlayTime(info.time);
+        });
+        if (Capacitor.isPluginAvailable('MediaSession')) {
+            (MediaSession as any).removeAllListeners();
             // I'm sorry typescript gods.
-            mediaListeners.current = [
-                (MediaSession as any).addListener('pause', (info: any) => {
-                    if (isPlaying) {
-                        VLC.pause();
-                    }
-                    else {
-                        VLC.play({ uri: null });
-                    }
-                }),
-                (MediaSession as any).addListener('next', (info: any) => {
-                    playNext();
-                }),
-                (MediaSession as any).addListener('prev', (info: any) => {
-                    playPrev();
-                }),];
+
+            (MediaSession as any).addListener('pause', (info: any) => {
+                if (isPlaying) {
+                    VLC.pause();
+                }
+                else {
+                    VLC.play({ uri: null });
+                }
+            });
+            (MediaSession as any).addListener('next', (info: any) => {
+                playNext();
+            });
+            (MediaSession as any).addListener('prev', (info: any) => {
+                playPrev();
+            });
+
+        }
 
         return () => {
-            setCurrentTrack(CurrentTrackContextDefValue);
-            setPlaylist([]);
+            // setCurrentTrack(CurrentTrackContextDefValue);
+            // setPlaylist([]);
         }
     }, [playlist, currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
 
