@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@benestudioco/react-scrollfade": "^1.0.2",
     "@capacitor/android": "^3.5.1",
     "@capacitor/app": "^1.1.1",
     "@capacitor/cli": "^3.5.1",
@@ -31,7 +30,6 @@
     "buffer": "^6.0.3",
     "classnames": "^2.3.1",
     "framer-motion": "^6.3.3",
-    "howler": "^2.2.3",
     "js-md5": "^0.7.3",
     "lodash": "^4.17.21",
     "react": "^18.1.0",

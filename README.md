@@ -1,7 +1,8 @@
 # Soniclair
 ## An album-centered subsonic client for PWA, Android and Desktop
-![Soniclair Logo](./logo.svg)
-<img src="./logo.svg">
+<div style="text-align:center">
+   <img src="./logo.svg">
+</div>.
 Soniclair is a minimal, mobile-ready, album-centered music client for subsonic compatible music servers built on top of [Capacitor] and [Tauri]
 
 ## Features
