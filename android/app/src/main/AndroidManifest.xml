@@ -11,6 +11,16 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
 
+        <!--Used by Android Auto-->
+        <meta-data android:name="com.google.android.gms.car.notification.SmallIcon"
+            android:resource="@drawable/ic_stat_soniclair" />
+
+        <service android:name=".MediaBrowser"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService"/>
+            </intent-filter>
+        </service>
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:name="tech.logica10.soniclair.MainActivity"

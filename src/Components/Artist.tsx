@@ -19,7 +19,6 @@ import AlbumCard from "./AlbumCard";
 import "./Artist.scss";
 import Loading from "./Loading";
 import useAutoFill from "../Hooks/useAutoFill";
-import ScrollFade from '@benestudioco/react-scrollfade';
 
 
 export default function Artist() {

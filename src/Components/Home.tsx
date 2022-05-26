@@ -1,24 +1,20 @@
-import { Link, useNavigate } from 'react-router-dom';
-import logo from '../logo.svg';
-import PlayTest from './PlayTest';
-import classnames from 'classnames';
-import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
 import GetTopAlbums from '../Api/GetTopAlbums';
 import { AppContext } from '../AppContext';
-import { IAlbumArtistResponse, IAlbumSongResponse, IRandomSongsResponse } from '../Models/API/Responses/IArtistResponse';
+import { IAlbumArtistResponse, IAlbumSongResponse } from '../Models/API/Responses/IArtistResponse';
 import AlbumCard from './AlbumCard';
 import GetRandomSongs from '../Api/GetRandomSongs';
 import RandomSongCard from './RandomSongCard';
-import { AutoSizer } from 'react-virtualized';
+import MediaBrowser from '../Plugins/MediaBrowser';
 
 export default function Home() {
-  const navigate = useNavigate();
   const [albumsFetched, setAlbumsFetched] = useState<boolean>(false);
   const [albums, setAlbums] = useState<IAlbumArtistResponse[]>([]);
   const [songsFetched, setSongsFetched] = useState<boolean>(false);
   const [songs, setSongs] = useState<IAlbumSongResponse[]>([]);
   const { context } = useContext(AppContext);
+
   useEffect(() => {
     if (albumsFetched)
       return;
@@ -38,9 +34,18 @@ export default function Home() {
       const randomSongs = await GetRandomSongs(context);
       setSongs(randomSongs.randomSongs.song);
       setSongsFetched(true);
+      MediaBrowser.loadItems(randomSongs.randomSongs.song.map(s => {
+        return {
+          album: s.album,
+          artist: s.artist,
+          song: s.title,
+          duration: s.duration,
+          albumArt: "",
+          id: s.id
+        }
+      }));
     };
     fetch();
-
   }, [songsFetched, context]);
 
   return (
@@ -53,7 +58,7 @@ export default function Home() {
       <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
         <div className="d-flex flex-row">
           {albums.map(s => <div style={{ margin: "10px" }}>
-            <AlbumCard item={s} forceWidth={true}/>
+            <AlbumCard item={s} forceWidth={true} />
           </div>
           )}
 
