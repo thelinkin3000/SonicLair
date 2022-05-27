@@ -14,5 +14,6 @@ public class MainActivity extends BridgeActivity {
         MainActivity.context = this;
         registerPlugin(VLCPlugin.class);
         registerPlugin(MediaSessionPlugin.class);
+        registerPlugin(MediaBrowserPlugin.class);
     }
 }

@@ -24,18 +24,13 @@ public class MediaBrowser extends MediaBrowserService {
         super.onCreate();
 
         // Create a MediaSessionCompat
-        mediaSession = new MediaSession(MainActivity.context, "SONICLAIR");
-
-//        // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
-//        stateBuilder = new PlaybackState.Builder()
-//                .setActions(
-//                        PlaybackStateCompat.ACTION_PLAY |
-//                                PlaybackStateCompat.ACTION_PLAY_PAUSE);
+        mediaSession = Globals.GetMediaSession();
+        stateBuilder = new PlaybackState.Builder();
+        stateBuilder.setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
+          // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
         mediaSession.setPlaybackState(stateBuilder.build());
-
         // MySessionCallback() has methods that handle callbacks from a media controller
         mediaSession.setCallback(new SonicLairSessionCallbacks());
-
         // Set the session's token so that client activities can communicate with it.
         setSessionToken(mediaSession.getSessionToken());
     }
@@ -43,6 +38,7 @@ public class MediaBrowser extends MediaBrowserService {
     @Nullable
     @Override
     public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {
+
         return new BrowserRoot("sonicLairRoot",null);
     }
 

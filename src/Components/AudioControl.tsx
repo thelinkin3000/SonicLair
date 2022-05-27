@@ -16,6 +16,7 @@ import VLC from "../Plugins/VLC";
 import MediaSession from "../Plugins/MediaSession";
 import { Capacitor } from "@capacitor/core";
 import { VLCWeb } from "../Plugins/Audio";
+import GetSimilarSongs from "../Api/GetSimilarSongs";
 
 interface IListener {
     event: string;
@@ -164,6 +165,18 @@ export default function AudioControl({ }) {
             });
             (MediaSession as any).addListener('prev', (info: any) => {
                 playPrev();
+            });
+            (MediaSession as any).addListener('playid', async (info: any) => {
+                const s = await GetSimilarSongs(context, info.value);
+                if (s.similarSongs2.song.length > 0) {
+                    setPlaylistAndPlay(s.similarSongs2.song, 0);
+                }
+                else {
+                    await Toast.show({
+                        text: 'The server did not report similar songs for this track.',
+                    });
+                }
+
             });
 
         }

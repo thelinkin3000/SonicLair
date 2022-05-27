@@ -39,8 +39,7 @@ public class MediaSessionPlugin extends Plugin implements IBroadcastObserver {
     public void load() {
         // Create a media session. NotificationCompat.MediaStyle
         // PlayerService is your own Service or Activity responsible for media playback.
-        mediaSession = new MediaSession(MainActivity.context, "Soniclair");
-        mediaSession.setCallback(new SonicLairSessionCallbacks());
+        mediaSession = Globals.GetMediaSession();
 
         notificationBuilder = new Notification.Builder(MainActivity.context, "soniclairr");
         // Create a Notification which is styled by your MediaStyle object.
@@ -99,7 +98,9 @@ public class MediaSessionPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void play(PluginCall call) {
         stateBuilder.setState(PlaybackState.STATE_PLAYING, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
+        stateBuilder.setActions(PlaybackState.ACTION_PLAY_PAUSE |  PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
+
         mediaSession.setActive(true);
         call.resolve();
     }
@@ -107,6 +108,7 @@ public class MediaSessionPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void pause(PluginCall call) {
         stateBuilder.setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
+        stateBuilder.setActions(PlaybackState.ACTION_PLAY_PAUSE |  PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
         mediaSession.setActive(true);
         call.resolve();
@@ -139,9 +141,11 @@ public class MediaSessionPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @Override
-    public void update(String action) {
+    public void update(String action, String value) {
         if (action.startsWith("SL")) {
-            notifyListeners(action.replace("SL", "").toLowerCase(Locale.ROOT), null);
+            JSObject ret = new JSObject();
+            ret.put("value", value);
+            notifyListeners(action.replace("SL", "").toLowerCase(Locale.ROOT), ret);
         }
     }
 

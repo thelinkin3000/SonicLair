@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import GetTopAlbums from '../Api/GetTopAlbums';
 import { AppContext } from '../AppContext';
 import { IAlbumArtistResponse, IAlbumSongResponse } from '../Models/API/Responses/IArtistResponse';
@@ -7,6 +7,8 @@ import AlbumCard from './AlbumCard';
 import GetRandomSongs from '../Api/GetRandomSongs';
 import RandomSongCard from './RandomSongCard';
 import MediaBrowser from '../Plugins/MediaBrowser';
+import GetBasicParams from '../Api/GetBasicParams';
+import { GetAsParams } from '../Helpers';
 
 export default function Home() {
   const [albumsFetched, setAlbumsFetched] = useState<boolean>(false);
@@ -14,7 +16,9 @@ export default function Home() {
   const [songsFetched, setSongsFetched] = useState<boolean>(false);
   const [songs, setSongs] = useState<IAlbumSongResponse[]>([]);
   const { context } = useContext(AppContext);
-
+  const getCoverArtParams = useCallback((item:any) => {
+    return GetAsParams({ ...GetBasicParams(context), id: item.albumId });
+}, [context]);
   useEffect(() => {
     if (albumsFetched)
       return;
@@ -34,16 +38,15 @@ export default function Home() {
       const randomSongs = await GetRandomSongs(context);
       setSongs(randomSongs.randomSongs.song);
       setSongsFetched(true);
-      MediaBrowser.loadItems(randomSongs.randomSongs.song.map(s => {
+      MediaBrowser.loadItems({items: randomSongs.randomSongs.song.map(s => {
         return {
           album: s.album,
           artist: s.artist,
           song: s.title,
           duration: s.duration,
-          albumArt: "",
+          albumArt: `${context.activeAccount.url}/rest/getCoverArt?${getCoverArtParams(s)}`,
           id: s.id
-        }
-      }));
+        }})});
     };
     fetch();
   }, [songsFetched, context]);

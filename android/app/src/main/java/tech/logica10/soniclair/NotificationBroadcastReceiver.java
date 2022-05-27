@@ -14,7 +14,7 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Globals.NotifyObservers(intent.getAction());
+        Globals.NotifyObservers(intent.getAction(),null);
     }
 }
 
