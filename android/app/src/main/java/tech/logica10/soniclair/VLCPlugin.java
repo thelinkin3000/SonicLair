@@ -8,6 +8,7 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.util.Log;
 
 import com.getcapacitor.JSObject;
@@ -30,9 +31,7 @@ public class VLCPlugin extends Plugin {
 
     private static LibVLC mLibVLC = null;
     private static MediaPlayer mMediaPlayer = null;
-    private VLCVideoLayout mVideoLayout = null;
-    private String DefaultAudioDeviceId = "";
-    private IMedia lastMedia = null;
+    private static PowerManager.WakeLock wakeLock = null;
 
     @Override
     public void load() {
@@ -46,6 +45,7 @@ public class VLCPlugin extends Plugin {
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build();
+
         AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(false)
@@ -55,35 +55,52 @@ public class VLCPlugin extends Plugin {
                     public void onAudioFocusChange(int focusChange) {
                         switch (focusChange) {
                             case AudioManager.AUDIOFOCUS_GAIN:
-                                if(mMediaPlayer.getMedia() != null){
+                                // We just gained focus, or got it back.
+                                // If we were playing something, and there's still something to play
+                                // we resume playing that.
+                                if (mMediaPlayer.getMedia() != null
+                                        && mMediaPlayer.getPosition() < mMediaPlayer.getMedia().getDuration()) {
                                     mMediaPlayer.play();
+                                    // Let the front end know
                                     notifyListeners("play", null);
                                 }
+                                // Finally, we acquire the wakelock again
+                                wakeLock.acquire();
                                 break;
                             case AudioManager.AUDIOFOCUS_LOSS:
                             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                                if(mMediaPlayer.isPlaying()){
+                                // We lost focus, let's pause playing
+                                if (mMediaPlayer.isPlaying()) {
                                     mMediaPlayer.pause();
+                                    // Let the front end know
                                     notifyListeners("paused", null);
                                 }
+                                // Release the wakelock to keep the battery of the user from
+                                // dying too young.
+                                wakeLock.release();
                                 break;
                         }
                     }
                 })
                 .build();
         final Object mFocusLock = new Object();
-        boolean mPlaybackDelayed = false;
 
         // requesting audio focus
         int res = mAudioManager.requestAudioFocus(mFocusRequest);
         synchronized (mFocusLock) {
             if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                mPlaybackDelayed = false;
+                // What are you gonna do about it?
+                if (mMediaPlayer.isPlaying()) {
+                    mMediaPlayer.pause();
+                    // Let the front end know
+                    notifyListeners("paused", null);
+                }
             } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                mPlaybackDelayed = false;
+                // We don't do anything here, let's wait for the user to start playing music
+
             } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                mPlaybackDelayed = true;
+                // We don't do anything here, let's wait for the user to start playing music.
             }
         }
 
@@ -107,6 +124,12 @@ public class VLCPlugin extends Plugin {
                 }
             });
         }
+
+        // Acquire wakelock to stop Android from shutting us down
+        PowerManager powerManager = (PowerManager) MainActivity.context.getSystemService(Context.POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                "SonicLair::VLCWakeLock");
+        wakeLock.acquire();
 
     }
 
