@@ -52,11 +52,3 @@ public class MediaBrowserPlugin extends Plugin {
     }
 }
 
-class MediaItemJson{
-    public String artist;
-    public String album;
-    public String albumArt;
-    public String song;
-    public float duration;
-    public String id;
-}

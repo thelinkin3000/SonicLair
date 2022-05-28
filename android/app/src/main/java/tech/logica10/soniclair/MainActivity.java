@@ -3,10 +3,22 @@ package tech.logica10.soniclair;
 import android.content.Context;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
+
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     public static Context context;
+
+    public MainActivity(){
+        super();
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -16,4 +28,5 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(MediaSessionPlugin.class);
         registerPlugin(MediaBrowserPlugin.class);
     }
+
 }

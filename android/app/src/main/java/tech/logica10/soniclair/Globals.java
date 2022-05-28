@@ -26,7 +26,7 @@ public class Globals {
         observers = new ArrayList<IBroadcastObserver>();
         // Create a media session. NotificationCompat.MediaStyle
         // PlayerService is your own Service or Activity responsible for media playback.
-        mediaSession = new MediaSession(MainActivity.context, "Soniclair");
+        mediaSession = new MediaSession(App.getContext(), "Soniclair");
         mediaSession.setCallback(new SonicLairSessionCallbacks());
         PlaybackState.Builder stateBuilder = new PlaybackState.Builder();
         stateBuilder.setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);

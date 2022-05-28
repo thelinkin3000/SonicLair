@@ -2,27 +2,21 @@ package tech.logica10.soniclair;
 
 import android.content.Context;
 import android.media.AudioAttributes;
-import android.media.AudioDeviceCallback;
-import android.media.AudioDeviceInfo;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.session.PlaybackState;
 import android.net.Uri;
-import android.os.Build;
 import android.os.PowerManager;
-import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.android.gms.common.util.PlatformVersion;
 
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
-import org.videolan.libvlc.interfaces.IMedia;
-import org.videolan.libvlc.util.VLCVideoLayout;
 
 import java.util.ArrayList;
 
@@ -32,16 +26,55 @@ public class VLCPlugin extends Plugin {
     private static LibVLC mLibVLC = null;
     private static MediaPlayer mMediaPlayer = null;
     private static PowerManager.WakeLock wakeLock = null;
+    private PlaybackState.Builder stateBuilder;
+    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = null;
+    private AudioManager mAudioManager;
+    private AudioAttributes mPlaybackAttributes;
 
     @Override
     public void load() {
         final ArrayList<String> args = new ArrayList<>();
         args.add("-vvv");
 
+        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                switch (focusChange) {
+                    case AudioManager.AUDIOFOCUS_GAIN:
+                        // We just gained focus, or got it back.
+                        // If we were playing something, and there's still something to play
+                        // we resume playing that.
+                        if (mMediaPlayer.getMedia() != null
+                                && mMediaPlayer.getPosition() < mMediaPlayer.getMedia().getDuration()) {
+                            mMediaPlayer.play();
+                            // Let the front end know
+                            notifyListeners("play", null);
+                            // Finally, we acquire the wakelock again
+                            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
+                        }
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS:
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                        // We lost focus, let's pause playing
+                        if (mMediaPlayer.isPlaying()) {
+                            mMediaPlayer.pause();
+                            // Let the front end know
+                            notifyListeners("paused", null);
+                        }
+                        // Release the wakelock to keep the battery of the user from
+                        // dying too young.
+                        wakeLock.release();
+                        break;
+                }
+            }
+        };
 
+        stateBuilder = new PlaybackState.Builder();
         // initialization of the audio attributes and focus request
-        AudioManager mAudioManager = (AudioManager) MainActivity.context.getSystemService(Context.AUDIO_SERVICE);
-        AudioAttributes mPlaybackAttributes = new AudioAttributes.Builder()
+        mAudioManager = (AudioManager) MainActivity.context.getSystemService(Context.AUDIO_SERVICE);
+
+        mPlaybackAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build();
@@ -50,39 +83,7 @@ public class VLCPlugin extends Plugin {
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(false)
                 .setWillPauseWhenDucked(false)
-                .setOnAudioFocusChangeListener(new AudioManager.OnAudioFocusChangeListener() {
-                    @Override
-                    public void onAudioFocusChange(int focusChange) {
-                        switch (focusChange) {
-                            case AudioManager.AUDIOFOCUS_GAIN:
-                                // We just gained focus, or got it back.
-                                // If we were playing something, and there's still something to play
-                                // we resume playing that.
-                                if (mMediaPlayer.getMedia() != null
-                                        && mMediaPlayer.getPosition() < mMediaPlayer.getMedia().getDuration()) {
-                                    mMediaPlayer.play();
-                                    // Let the front end know
-                                    notifyListeners("play", null);
-                                }
-                                // Finally, we acquire the wakelock again
-                                wakeLock.acquire();
-                                break;
-                            case AudioManager.AUDIOFOCUS_LOSS:
-                            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                                // We lost focus, let's pause playing
-                                if (mMediaPlayer.isPlaying()) {
-                                    mMediaPlayer.pause();
-                                    // Let the front end know
-                                    notifyListeners("paused", null);
-                                }
-                                // Release the wakelock to keep the battery of the user from
-                                // dying too young.
-                                wakeLock.release();
-                                break;
-                        }
-                    }
-                })
+                .setOnAudioFocusChangeListener(audioFocusChangeListener)
                 .build();
         final Object mFocusLock = new Object();
 
@@ -111,12 +112,18 @@ public class VLCPlugin extends Plugin {
                 @Override
                 public void onEvent(MediaPlayer.Event event) {
                     if (event.type == MediaPlayer.Event.TimeChanged) {
+                        long position = (long)(mMediaPlayer.getPosition() * mMediaPlayer.getMedia().getDuration());
+                        Globals.GetMediaSession().setPlaybackState(stateBuilder.setState(
+                                        PlaybackState.STATE_PLAYING,
+                                        position,
+                                        1)
+                                .build());
                         JSObject ret = new JSObject();
-                        ret.put("time", mMediaPlayer.getPosition());
+                        ret.put("time", position);
                         notifyListeners("progress", ret);
-                    } else if (event.type == MediaPlayer.Event.Stopped) {
+                    } else if (event.type == MediaPlayer.Event.EndReached) {
                         notifyListeners("stopped", null);
-                    } else if (event.type == MediaPlayer.Event.Paused) {
+                    } else if (event.type == MediaPlayer.Event.Paused || event.type == MediaPlayer.Event.Stopped) {
                         notifyListeners("paused", null);
                     } else if (event.type == MediaPlayer.Event.Playing) {
                         notifyListeners("play", null);
@@ -129,7 +136,6 @@ public class VLCPlugin extends Plugin {
         PowerManager powerManager = (PowerManager) MainActivity.context.getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "SonicLair::VLCWakeLock");
-        wakeLock.acquire();
 
     }
 
@@ -142,8 +148,35 @@ public class VLCPlugin extends Plugin {
         }
         JSObject ret = new JSObject();
         ret.put("status", "ok");
-        mMediaPlayer.play();
+        if(mMediaPlayer.getMedia() != null){
+            mMediaPlayer.play();
+            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
+        }
+        AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(mPlaybackAttributes)
+                .setAcceptsDelayedFocusGain(false)
+                .setWillPauseWhenDucked(false)
+                .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                .build();
+        final Object mFocusLock = new Object();
 
+        // requesting audio focus
+        int res = mAudioManager.requestAudioFocus(mFocusRequest);
+        synchronized (mFocusLock) {
+            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+                // What are you gonna do about it?
+                if (mMediaPlayer.isPlaying()) {
+                    mMediaPlayer.pause();
+                    // Let the front end know
+                    notifyListeners("paused", null);
+                }
+            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                // We don't do anything here, let's wait for the user to start playing music
+
+            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
+                // We don't do anything here, let's wait for the user to start playing music.
+            }
+        }
         call.resolve(ret);
     }
 
@@ -152,6 +185,7 @@ public class VLCPlugin extends Plugin {
         JSObject ret = new JSObject();
         if (mMediaPlayer.isPlaying()) {
             mMediaPlayer.pause();
+            wakeLock.release();
         }
         ret.put("status", "ok");
         call.resolve(ret);
