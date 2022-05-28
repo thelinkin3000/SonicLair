@@ -4,19 +4,23 @@ import { ISubsonicResponse } from "./SubsonicResponse";
 
 
 export interface IArtistInfoResponse extends ISubsonicResponse {
-    artistInfo2: {
-        biography: string;
-        largeImageUrl: string;
-        smallImageUrl: string;
-        mediumImageUrl: string;
-    };
+    artistInfo2: IArtistInfo;
+}
+
+export interface IArtistInfo {
+    biography: string;
+    largeImageUrl: string;
+    smallImageUrl: string;
+    mediumImageUrl: string;
 }
 
 
 export interface ISearchResponse extends ISubsonicResponse {
-    searchResult3: {
-        album?: IAlbumArtistResponse[];
-        artist?: IArtist[];
-        song?: IAlbumSongResponse[];
-    }
+    searchResult3: ISearchResult;
+}
+
+export interface ISearchResult{
+    album?: IAlbumArtistResponse[];
+    artist?: IArtist[];
+    song?: IAlbumSongResponse[];
 }

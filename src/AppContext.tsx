@@ -1,20 +1,17 @@
 import React, { useState, useMemo, SetStateAction, Dispatch } from "react";
-import { IAppContext } from "./Models/AppContext";
+import { IAccount, IAppContext } from "./Models/AppContext";
 
-export const AppContextDefValue: IAppContext = {
-    activeAccount: {
-        username: "",
-        password: "",
-        url: "",
-        type: "",
-    },
-    accounts: [],
-    spotifyToken: "",
+export const AppContextDefValue: IAccount = {
+    username: "",
+    password: "",
+    url: "",
+    type: "",
+
 };
 
 
 
-export const AppContext = React.createContext<{ context: IAppContext, setContext: Dispatch<SetStateAction<IAppContext>> }>
+export const AppContext = React.createContext<{ context: IAccount, setContext: Dispatch<SetStateAction<IAccount>> }>
     ({ context: AppContextDefValue, setContext: (c) => { } });
 
 export interface IMenuContext {

@@ -12,6 +12,7 @@ import { motion, useAnimation } from 'framer-motion';
 import { Toast } from '@capacitor/toast';
 import AccountItem from './AccountItem';
 import { IAppContext } from '../Models/AppContext';
+import VLC from '../Plugins/VLC';
 
 
 interface FormData {
@@ -20,87 +21,34 @@ interface FormData {
     url: string;
 }
 
-function removeTrailingSlash(str: string) {
-    return str.replace(/\/+$/, '');
-}
-
-
 export default function PlayTest() {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const [error, setError] = useState<string>("");
     const controls = useAnimation();
     useEffect(() => {
-
         setTimeout(() => {
-            if (context.activeAccount.username !== "" && context.activeAccount.username !== null) {
+            if (context.username !== "" && context.username !== null) {
                 navigate("/home")
             }
-            else if (context.activeAccount.username === null) {
+            else if (context.username === null) {
                 controls.start({ rotate: 0, scale: 1 });
             }
         }, 1000);
     }, [context]);
 
     const hash = async (data: FormData) => {
-        setError("handling");
-        const uuid = uuidv4();
-        const hash = md5(`${data.password}${uuid}`);
-        const basicParams: IBasicParams = {
-            u: data.username,
-            t: hash,
-            s: uuid,
-            v: "1.16.1",
-            c: "soniclair",
-            f: "json"
-        };
-        try {
-            const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${data.url}/rest/getArtists`, { params: basicParams });
-            if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-                const creds = {
-                    username: data.username,
-                    password: data.password,
-                    url: removeTrailingSlash(data.url),
-                    type: ret.data['subsonic-response'].type,
-                };
-                if (context.accounts.filter(s => s.url === data.url).length === 1) {
-                    const newContext: IAppContext = {
-                        activeAccount: creds,
-                        accounts: [
-                            ...context.accounts.filter(s => s.url !== data.url),
-                            creds],
-                        spotifyToken: context.spotifyToken,
+        const ret = await VLC.login(data);
+        if (ret.status === "ok") {
+            setContext(ret.value!);
+            navigate("/home");
 
-                    };
-                    setContext(newContext);
-                    localStorage.setItem('serverCreds', JSON.stringify(newContext));
-                }
-                else {
-                    const newContext: IAppContext = {
-                        activeAccount: creds,
-                        accounts: [
-                            ...context.accounts,
-                            creds],
-                        spotifyToken: context.spotifyToken
-                    };
-                    setContext(newContext);
-                    localStorage.setItem('serverCreds', JSON.stringify(newContext));
-                }
-                navigate("/home");
-            }
-            else {
-                if (ret?.data["subsonic-response"]?.status === "failed")
-                    await Toast.show({
-                        text: ret?.data["subsonic-response"]?.error?.message!
-                    });
-            }
         }
-        catch (e) {
+        else {
             await Toast.show({
-                text: "Ocurrió un error comunicándonos con el servidor"
+                text: ret.error
             });
         }
-
     }
     const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
     const onSubmit = handleSubmit(hash);

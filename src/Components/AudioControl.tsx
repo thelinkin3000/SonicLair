@@ -1,22 +1,15 @@
 import { faForwardStep, faPause, faPlay, faVolumeHigh, faVolumeLow } from "@fortawesome/free-solid-svg-icons";
-import { ChangeEvent, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import GetBasicParams from "../Api/GetBasicParams";
+import { ChangeEvent, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
-import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContext"
-import { GetAsParams, SecondsToHHSS } from "../Helpers";
-import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
+import { CurrentTrackContext } from "../AudioContext"
+import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import _, { forEach, identity, indexOf } from 'lodash';
+import _, {  } from 'lodash';
 import { useNavigate } from "react-router-dom";
 import classnames from "classnames";
-import axios from "axios";
-import { Toast } from "@capacitor/toast";
 import VLC from "../Plugins/VLC";
-import MediaSession from "../Plugins/MediaSession";
-import { Capacitor } from "@capacitor/core";
 import { VLCWeb } from "../Plugins/Audio";
-import GetSimilarSongs from "../Api/GetSimilarSongs";
 
 interface IListener {
     event: string;
@@ -36,31 +29,6 @@ export default function AudioControl({ }) {
     const [volume, setVolume] = useState<number>(1);
     const vlcListeners = useRef<any[]>([]);
     const mediaListeners = useRef<any[]>([]);
-    const play = (track: IAlbumSongResponse) => {
-        try {
-            VLC.play({ uri: `${context.activeAccount.url}/rest/stream?${getSongParams(track)}` });
-
-
-            if (Capacitor.isPluginAvailable('MediaSession')) {
-
-                MediaSession.play();
-            }
-        }
-        catch (e: any) {
-            if (typeof (e) === typeof (DOMException)) {
-                Toast.show({
-                    text: "Your browser or webview doesn't support this song's format. Please try to play another song."
-                });
-            }
-            else {
-                Toast.show({
-                    text: "There was an error trying to play this track. Please try to play another song."
-                });
-            }
-
-        }
-
-    }
 
     const changeVolume = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const vol = parseFloat(e.target.value);
@@ -73,36 +41,17 @@ export default function AudioControl({ }) {
         VLC.seek({ time: time });
     }, [audioInstance, currentTrack]);
 
-    const getCoverArtParams = useCallback((currentTrack: IAlbumSongResponse) => {
-        return GetAsParams({ ...GetBasicParams(context), id: currentTrack.coverArt });
-    }, [context]);
 
-    const getSongParams = useCallback((currentTrack: IAlbumSongResponse) => {
-        return GetAsParams({ ...GetBasicParams(context), id: currentTrack.id });
-    }, [context]);
-
-    const scrobble = useCallback(async () => {
-        const ret = await axios.get(`${context.activeAccount.url}/rest/scrobble?${getSongParams(currentTrack)}`);
-    }, [context, currentTrack]);
 
 
     useEffect(() => {
         if (currentTrack.id === "") {
             return;
         }
-        setCoverArt(`${context.activeAccount.url}/rest/getCoverArt?${getCoverArtParams(currentTrack)}`);
-        if (context.activeAccount.type === "navidrome") {
-            scrobble();
+        const fetch = async () => {
+            setCoverArt((await VLC.getAlbumArt({ id: currentTrack.coverArt })).value!);
         }
-        play(currentTrack);
-        if (coverArt !== "" && Capacitor.isPluginAvailable('MediaSession')) {
-            MediaSession.updateMedia({
-                album: currentTrack.album,
-                artist: currentTrack.artist,
-                song: currentTrack.title,
-                albumImage: coverArt
-            });
-        }
+        fetch();
     }, [currentTrack, coverArt]);
 
     const playNext = useCallback(() => {
@@ -124,7 +73,7 @@ export default function AudioControl({ }) {
             VLC.pause();
         }
         else {
-            VLC.play({ uri: null });
+            VLC.play();
         }
     };
 
@@ -133,7 +82,6 @@ export default function AudioControl({ }) {
         // I'm sorry typescript gods.
 
         (VLC as any).addListener('play', (info: any) => {
-            console.log("LAKNSDLAKSNDLKANSD");
             setIsPlaying(true);
         });
         (VLC as any).addListener('paused', (info: any) => {
@@ -148,38 +96,9 @@ export default function AudioControl({ }) {
         (VLC as any).addListener('progress', (info: any) => {
             setPlayTime(info.time);
         });
-        if (Capacitor.isPluginAvailable('MediaSession')) {
-            (MediaSession as any).removeAllListeners();
-            // I'm sorry typescript gods.
-
-            (MediaSession as any).addListener('pause', (info: any) => {
-                if (isPlaying) {
-                    VLC.pause();
-                }
-                else {
-                    VLC.play({ uri: null });
-                }
-            });
-            (MediaSession as any).addListener('next', (info: any) => {
-                playNext();
-            });
-            (MediaSession as any).addListener('prev', (info: any) => {
-                playPrev();
-            });
-            (MediaSession as any).addListener('playid', async (info: any) => {
-                const s = await GetSimilarSongs(context, info.value);
-                if (s.similarSongs2.song.length > 0) {
-                    setPlaylistAndPlay(s.similarSongs2.song, 0);
-                }
-                else {
-                    await Toast.show({
-                        text: 'The server did not report similar songs for this track.',
-                    });
-                }
-
-            });
-
-        }
+        (VLC as any).addListener('currentTrack', (info: any) => {
+            setCurrentTrack(info.currentTrack);
+        });
 
         return () => {
             // setCurrentTrack(CurrentTrackContextDefValue);
