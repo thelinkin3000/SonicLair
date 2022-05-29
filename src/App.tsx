@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import './App.scss';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import Home from './Components/Home';
 import PlayTest from './Components/PlayTest';
 import { AppContext, AppContextDefValue, MenuContextDefValue, IMenuContext, MenuContext } from './AppContext';
-import { IAccount, IAppContext } from './Models/AppContext';
+import { IAccount } from './Models/AppContext';
 import Artists from './Components/Artists';
 import Artist from './Components/Artist';
 import Album from './Components/Album';
@@ -16,16 +16,14 @@ import { StatusBar } from '@capacitor/status-bar';
 import Sidebar from './Components/Sidebar';
 import Navbar from './Components/Navbar';
 import Albums from './Components/Albums';
-import Account from './Components/Account';
 import GetSpotifyToken from "./Api/GetSpotifyToken";
 import Loading from './Components/Loading';
 import CardContextMenu from './Components/CardContextMenu';
-import axios from 'axios';
-import { ISubsonicResponse } from './Models/API/Responses/SubsonicResponse';
 import { Toast } from '@capacitor/toast';
 import { Capacitor } from '@capacitor/core';
 import Search from './Components/Search';
 import VLC from './Plugins/VLC';
+import Account from './Components/Account';
 
 
 function App() {
@@ -60,9 +58,9 @@ function App() {
         });
       }
 
-      const c = await VLC.getContext();
+      const c = await VLC.getActiveAccount();
       if(c.status === "ok"){
-        setContext(c.value?.activeAccount!);
+        setContext(c.value!);
       }
       else{
         setContext({username:null, password:"", url:"", type:""});

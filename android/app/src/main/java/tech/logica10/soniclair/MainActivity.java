@@ -10,23 +10,11 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     public static Context context;
 
-    public MainActivity(){
-        super();
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MainActivity.context = this;
         registerPlugin(VLCPlugin.class);
-        registerPlugin(MediaSessionPlugin.class);
-        registerPlugin(MediaBrowserPlugin.class);
     }
 
 }

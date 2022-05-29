@@ -19,7 +19,6 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         android.os.Debug.waitForDebugger();
-
         sApplication = this;
     }
 }

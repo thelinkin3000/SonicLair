@@ -1,18 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
-import md5 from 'js-md5';
 import { useForm } from "react-hook-form";
-import axios from 'axios';
 import { AppContext } from '../AppContext';
 import { useContext, useEffect, useState } from 'react';
-import { IBasicParams } from '../Models/API/Requests/BasicParams';
-import { ISubsonicResponse } from '../Models/API/Responses/SubsonicResponse';
 import { useNavigate } from 'react-router-dom';
 import logo from '../logo.svg';
 import { motion, useAnimation } from 'framer-motion';
 import { Toast } from '@capacitor/toast';
 import AccountItem from './AccountItem';
-import { IAppContext } from '../Models/AppContext';
 import VLC from '../Plugins/VLC';
+import { IAccount } from "../Models/AppContext";
 
 
 interface FormData {
@@ -24,15 +19,22 @@ interface FormData {
 export default function PlayTest() {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
-    const [error, setError] = useState<string>("");
+    const [accounts, setAccounts] = useState<IAccount[]>([]);
     const controls = useAnimation();
     useEffect(() => {
-        setTimeout(() => {
+        setTimeout(async () => {
             if (context.username !== "" && context.username !== null) {
                 navigate("/home")
             }
             else if (context.username === null) {
                 controls.start({ rotate: 0, scale: 1 });
+                const ret = await VLC.getAccounts();
+                if (ret.status === "ok") {
+                    setAccounts(ret.value!);
+                }
+                else {
+                    Toast.show({ text: ret.error });
+                }
             }
         }, 1000);
     }, [context]);
@@ -42,7 +44,6 @@ export default function PlayTest() {
         if (ret.status === "ok") {
             setContext(ret.value!);
             navigate("/home");
-
         }
         else {
             await Toast.show({
@@ -50,8 +51,13 @@ export default function PlayTest() {
             });
         }
     }
-    const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
+    const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
     const onSubmit = handleSubmit(hash);
+
+    const del = (url: string) => {
+        setAccounts(accounts.filter(s => s.url !== url));
+
+    }
 
     return (
         <div className={"row d-flex align-items-center"} style={{ height: "100vh" }}>
@@ -95,8 +101,8 @@ export default function PlayTest() {
                     {errors && errors.url && <div className="col-12 text-danger">{errors.url.message}</div>}
 
                     <button type="submit" className={"btn btn-primary mb-3"}>Log In!</button>
-                    {context.accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">
-                        {context.accounts.map(s => (<AccountItem account={s} />))}
+                    {accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">
+                        {accounts.map(s => (<AccountItem account={s} del={del}/>))}
                     </div>}
                 </motion.div>
             </form>

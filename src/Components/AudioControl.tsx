@@ -9,7 +9,7 @@ import _, {  } from 'lodash';
 import { useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
-import { VLCWeb } from "../Plugins/Audio";
+import { Backend } from "../Plugins/Audio";
 
 interface IListener {
     event: string;
@@ -23,7 +23,7 @@ export default function AudioControl({ }) {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [playTime, setPlayTime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
-    const audioInstance = useRef<VLCWeb>(new VLCWeb());
+    const audioInstance = useRef<Backend>(new Backend());
 
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
@@ -33,7 +33,7 @@ export default function AudioControl({ }) {
     const changeVolume = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const vol = parseFloat(e.target.value);
         setVolume(vol);
-        await VLC.setVolume({ volume: Math.floor(vol * 100) });
+        await VLC.setVolume({ volume: vol });
     }, [audioInstance]);
 
     const changePlayTime = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
@@ -55,18 +55,12 @@ export default function AudioControl({ }) {
     }, [currentTrack, coverArt]);
 
     const playNext = useCallback(() => {
-        if (playlist.length < 2 || playlist.indexOf(currentTrack) === (playlist.length - 1))
-            return;
-        setCurrentTrack(playlist[playlist.indexOf(currentTrack) + 1]);
-
-    }, [currentTrack, playlist]);
+        VLC.next();
+    }, []);
 
     const playPrev = useCallback(() => {
-        if (playlist.length < 2 || playlist.indexOf(currentTrack) === 0)
-            return;
-        setCurrentTrack(playlist[playlist.indexOf(currentTrack) - 1]);
-
-    }, [currentTrack, playlist]);
+        VLC.prev();
+    }, []);
 
     const togglePlaying = () => {
         if (isPlaying) {

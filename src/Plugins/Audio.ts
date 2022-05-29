@@ -5,41 +5,49 @@ import { ListenerCallback, PluginListenerHandle, WebPlugin } from '@capacitor/co
 import axios from 'axios';
 import md5 from 'js-md5';
 import qs from 'qs';
-import GetSimilarSongs from '../Api/GetSimilarSongs';
 import { IBasicParams } from '../Models/API/Requests/BasicParams';
 import { IAlbumsResponse } from '../Models/API/Responses/IAlbumsResponse';
 import { IArtistInfo, IArtistInfoResponse, ISearchResponse, ISearchResult } from '../Models/API/Responses/IArtistInfoResponse';
-import { IArtistResponse, IAlbumResponse, IAlbumSongResponse, IAlbumArtistResponse, IInnerArtistResponse, IInnerAlbumResponse } from '../Models/API/Responses/IArtistResponse';
+import { IArtistResponse, IAlbumResponse, IAlbumSongResponse, IAlbumArtistResponse, IInnerArtistResponse, IInnerAlbumResponse, IRandomSongsResponse, ISimilarSongsResponse } from '../Models/API/Responses/IArtistResponse';
 import { IArtistsResponse } from '../Models/API/Responses/IArtistsResponse';
 import { ISubsonicResponse } from '../Models/API/Responses/SubsonicResponse';
 import { IAccount, IAppContext } from '../Models/AppContext';
-import type VLC from "./VLC";
 import { IBackendPlugin, IBackendResponse } from './VLC';
 
-
-
-export interface IVLCWeb {
-    audio: HTMLAudioElement;
-}
-
-
-// This name is EXTREMELY misleading as it implements audio playback using an HTML Audio Element
-export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
+export class Backend extends WebPlugin implements IBackendPlugin {
     playlist: IAlbumSongResponse[];
     isPlaying: boolean;
     audio: HTMLAudioElement;
     context: IAppContext;
     _spotifyToken: string;
-    current: IAlbumSongResponse;
+    currentTrack: IAlbumSongResponse;
 
     constructor() {
         super();
-        this.current = { album: "", albumId: "", artist: "", coverArt: "", duration: 0, id: "", parent: "", title: "", track: 0 };
+        this.currentTrack = { album: "", albumId: "", artist: "", coverArt: "", duration: 0, id: "", parent: "", title: "", track: 0 };
         this._spotifyToken = "";
-        this.context = { activeAccount: { username: null, password: "", url: "", type: "" }, accounts: [], spotifyToken: "" };
+        this.context = JSON.parse(localStorage.getItem("serverCreds") ?? "{ activeAccount: { username: null, password: \"\", url: \"\", type: \"\" }, accounts: [], spotifyToken: \"\" }");
+
         this.playlist = [];
         this.audio = new Audio();
         this.isPlaying = false;
+
+        if ("mediaSession" in navigator) {
+            navigator.mediaSession.setActionHandler("pause", () => {
+                this.pause();
+            });
+            navigator.mediaSession.setActionHandler("play", () => {
+                this.play();
+            });
+            navigator.mediaSession.setActionHandler("nexttrack", () => {
+                this._next();
+            });
+            navigator.mediaSession.setActionHandler("previoustrack", () => {
+                this.prev();
+            });
+        }
+
+
         this.audio.onplay = () => {
             if (this.listeners["play"]) {
                 this.notifyListeners("play", null)
@@ -59,6 +67,55 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
             if (this.listeners["stopped"]) {
                 this.notifyListeners("stopped", null);
             }
+            this._next();
+        }
+    }
+    getActiveAccount(): Promise<IBackendResponse<IAccount>> {
+        return Promise.resolve(this.OKResponse(this.context.activeAccount));
+    }
+
+    deleteAccount(options: { url: string }): Promise<IBackendResponse<string>> {
+        this.context = {
+            activeAccount: this.context.activeAccount,
+            spotifyToken: this.context.spotifyToken,
+            accounts: this.context.accounts.filter(s => s.url !== options.url)
+        }
+        localStorage.setItem("serverCreds", JSON.stringify(this.context));
+        return Promise.resolve(this.OKResponse(""));
+
+    }
+
+    getAccounts(): Promise<IBackendResponse<IAccount[]>> {
+        return Promise.resolve(this.OKResponse(this.context.accounts));
+    }
+
+    async getTopAlbums(): Promise<IBackendResponse<IAlbumArtistResponse[]>> {
+        const params = this.GetBasicParams();
+        const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${this.context.activeAccount.url}/rest/getAlbumList2`, { params: { ...params, type: "frequent", size: 10 } });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret.data["subsonic-response"]!.albumList2.album);
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
+        }
+        else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+    async getRandomSongs(): Promise<IBackendResponse<IAlbumSongResponse[]>> {
+        const ret = await axios.get<{ "subsonic-response": IRandomSongsResponse }>(`${this.context.activeAccount.url}/rest/getRandomSongs`, { params: { ...this.GetBasicParams(), size: 10 } });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret.data["subsonic-response"].randomSongs.song);
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
+        }
+        else {
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
@@ -95,7 +152,6 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
         }
         else {
             this.setContext({ context: { activeAccount: { username: null, password: "", url: "", type: "" }, accounts: [], spotifyToken: await this.getSpotifyToken() } });
-
         }
     }
 
@@ -135,7 +191,6 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
     }
 
     async login(options: { username: string; password: string; url: string; }): Promise<IBackendResponse<IAccount>> {
-
         const uuid = "abcd1234";
         const hash = md5(`${options.password}${uuid}`);
         const basicParams: IBasicParams = {
@@ -158,7 +213,7 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
                     type: ret.data['subsonic-response'].type,
                 };
                 if (this.context!.accounts.filter(s => s.url === options.url).length === 1) {
-                    const newContext: IAppContext = {
+                    newContext = {
                         activeAccount: creds,
                         accounts: [
                             ...this.context.accounts.filter(s => s.url !== options.url),
@@ -169,7 +224,7 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
                     localStorage.setItem('serverCreds', JSON.stringify(newContext));
                 }
                 else {
-                    const newContext: IAppContext = {
+                    newContext = {
                         activeAccount: creds,
                         accounts: [
                             ...this.context.accounts,
@@ -181,11 +236,11 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
                 }
             }
             else if (ret?.data["subsonic-response"]?.status === "failed") {
-                throw Error(ret?.data["subsonic-response"]?.error?.message!);
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
             }
         }
         catch (e) {
-            throw Error("There was an error connecting to the server.")
+            return this.ErrorResponse("There was an error connecting to the server.")
         }
         return this.OKResponse<IAccount>(newContext.activeAccount);
 
@@ -230,46 +285,72 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
 
     }
 
+    async getSimilarSongs(options: { id: string }): Promise<IBackendResponse<IAlbumSongResponse[]>> {
+        const ret = await axios.get<{ "subsonic-response": ISimilarSongsResponse }>(`${this.context.activeAccount.url}/rest/getSimilarSongs2`, { params: { ...this.GetBasicParams(), size: 10, id: options.id } });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret.data["subsonic-response"].similarSongs2.song);
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
+        }
+        else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
 
 
     async playAlbum(options: { album: string; track: number; }): Promise<IBackendResponse<string>> {
         const album = await this.getAlbum({ id: options.album });
         if (album.status !== "ok") {
-            return Promise.resolve(this.ErrorReponse(album.error));
+            return this.ErrorResponse(album.error);
         }
         this.playlist = album.value!.song;
-        this.current = this.playlist[options.track];
+        this.currentTrack = this.playlist[options.track];
         this._playCurrent();
         return Promise.resolve(this.OKResponse(""));
     }
 
     async playRadio(options: { song: string; }): Promise<IBackendResponse<string>> {
-        const album = await GetSimilarSongs(this.context, options.song);
-        this.playlist = album.similarSongs2.song;
-        this.current = this.playlist[0];
+        const album = await this.getSimilarSongs({ id: options.song });
+        if (album.status !== "ok") {
+            return this.ErrorResponse(album.error);
+        }
+        this.playlist = album.value!;
+        this.currentTrack = this.playlist[0];
         this._playCurrent();
-        return Promise.resolve(this.OKResponse(""));
+        return this.OKResponse("");
     }
 
     async getArtists(): Promise<IBackendResponse<IArtistsResponse>> {
         const ret = await axios.get<{ "subsonic-response": IArtistsResponse }>(`${this.context!.activeAccount.url}/rest/getArtists`, { params: this.GetBasicParams() });
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            // return Promise.resolve(this.(ret.data["subsonic-response"] }));
-            return Promise.resolve(this.OKResponse(ret.data["subsonic-response"]));
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret.data["subsonic-response"]);
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
         }
         else {
-            return this.ErrorReponse("Ocurrió un error");
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
     async search(options: { query: string }): Promise<IBackendResponse<ISearchResult>> {
         const params = { ...this.GetBasicParams(), query: options.query };
         const ret = await axios.get<{ "subsonic-response": ISearchResponse }>(`${this.context!.activeAccount.url}/rest/search3`, { params: params });
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].searchResult3));
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].searchResult3));
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
         }
         else {
-            return this.ErrorReponse("Ocurrió un error");
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
@@ -278,11 +359,16 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
     async getArtist(options: { id: string; }): Promise<IBackendResponse<IInnerArtistResponse>> {
         const params = { ...this.GetBasicParams(), id: options.id };
         const ret = await axios.get<{ "subsonic-response": IArtistResponse }>(`${this.context!.activeAccount.url}/rest/getArtist`, { params: params });
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].artist));
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].artist));
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
         }
         else {
-            return this.ErrorReponse("Ocurrió un error");
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
@@ -293,49 +379,63 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
         let page = 0;
         while (more) {
             const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${this.context!.activeAccount.url}/rest/getAlbumList2`, { params: { ...params, type: "alphabeticalByName", size: 500, offset: page * 500 } });
-            if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-                if (albumsResponse === null) {
-                    albumsResponse = ret.data["subsonic-response"];
-                }
-                else {
-                    albumsResponse.albumList2.album = [...albumsResponse.albumList2.album, ...ret.data["subsonic-response"].albumList2.album];
-                }
-                page++;
-                if (ret.data["subsonic-response"].albumList2.album.length < 500) {
-                    more = false;
+            if (ret?.status === 200) {
+                if (ret?.data["subsonic-response"]?.status === "ok") {
+                    if (albumsResponse === null) {
+                        albumsResponse = ret.data["subsonic-response"];
+                    }
+                    else {
+                        albumsResponse.albumList2.album = [...albumsResponse.albumList2.album, ...ret.data["subsonic-response"].albumList2.album];
+                    }
+                    page++;
+                    if (ret.data["subsonic-response"].albumList2.album.length < 500) {
+                        more = false;
+                    }
+                } else {
+                    return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
                 }
             }
             else {
-                return this.ErrorReponse("Ocurrió un error");
+                return this.ErrorResponse(ret?.statusText);
             }
         }
-        return Promise.resolve(this.OKResponse(albumsResponse!.albumList2.album));
+        return this.OKResponse(albumsResponse!.albumList2.album);
     }
 
     async getAlbum(options: { id: string; }): Promise<IBackendResponse<IInnerAlbumResponse>> {
         const params = { ...this.GetBasicParams(), id: options.id };
         const ret = await axios.get<{ "subsonic-response": IAlbumResponse }>(`${this.context!.activeAccount.url}/rest/getAlbum`, { params: params });
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].album));
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].album));
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
         }
         else {
-            return this.ErrorReponse("Ocurrió un error");
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
     async getArtistInfo(options: { id: string; }): Promise<IBackendResponse<IArtistInfo>> {
         const params = { ...this.GetBasicParams(), id: options.id };
         const ret = await axios.get<{ "subsonic-response": IArtistInfoResponse }>(`${this.context!.activeAccount.url}/rest/getArtistInfo2`, { params: params });
-        if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-            return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].artistInfo2));
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return Promise.resolve(this.OKResponse(ret.data["subsonic-response"].artistInfo2));
+            }
+            else {
+                return this.ErrorResponse(ret?.data["subsonic-response"]?.error?.message!);
+            }
         }
         else {
-            return this.ErrorReponse("Ocurrió un error");
+            return this.ErrorResponse(ret?.statusText);
         }
     }
 
     async play(): Promise<IBackendResponse<string>> {
-        if (this.current && !this.isPlaying) {
+        if (this.currentTrack && !this.isPlaying) {
             await this.audio.play();
         }
         return this.OKResponse("");
@@ -353,15 +453,30 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
     };
 
     async _playCurrent() {
-        this.audio.src = `${this.context.activeAccount.url}/rest/stream?${this.getSongParams(this.current)}`;
+        this.notifyListeners("currentTrack", { currentTrack: this.currentTrack });
+        if ("mediaSession" in navigator) {
+            let albumArt = "";
+            const ret = await this.getAlbumArt({ id: this.currentTrack.albumId });
+            if (ret.status === "ok") {
+                albumArt = ret.value!;
+            }
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: this.currentTrack.title,
+                artist: this.currentTrack.artist,
+                album: this.currentTrack.album,
+                artwork: [{ src: albumArt }]
+            });
+            navigator.mediaSession.playbackState = "playing";
+        }
+        this.audio.src = `${this.context.activeAccount.url}/rest/stream?${this.getSongParams(this.currentTrack)}`;
         await this.audio.play();
     }
 
     _prev() {
-        if (this.playlist.indexOf(this.current) !== 0) {
-            this.current = this.playlist[this.playlist.indexOf(this.current) - 1];
+        if (this.playlist.indexOf(this.currentTrack) !== 0) {
+            this.currentTrack = this.playlist[this.playlist.indexOf(this.currentTrack) - 1];
+            this._playCurrent();
         }
-        this._playCurrent();
     }
 
     async prev(): Promise<IBackendResponse<string>> {
@@ -370,10 +485,10 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
     }
 
     _next() {
-        if (this.playlist.indexOf(this.current) !== this.playlist.length - 1) {
-            this.current = this.playlist[this.playlist.indexOf(this.current) + 1];
+        if (this.playlist.indexOf(this.currentTrack) !== this.playlist.length - 1) {
+            this.currentTrack = this.playlist[this.playlist.indexOf(this.currentTrack) + 1];
+            this._playCurrent();
         }
-        this._playCurrent();
     }
 
     async next(): Promise<IBackendResponse<string>> {
@@ -409,10 +524,10 @@ export class VLCWeb extends WebPlugin implements IVLCWeb, IBackendPlugin {
         }
     }
 
-    ErrorReponse<T>(error: string) {
+    ErrorResponse<T>(error?: string) {
         return {
             status: "error",
-            error: error,
+            error: error ?? "There was an error.",
             value: null
         }
     }

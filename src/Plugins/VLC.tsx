@@ -1,4 +1,5 @@
 import { registerPlugin } from '@capacitor/core';
+import { IAlbumsResponse } from '../Models/API/Responses/IAlbumsResponse';
 import { IArtistInfo, IArtistInfoResponse, ISearchResult } from '../Models/API/Responses/IArtistInfoResponse';
 import { IAlbumArtistResponse, IAlbumResponse, IAlbumSongResponse, IArtistResponse, IInnerAlbumResponse, IInnerArtistResponse } from '../Models/API/Responses/IArtistResponse';
 import { IArtistsResponse } from '../Models/API/Responses/IArtistsResponse';
@@ -24,16 +25,21 @@ export interface IBackendPlugin {
     getAlbumArt(options: { id: string }): Promise<IBackendResponse<string>>;
     getArtistInfo(options: { id: string }): Promise<IBackendResponse<IArtistInfo>>;
     search(options: { query: string }): Promise<IBackendResponse<ISearchResult>>;
-    setContext(options: { context: IAppContext }): Promise<IBackendResponse<string>>;
-    getContext(): Promise<IBackendResponse<IAppContext>>;
+    getTopAlbums(): Promise<IBackendResponse<IAlbumArtistResponse[]>>;
+    getRandomSongs(): Promise<IBackendResponse<IAlbumSongResponse[]>>;
     login(options: { username: string, password: string, url: string }): Promise<IBackendResponse<IAccount>>;
+    getActiveAccount() : Promise<IBackendResponse<IAccount>>;
+    getAccounts(): Promise<IBackendResponse<IAccount[]>>;
+    deleteAccount(options:{url:string}): Promise<IBackendResponse<string>>;
     prev(): Promise<IBackendResponse<string>>;
     next(): Promise<IBackendResponse<string>>;
+    getSpotifyToken(): Promise<string>;
+    getSimilarSongs(options: { id: string }): Promise<IBackendResponse<IAlbumSongResponse[]>>;
 }
 
 
 const VLC = registerPlugin<IBackendPlugin>('VLC', {
-    web: () => import('./Audio').then(m => new m.VLCWeb()),
+    web: () => import('./Audio').then(m => new m.Backend()),
 });
 
 export default VLC;

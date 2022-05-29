@@ -6,23 +6,23 @@ import { FixedSizeGrid as Grid } from "react-window";
 import { GridChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-import GetArtist from "../Api/GetArtist";
-import GetArtistInfo from "../Api/GetArtistInfo";
-import GetBasicParams from "../Api/GetBasicParams";
 import GetSpotifyArtist from "../Api/GetSpotifyArtist";
 import { AppContext } from "../AppContext";
 import { GetAsParams } from "../Helpers";
 import useWindowSize from "../Hooks/useWindowSize";
 import { IArtistInfoResponse } from "../Models/API/Responses/IArtistInfoResponse";
-import { IAlbumArtistResponse, IArtistResponse } from "../Models/API/Responses/IArtistResponse";
+import { IAlbumArtistResponse, IArtistResponse, IInnerArtistResponse } from "../Models/API/Responses/IArtistResponse";
 import AlbumCard from "./AlbumCard";
 import "./Artist.scss";
 import Loading from "./Loading";
 import useAutoFill from "../Hooks/useAutoFill";
+import VLC from "../Plugins/VLC";
+import GetSpotifyToken from "../Api/GetSpotifyToken";
+import { Toast } from "@capacitor/toast";
 
 
 export default function Artist() {
-    const [artist, setArtist] = useState<IArtistResponse>();
+    const [artist, setArtist] = useState<IInnerArtistResponse>();
     const [coverArt, setCoverArt] = useState<string>("");
     const [artistFetched, setArtistFetched] = useState<boolean>();
     const [artistInfoFetched, setArtistInfoFetched] = useState<boolean>();
@@ -32,10 +32,6 @@ export default function Artist() {
     const { state }: any = useLocation();
     const [width, height] = useWindowSize();
     const img = useRef(new Image());
-
-    const getCoverArtParams = () => {
-        return GetAsParams({ ...GetBasicParams(context), id: state.id });
-    };
     useEffect(() => {
         const fetch = async () => {
 
@@ -43,46 +39,46 @@ export default function Artist() {
                 setArtistFetched(true);
                 return;
             }
-            const ret = await GetArtist(context, state.id);
+            const ret = await VLC.getArtist({ id: state.id });
+            if (ret.status === "ok") {
+                setArtist(ret.value!);
+                setAlbums(ret.value!.album);
+                setArtistFetched(true);
 
-            setArtist(ret);
-            setAlbums(ret.artist.album);
-            console.log(ret.artist.album);
-            setArtistFetched(true);
+            }
         }
-        if (!artistFetched && context.activeAccount.url !== "") {
-            fetch();
-        }
+        fetch();
 
-    }, [artistFetched, context]);
+    }, [context, state.id]);
+
     useEffect(() => {
         const fetch = async () => {
             if (state.id === 0 || !state.id) {
                 setArtistInfoFetched(true);
                 return;
             }
-            try {
-                const items = await GetSpotifyArtist(context.spotifyToken, artist!.artist.name);
-                if (items.length > 0 && items[0].name === artist!.artist.name) {
-                    if (items[0].images.length > 1) {
-                        setCoverArt(items[0].images[1].url);
-                    }
-                    else {
-                        setCoverArt(items[0].images[0].url);
-
-                    }
+            const items = await GetSpotifyArtist(await VLC.getSpotifyToken(), artist!.name);
+            if (items.length > 0 && items[0].name === artist!.name) {
+                if (items[0].images.length > 1) {
+                    setCoverArt(items[0].images[1].url);
                 }
                 else {
-                    const ret = await GetArtistInfo(context, artist!.artist.id);
-                    setCoverArt(ret.artistInfo2.largeImageUrl);
+                    setCoverArt(items[0].images[0].url);
+
                 }
             }
-            catch (e) {
+            else {
+                const ret = await VLC.getArtistInfo({ id: artist!.id });
+                if (ret.status === "ok") {
+                    setCoverArt(ret.value!.largeImageUrl);
+                }
+                else {
+                    await Toast.show({ text: ret.error });
+                }
             }
             setArtistInfoFetched(true);
-
         }
-        if (!artistInfoFetched && artistFetched && artist !== undefined && context.activeAccount.url !== "" && context.spotifyToken !== "") {
+        if (!artistInfoFetched && artistFetched && artist !== undefined) {
             fetch();
         }
 
@@ -147,7 +143,7 @@ export default function Artist() {
 
     return (<>
         <Helmet>
-            <title>{artist.artist.name} - SonicLair</title>
+            <title>{artist.name} - SonicLair</title>
         </Helmet>
         <div className="artist-container d-flex flex-column">
             {coverArt !== "" && (
@@ -158,7 +154,7 @@ export default function Artist() {
                 </>
             )}
             <div className="text-white d-flex flex-column align-items-start justify-content-end artist-name-container">
-                {artist && artist.artist.name}
+                {artist && artist.name}
             </div>
             <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
                 <Grid

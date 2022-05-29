@@ -29,7 +29,7 @@ export interface IAlbumArtistResponse {
     created: string;
     duration: number;
     artist: string;
-    artistId: number;
+    artistId: string;
     year: number;
 }
 

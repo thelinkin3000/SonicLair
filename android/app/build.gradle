@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -6,8 +7,8 @@ android {
         applicationId "tech.logica10.soniclair"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "0.0.1-beta1-audiofocus"
+        versionCode 6
+        versionName "0.0.1-beta-vlcbackend"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -38,6 +39,7 @@ repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
+    mavenCentral()
 }
 
 dependencies {
@@ -52,6 +54,10 @@ dependencies {
     implementation 'org.videolan.android:libvlc-all:3.4.9'
     implementation 'com.github.bumptech.glide:glide:4.13.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.13.0'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation "androidx.core:core-ktx:1.7.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
 }
 

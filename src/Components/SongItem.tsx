@@ -9,28 +9,30 @@ import classNames from "classnames";
 import "./SongItem.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
-import { AppContext, MenuContext } from "../AppContext";
-import GetSimilarSongs from "../Api/GetSimilarSongs";
+import { MenuContext } from "../AppContext";
+import VLC from "../Plugins/VLC";
+import { Toast } from "@capacitor/toast";
 
 
-export default function SongItem({ item, album }: { item: IAlbumSongResponse, album: IAlbumSongResponse[] }) {
-    const { currentTrack, setPlaylistAndPlay } = useContext(CurrentTrackContext);
-    const {context} = useContext(AppContext);
-    const play = () => {
-        setPlaylistAndPlay(album, album.indexOf(item));
-    }
+export default function SongItem({ item }: { item: IAlbumSongResponse }) {
+    const { currentTrack } = useContext(CurrentTrackContext);
     const listeners = useRef<{ event: string, listener: (ev: any) => void }[]>([]);
-    const {setMenuContext} = useContext(MenuContext);
-    const playRadio = useCallback(() => {
-        const play = async () => {
-            const s = await GetSimilarSongs(context, item.id);
-            if (s.similarSongs2.song.length > 0) {
-                setPlaylistAndPlay([item, ...s.similarSongs2.song], 0);
-            }
-
+    const { setMenuContext } = useContext(MenuContext);
+    const playRadio = useCallback(async () => {
+        const s = await VLC.playRadio({ song: item.id });
+        if (s.status === "error") {
+            await Toast.show({ text: s.error });
         }
-        play();
-    }, [context, item])
+
+    }, [item]);
+    const play = useCallback(async () => {
+        const s = await VLC.playAlbum({ album: item.albumId, track: item.track - 1 });
+        if (s.status === "error") {
+            await Toast.show({ text: s.error });
+        }
+
+    }, [item]);
+
     const ref = (r: HTMLDivElement) => {
         if (r) {
             listeners.current.forEach(element => {
@@ -42,7 +44,7 @@ export default function SongItem({ item, album }: { item: IAlbumSongResponse, al
                     x: ev.pageX,
                     y: ev.pageY,
                     show: true,
-                    body: (<button className="btn btn-primary" onClick={() => {playRadio()}}>Start radio</button>)
+                    body: (<button className="btn btn-primary" onClick={() => { playRadio() }}>Start radio</button>)
 
                 })
             };
@@ -54,7 +56,7 @@ export default function SongItem({ item, album }: { item: IAlbumSongResponse, al
         <div ref={ref} className={classNames("list-group-item", currentTrack.id === item.id && "highlight", "not-selectable")} onClick={() => play()}>
             <div className="row">
                 <div className="col-auto">{item.track}</div>
-                <div className="col">{currentTrack.id === item.id && <FontAwesomeIcon icon={faVolumeHigh}/>}  {item.title}</div>
+                <div className="col">{currentTrack.id === item.id && <FontAwesomeIcon icon={faVolumeHigh} />}  {item.title}</div>
                 <div className="col-auto">{SecondsToHHSS(item.duration)}</div>
             </div>
         </div>

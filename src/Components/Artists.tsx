@@ -1,35 +1,34 @@
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
-import React, { SyntheticEvent, useCallback, useContext, useEffect, useRef, useState } from "react";
-import GetArtists from "../Api/GetArtists";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
 import { IArtist } from "../Models/API/Responses/IArtist";
 import ArtistCard from "./ArtistCard";
 import "./Artists.scss";
 import Loading from "./Loading";
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { FixedSizeGrid as Grid, FixedSizeGridProps, GridChildComponentProps } from 'react-window';
-import { floor } from "lodash";
+import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
 import useAutoFill from "../Hooks/useAutoFill";
+import VLC from "../Plugins/VLC";
 
 export default function Artists() {
     const [artists, setArtists] = useState<IArtist[]>([]);
     const [filteredArtists, setFilteredArtists] = useState<IArtist[]>([]);
     const [fetched, setFetched] = useState<boolean>(false);
-    const { context } = useContext(AppContext);
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetch = async () => {
-            const ar = (await GetArtists(context));
-            const ret = ar.artists.index.reduce<IArtist[]>((previous, s) => { return [...previous, ...(s.artist)] }, []);
-            setArtists(ret);
-            setFilteredArtists(ret);
-            setFetched(true);
+            const ar = await VLC.getArtists();
+            if (ar.status === "ok") {
+                const ret = ar.value!.artists!.index!.reduce<IArtist[]>((previous, s) => { return [...previous, ...(s.artist)] }, []);
+                setArtists(ret);
+                setFilteredArtists(ret);
+                setFetched(true);
+            }
         }
-        if (!fetched && context.activeAccount.username !== "") {
+        if (!fetched) {
             fetch();
         }
     }, [fetched]);
@@ -50,7 +49,7 @@ export default function Artists() {
         setCanSearch(!canSearch);
     }
 
-    const { width, height, columnWidth, gridProps, autoFillRef, columnCount } = useAutoFill(filteredArtists);
+    const { gridProps, autoFillRef, columnCount } = useAutoFill(filteredArtists);
 
     const ArtistCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IArtist[]>) => {
         const index = rowIndex * columnCount + columnIndex;

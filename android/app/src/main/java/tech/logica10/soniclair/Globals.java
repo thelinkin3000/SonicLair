@@ -4,8 +4,11 @@ import android.media.browse.MediaBrowser;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class Globals {
     // Static variable reference of single_instance
@@ -49,7 +52,7 @@ public class Globals {
         getInstance().observers.add(observer);
     }
 
-    public static void NotifyObservers(String action, String value){
+    public static void NotifyObservers(String action, String value) {
         for (IBroadcastObserver observer : getInstance().observers) {
             observer.update(action, value);
         }

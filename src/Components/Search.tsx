@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import SearchBackend from "../Api/SearchBackend";
 import { AppContext } from "../AppContext";
-import { ISearchResponse } from "../Models/API/Responses/IArtistInfoResponse";
+import { ISearchResponse, ISearchResult } from "../Models/API/Responses/IArtistInfoResponse";
+import VLC from "../Plugins/VLC";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import RandomSongCard from "./RandomSongCard";
@@ -9,7 +9,7 @@ import RandomSongCard from "./RandomSongCard";
 export default function Search() {
     const { context } = useContext(AppContext);
     const [searchValue, setSearchValue] = useState<string>("");
-    const [result, setResult] = useState<ISearchResponse | null>(null);
+    const [result, setResult] = useState<ISearchResult | null>(null);
     const setValue = (ev: any) => {
         setSearchValue(ev.target.value);
     }
@@ -19,8 +19,11 @@ export default function Search() {
         const fetch = async () => {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(async () => {
-                const result = await SearchBackend(context, searchValue);
-                setResult(result);
+                const result = await VLC.search({query: searchValue});
+                if(result.status === "ok"){
+                    setResult(result.value!);
+
+                }
             },350);
         };
         if (searchValue !== "") {
@@ -39,7 +42,7 @@ export default function Search() {
             </span> : ""}
         <div className="d-flex flex-column align-items-center justify-content-start overflow-auto" style={{ height: "100%" }}>
 
-            {result?.searchResult3?.artist && (
+            {result?.artist && (
                 <>
                     <div className="col-12 text-start" style={{ height: "auto" }}>
                         <span className="section-header text-white">Artists</span>
@@ -47,35 +50,35 @@ export default function Search() {
                     </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
-                            {result.searchResult3.artist?.map(s => <div style={{ margin: "10px" }}>
+                            {result.artist?.map(s => <div style={{ margin: "10px" }}>
                                 <ArtistCard item={s} forceWidth={true} />
                             </div>
                             )}
 
                         </div>
                     </div></>)}
-            {result?.searchResult3.album &&
+            {result?.album &&
                 (<><div className="col-12 text-start" style={{ height: "auto" }}>
                     <span className="section-header text-white">Albums</span>
                     <hr className="text-white w-100" />
                 </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
-                            {result.searchResult3.album?.map(s => <div style={{ margin: "10px" }}>
+                            {result.album?.map(s => <div style={{ margin: "10px" }}>
                                 <AlbumCard item={s} forceWidth={true} />
                             </div>
                             )}
 
                         </div>
                     </div></>)}
-            {result?.searchResult3?.song &&
+            {result?.song &&
                 (<><div className="col-12 text-start">
                     <span className="section-header text-white">Songs</span>
                     <hr className="text-white w-100" />
                 </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
-                            {result.searchResult3.song?.map(s => <div style={{ margin: "10px" }}>
+                            {result.song?.map(s => <div style={{ margin: "10px" }}>
                                 <RandomSongCard item={s} />
                             </div>
                             )}

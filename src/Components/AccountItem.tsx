@@ -11,58 +11,37 @@ import { ISubsonicResponse } from "../Models/API/Responses/SubsonicResponse";
 import { useNavigate } from "react-router-dom";
 import { IBasicParams } from "../Models/API/Requests/BasicParams";
 import { Toast } from "@capacitor/toast";
+import VLC from "../Plugins/VLC";
 
 export interface AccountItemProps {
     account: IAccount;
+    del: (url:string) => void;
 }
 
-export default function AccountItem(props: AccountItemProps) {
+export default function AccountItem({account, del } : AccountItemProps) {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const login = useCallback(async () => {
-        const uuid = uuidv4();
-        const hash = md5(`${props.account.password}${uuid}`);
-        const basicParams: IBasicParams = {
-            u: props.account.username!,
-            t: hash,
-            s: uuid,
-            v: "1.16.1",
-            c: "soniclair",
-            f: "json"
-        };
-        try {
-            const ret = await axios.get<{ "subsonic-response": ISubsonicResponse }>(`${props.account.url}/rest/getScanStatus`, { params: basicParams });
-            if (ret?.status === 200 && ret?.data["subsonic-response"]?.status === "ok") {
-                const newContext: IAppContext = {
-                    activeAccount: props.account,
-                    accounts: context.accounts,
-                    spotifyToken: context.spotifyToken,
-                };
-                setContext(newContext);
-                localStorage.setItem('serverCreds', JSON.stringify(newContext));
-                navigate("/home");
-            }
-            else {
-                if (ret?.data["subsonic-response"]?.status === "failed")
-                    await Toast.show({
-                        text: ret?.data["subsonic-response"]?.error?.message!
-                    });
-            }
+        const ret = await VLC.login({ username: account.username!, password: account.password, url: account.url });
+        if (ret.status === "ok") {
+            setContext(ret.value!);
+            navigate("/home");
         }
-        catch (e) {
-            await Toast.show({
-                text: "Ocurrió un error comunicándonos con el servidor"
+        else {
+            await Toast.show({ 
+                text: ret.error
             });
         }
-    }, [context]);
+    }, []);
 
-    const deleteAccount = useCallback(() => {
-        const newContext = {
-            ...context,
-            accounts: context.accounts.filter(s => s.url !== props.account.url)
-        };
-        setContext(newContext);
-        localStorage.setItem("serverCreds",JSON.stringify(newContext));
+    const deleteAccount = useCallback(async () => {
+        const ret = await VLC.deleteAccount({url: account.url});
+        if(ret.status === "ok"){
+            del(account.url);
+        }
+        else{
+            Toast.show({text: ret.error});
+        }
     }, [context, setContext]);
 
     return (
@@ -71,8 +50,8 @@ export default function AccountItem(props: AccountItemProps) {
                 <FontAwesomeIcon icon={faUser} size="2x" />
             </div>
             <div onClick={login} className="d-flex flex-column align-items-start justify-content-start ml-5 account-info">
-                <span className="text-white">{props.account.username}</span>
-                <span className="text-white no-wrap no-overflow">on {props.account.url}</span>
+                <span className="text-white">{account.username}</span>
+                <span className="text-white no-wrap no-overflow">on {account.url}</span>
             </div>
             <div onClick={deleteAccount} className="d-flex flex-row align-items-center justify-content-center text-white delete">
                 <i className="bi bi-trash" style={{ fontSize: "2rem" }}></i>

@@ -1,35 +1,32 @@
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
-import { floor } from "lodash";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeGrid as Grid, FixedSizeGridProps, GridChildComponentProps } from "react-window";
-import GetAlbums from "../Api/GetAlbums";
+import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
 import { AppContext } from "../AppContext";
-import useWindowSize from "../Hooks/useWindowSize";
 import { IAlbumArtistResponse } from "../Models/API/Responses/IArtistResponse";
-import IGridProps from "../Models/IGridProps";
 import AlbumCard from "./AlbumCard";
 import "./Artists.scss";
 import Loading from "./Loading";
-import React from "react";
 import useAutoFill from "../Hooks/useAutoFill";
+import VLC from "../Plugins/VLC";
 
 export default function Albums() {
     const [albums, setAlbums] = useState<IAlbumArtistResponse[]>([]);
     const [filteredAlbums, setFilteredAlbums] = useState<IAlbumArtistResponse[]>([]);
     const [fetched, setFetched] = useState<boolean>(false);
-    const { context } = useContext(AppContext);
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetch = async () => {
-            const al = (await GetAlbums(context));
-            setAlbums(al.albumList2.album);
-            setFilteredAlbums(al.albumList2.album);
+            const al = await VLC.getAlbums();
+            if(al.status === "ok"){
+                setAlbums(al.value!);
+                setFilteredAlbums(al.value!);
+            }
             setFetched(true);
+            
         }
         if (!fetched) {
             fetch();
@@ -47,7 +44,7 @@ export default function Albums() {
             searchRef.current!.focus();
         }
     }, [canSearch]);
-   
+
 
 
 
@@ -55,7 +52,7 @@ export default function Albums() {
         setCanSearch(!canSearch);
     }
 
-    const {width, height, columnWidth, gridProps, autoFillRef, columnCount} = useAutoFill(filteredAlbums);
+    const { gridProps, autoFillRef, columnCount } = useAutoFill(filteredAlbums);
 
     const AlbumCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IAlbumArtistResponse[]>) => {
         const index = rowIndex * columnCount + columnIndex;
@@ -68,7 +65,7 @@ export default function Albums() {
         )
     }, [columnCount]);
 
-    
+
 
 
     if (albums.length === 0) {
@@ -91,7 +88,7 @@ export default function Albums() {
             <input ref={searchRef} className={classNames("form-control", "mb-2", canSearch ? "" : "d-none")} placeholder="Search..." onKeyUp={search} />
             <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
                 <Grid {...gridProps}
-                itemData={filteredAlbums}
+                    itemData={filteredAlbums}
                 >
                     {AlbumCardWrapper}
                 </Grid>
