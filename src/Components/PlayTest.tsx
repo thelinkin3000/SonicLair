@@ -22,19 +22,27 @@ export default function PlayTest() {
     const [accounts, setAccounts] = useState<IAccount[]>([]);
     const controls = useAnimation();
     useEffect(() => {
+        console.log("MOUNTED PLAYTEST!");
         setTimeout(async () => {
-            if (context.username !== "" && context.username !== null) {
-                navigate("/home")
+            try{
+                if (context.username !== "" && context.username !== null) {
+                    navigate("/home")
+                }
+                else if (context.username === null) {
+                    controls.start({ rotate: 0, scale: 1 });
+
+                    const ret = await VLC.getAccounts();
+                    if (ret.status === "ok") {
+                        setAccounts(ret.value!);
+                    }
+                    else {
+                        Toast.show({ text: ret.error });
+                    }
+                }
+
             }
-            else if (context.username === null) {
-                controls.start({ rotate: 0, scale: 1 });
-                const ret = await VLC.getAccounts();
-                if (ret.status === "ok") {
-                    setAccounts(ret.value!);
-                }
-                else {
-                    Toast.show({ text: ret.error });
-                }
+            catch(e:any){
+                console.error("loading of playtest",e);
             }
         }, 1000);
     }, [context]);

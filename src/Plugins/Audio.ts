@@ -26,7 +26,13 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         super();
         this.currentTrack = { album: "", albumId: "", artist: "", coverArt: "", duration: 0, id: "", parent: "", title: "", track: 0 };
         this._spotifyToken = "";
-        this.context = JSON.parse(localStorage.getItem("serverCreds") ?? "{ activeAccount: { username: null, password: \"\", url: \"\", type: \"\" }, accounts: [], spotifyToken: \"\" }");
+        let thisCreds = localStorage.getItem("serverCreds");
+        if(thisCreds == null ){
+            this.context = JSON.parse("{ \"activeAccount\": { \"username\": null, \"password\": \"\", \"url\": \"\", \"type\": \"\" }, \"accounts\": [], \"spotifyToken\": \"\" }");
+        }
+        else{
+            this.context = JSON.parse(thisCreds);
+        }
 
         this.playlist = [];
         this.audio = new Audio();

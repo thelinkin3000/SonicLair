@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
 import { Backend } from "../Plugins/Audio";
+// import AndroidTV from "../Plugins/AndroidTV";
+import { Capacitor } from "@capacitor/core";
 
 interface IListener {
     event: string;
@@ -24,6 +26,7 @@ export default function AudioControl({ }) {
     const [playTime, setPlayTime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
     const audioInstance = useRef<Backend>(new Backend());
+    const [androidTV, setAndroidTV] = useState<boolean>(false);
 
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
@@ -40,7 +43,22 @@ export default function AudioControl({ }) {
         const time = parseFloat(e.target.value);
         VLC.seek({ time: time });
     }, [audioInstance, currentTrack]);
+    useEffect(() => {
+        const fetch = async () => {
+            
+            // try{
+            //     if(Capacitor.isPluginAvailable("AndroidTV")){
+            //         setAndroidTV((await AndroidTV.get()).androidTv);
+            //     }
+            // }
+            // catch(e:any){
+            //     console.error("ERROR ANDROID TV", e);
+            // }
+            
+        }
+        fetch();
 
+    },[]);
 
 
 
@@ -131,7 +149,7 @@ export default function AudioControl({ }) {
                             <FontAwesomeIcon icon={faForwardStep}></FontAwesomeIcon>
                         </button>
                     </div>
-                    <div className="hide-mobile-flex flex-row align-items-center justify-content-center">
+                    <div className={classnames("hide-mobile-flex","flex-row","align-items-center","justify-content-center", androidTV ?  "d-none" : "")}>
                         <FontAwesomeIcon icon={faVolumeLow} className="text-white" />
                         <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => changeVolume(e)} className="mx-2"></input>
                         <FontAwesomeIcon icon={faVolumeHigh} className="text-white" />
@@ -143,7 +161,7 @@ export default function AudioControl({ }) {
                 <span>{SecondsToHHSS(currentTrack.duration)}</span>
             </div>
             <div className="w-100 mb-3">
-                <input type="range" className="w-100" min={0} max={1} step={0.01} value={playTime} onChange={(e) => changePlayTime(e)}></input>
+                <input disabled={androidTV} type="range" className="w-100" min={0} max={1} step={0.01} value={playTime} onChange={(e) => changePlayTime(e)}></input>
             </div>
         </div>
     )

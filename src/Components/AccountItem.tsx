@@ -22,10 +22,15 @@ export default function AccountItem({account, del } : AccountItemProps) {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const login = useCallback(async () => {
+        console.log("LOGIN")
         const ret = await VLC.login({ username: account.username!, password: account.password, url: account.url });
+        console.log("RET",ret);
         if (ret.status === "ok") {
+            console.log("SETTING CONTEXT");
             setContext(ret.value!);
+            console.log("CONTEXT SET")
             navigate("/home");
+            console.log("NAVIGATED");
         }
         else {
             await Toast.show({ 

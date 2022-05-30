@@ -67,9 +67,7 @@ class SubsonicClient(var account: Account) {
         path: List<String>,
         parameters: HashMap<String, String>?
     ): T {
-        val uriBuilder = Uri.Builder().clearQuery()
-            .scheme(account.url.split("://")[0])
-            .authority(account.url.split("://")[1])
+        val uriBuilder = Uri.parse(account.url).buildUpon()
         for (p in path) {
             uriBuilder.appendPath(p)
         }
@@ -182,9 +180,7 @@ class SubsonicClient(var account: Account) {
     }
 
     fun getAlbumArt(id: String): String {
-        val uriBuilder = Uri.Builder().clearQuery()
-            .scheme(account.url.split("://")[0])
-            .authority(account.url.split("://")[1])
+        val uriBuilder = Uri.parse(account.url).buildUpon()
             .appendPath("rest")
             .appendPath("getCoverArt")
         val map = this.getBasicParams().asMap()
@@ -208,9 +204,7 @@ class SubsonicClient(var account: Account) {
         if (song == null) {
             return null
         }
-        val uriBuilder = Uri.Builder()
-            .scheme(account.url.split("://")[0])
-            .authority(account.url.split("://")[1])
+        val uriBuilder = Uri.parse(account.url).buildUpon()
             .appendPath("rest")
             .appendPath("stream")
         val map = this.getBasicParams().asMap()
@@ -253,9 +247,7 @@ class SubsonicClient(var account: Account) {
             "soniclair",
             "json",
         )
-        val uriBuilder = Uri.Builder().clearQuery()
-            .scheme(url.split("://")[0])
-            .authority(url.split("://")[1])
+        val uriBuilder = Uri.parse(url).buildUpon()
             .appendPath("rest")
             .appendPath("getArtists")
         val map = basicParams.asMap()

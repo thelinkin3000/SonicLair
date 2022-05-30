@@ -74,9 +74,9 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
     private String spotifyToken = "";
     private Boolean wasPlaying = false;
 
-    private PlaybackState.Builder getPlaybackStateBuilder(){
+    private PlaybackState.Builder getPlaybackStateBuilder() {
         return new PlaybackState.Builder()
-        .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
     }
 
     @Override
@@ -396,7 +396,9 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getActiveAccount(PluginCall call) throws JSONException {
         try {
-            call.resolve(OkResponse(KeyValueStorage.Companion.getActiveAccount()));
+            JSObject ret = OkResponse(KeyValueStorage.Companion.getActiveAccount());
+            ret.remove("url");
+            call.resolve(ret);
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -497,11 +499,11 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
         _play();
     }
 
-    private void _loadMedia(){
+    private void _loadMedia() {
         String uri = subsonicClient.getSongUri(currentTrack);
         if (uri != null) {
             final Media media = new Media(mLibVLC, Uri.parse(uri));
-            if(mMediaPlayer.isPlaying())
+            if (mMediaPlayer.isPlaying())
                 mMediaPlayer.pause();
             mMediaPlayer.setMedia(media);
             media.release();
@@ -529,7 +531,7 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
-       _loadMedia();
+        _loadMedia();
         _play();
         call.resolve(OkStringResponse(""));
     }
@@ -598,7 +600,7 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void search(PluginCall call){
+    public void search(PluginCall call) {
         String query = call.getString("query");
         try {
             SearchResult result = subsonicClient.search(query);

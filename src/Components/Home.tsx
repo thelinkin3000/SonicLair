@@ -13,6 +13,7 @@ export default function Home() {
 
 
   useEffect(() => {
+    console.log("MOUNTED HOME!");
     if (fetched)
       return;
     const fetch = async () => {

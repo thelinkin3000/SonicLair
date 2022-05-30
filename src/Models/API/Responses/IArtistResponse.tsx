@@ -41,8 +41,6 @@ export interface IInnerAlbumResponse extends IAlbumArtistResponse {
     song: IAlbumSongResponse[];
 }
 
-
-
 export interface IAlbumSongResponse {
     id: string;
     parent: string;

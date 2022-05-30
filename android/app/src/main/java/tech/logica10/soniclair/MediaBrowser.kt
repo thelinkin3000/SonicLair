@@ -54,7 +54,7 @@ class MediaBrowser : MediaBrowserService() {
         executorService.execute {
             load(subsonicClient, result)
         }
-        executorService.awaitTermination(5000, TimeUnit.MILLISECONDS)
+        executorService.awaitTermination(60000, TimeUnit.MILLISECONDS)
     }
 
     fun load(
