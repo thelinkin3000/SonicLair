@@ -1,0 +1,59 @@
+.current-track-img-tv {
+    max-height: 40vh;
+    height: auto;
+    width: auto;
+    margin: 0 0.5rem 0 0;
+    border-radius: 5%;
+    box-shadow:
+        0 0 10px 5px #fff,
+        0 0 15px 10px #0ff;
+    animation: pulse 2s infinite;
+}
+
+.current-track-header {
+    overflow: hidden;
+    margin: 0 0 0.5rem 0;
+
+
+}
+
+.fade-right {
+    // mask-image: linear-gradient(270deg, rgb(0,0,0,0) 0%,rgb(0,0,0,0) 25%,rgb(40, 44, 52) 90%,rgb(40, 44, 52) 100%);
+}
+
+.shadow-down {
+    width: 100vw;
+    height: 1px;
+    position: absolute;
+    left: 0;
+    top: calc(100vh - 1px);
+    box-shadow:
+        0 0 15px 10px #fff,
+        0 0 20px 15px #0ff,
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow:
+            0 0 15px 10px #fff,
+            0 0 20px 15px #0ff,
+    }
+
+    25% {
+        box-shadow:
+            0 0 15px 10px #0ff,
+            0 0 20px 15px #7df,
+    }
+
+    50% {
+        box-shadow:
+            0 0 15px 10px #7df,
+            0 0 20px 15px #478499,
+    }
+
+    75% {
+        box-shadow:
+            0 0 15px 10px #478499,
+            0 0 20px 15px #fff,
+    }
+}

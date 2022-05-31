@@ -8,6 +8,17 @@ export interface IBackendPlugin {
     get(): Promise<IAndroidTVResponse>;
 }
 
-const AndroidTV = registerPlugin<IBackendPlugin>('AndroidTV');
+class AndroidTVPlugin implements IBackendPlugin {
+    constructor() {
+
+    }
+    get(): Promise<IAndroidTVResponse> {
+        return Promise.resolve({ value: true });
+    }
+}
+
+const AndroidTV = registerPlugin<IBackendPlugin>('AndroidTV', {
+    web: () => new AndroidTVPlugin(),
+});
 
 export default AndroidTV;

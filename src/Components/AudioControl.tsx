@@ -6,11 +6,10 @@ import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import _, {  } from 'lodash';
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
 import { Backend } from "../Plugins/Audio";
-// import AndroidTV from "../Plugins/AndroidTV";
 import { Capacitor } from "@capacitor/core";
 import AndroidTV from "../Plugins/AndroidTV";
 
@@ -19,7 +18,6 @@ interface IListener {
     func: (ev: any) => void;
 }
 
-
 export default function AudioControl({ }) {
     const { currentTrack, setCurrentTrack } = useContext(CurrentTrackContext);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -27,7 +25,7 @@ export default function AudioControl({ }) {
     const [coverArt, setCoverArt] = useState<string>("");
     const audioInstance = useRef<Backend>(new Backend());
     const [androidTV, setAndroidTV] = useState<boolean>(false);
-
+    const location = useLocation();
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
 
@@ -112,8 +110,15 @@ export default function AudioControl({ }) {
         navigate(`/album`, { state: { id: currentTrack.parent } });
     }, [currentTrack]);
 
+    const hide = useCallback(() => {
+        if(currentTrack.id === "" || location.pathname.match(/playing/)){
+            return "d-none"
+        }
+        return "d-flex";
+    },[currentTrack, location.pathname]);
+
     return (
-        <div className={classnames("flex-column justify-content-between w-100", "mt-3", currentTrack.id === "" ? "d-none" : "d-flex")}>
+        <div className={classnames("flex-column justify-content-between w-100", "mt-3", hide())}>
             <div className="d-flex flex-row align-items-center justify-content-between w-100">
                 {/* <div className="flex-shrink-1 hide-overflow" > */}
                 <div onClick={goToAlbum} className={`current-track-header flex-row align-items-center justify-content-start ${currentTrack.id === "" ? "d-none" : "d-flex"}`}>
@@ -126,6 +131,9 @@ export default function AudioControl({ }) {
                 {/* </div> */}
                 <div className="d-flex  flex-grow-1 flex-column align-items-end justify-content-end">
                     <div className="d-flex flex-row align-items-center justify-content-center p-0">
+                    <button type="button" className="btn btn-link text-white" onClick={() => navigate("playing")}>
+                            <FontAwesomeIcon flip="horizontal" icon={faForwardStep}></FontAwesomeIcon>
+                        </button>
                         <button type="button" className="btn btn-link text-white" onClick={playPrev}>
                             <FontAwesomeIcon flip="horizontal" icon={faForwardStep}></FontAwesomeIcon>
                         </button>

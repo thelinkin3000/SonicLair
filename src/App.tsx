@@ -24,6 +24,10 @@ import { Capacitor } from '@capacitor/core';
 import Search from './Components/Search';
 import VLC from './Plugins/VLC';
 import Account from './Components/Account';
+import NowPlaying from './Components/NowPlaying';
+import AndroidTV from './Plugins/AndroidTV';
+import classNames from 'classnames';
+import TVSidebar from './Components/TVSidebar';
 
 
 function App() {
@@ -31,6 +35,7 @@ function App() {
   const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
   const [playlist, setPlaylist] = useState<IAlbumSongResponse[]>([CurrentTrackContextDefValue]);
   const [menuContext, setMenuContext] = useState<IMenuContext>(MenuContextDefValue);
+  const [androidTv, setAndroidTv] = useState<boolean>(false);
   const setPlaylistAndPlay = (p: IAlbumSongResponse[], track: number) => {
     setPlaylist(p);
     setCurrentTrack(p[track]);
@@ -56,6 +61,10 @@ function App() {
           text: 'There was an error obtaining a token from spotify. Artist images may look off.',
         });
       }
+      if (Capacitor.isPluginAvailable("AndroidTV")) {
+        setAndroidTv((await AndroidTV.get()).value);
+      }
+
       const c = await VLC.getActiveAccount();
 
       if (c.status === "ok") {
@@ -68,7 +77,7 @@ function App() {
       if (Capacitor.getPlatform() == "android") {
         StatusBar.setBackgroundColor({ color: "282c34" });
       }
-      
+
       setTried(true);
       document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
@@ -82,16 +91,20 @@ function App() {
   const [navbarCollapsed, setNavbarCollapsed] = useState<boolean>(true);
 
 
-  return (
-    <div className="App container-fluid d-flex flex-column justify-content-between">
+  return (<>
+    {androidTv && <div className="App"><TVSidebar></TVSidebar></div>}
+
+    <div className={classNames("App", androidTv ? "container-tv" : "container-fluid", "d-flex", "flex-column", "justify-content-between")}>
       <Helmet>
         <title>SonicLair</title>
       </Helmet>
       <MenuContext.Provider value={menuContextValue}>
         <CurrentTrackContext.Provider value={currentTrackContextValue}>
           <AppContext.Provider value={contextValue}>
-            <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
-            <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+            {!androidTv && <>
+              <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+              <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} /></>}
+
             {
               context.username === "" &&
               <div className="h-100 w-100 d-flex align-items-center justify-content-center">
@@ -112,15 +125,22 @@ function App() {
                   <Route path="/account" element={<Account />} />
                   <Route path="/albums" element={<Albums />} />
                   <Route path="/search" element={<Search />} />
+                  <Route path="/playing" element={<NowPlaying />} />
                 </Routes>
-                <AudioControl />
-                <CardContextMenu {...menuContext} />
+                {
+                  !androidTv && <>
+                  <AudioControl />
+
+                    <CardContextMenu {...menuContext} />
+                  </>
+                }
               </>
             }
           </AppContext.Provider>
         </CurrentTrackContext.Provider>
       </MenuContext.Provider>
     </div>
+  </>
   );
 }
 
