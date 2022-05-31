@@ -28,7 +28,7 @@ import NowPlaying from './Components/NowPlaying';
 import AndroidTV from './Plugins/AndroidTV';
 import classNames from 'classnames';
 import TVSidebar from './Components/TVSidebar';
-import { init } from '@noriginmedia/norigin-spatial-navigation';
+import { FocusContext, init, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 
 
 function App() {
@@ -41,7 +41,7 @@ function App() {
     setPlaylist(p);
     setCurrentTrack(p[track]);
   };
-  const navigate = useNavigate();
+  const {focusKey, ref} = useFocusable();
   const [tried, setTried] = useState<boolean>(false);
   const contextValue = React.useMemo(() => ({
     context, setContext
@@ -54,7 +54,8 @@ function App() {
   useEffect(() => {
     const fetch = async () => {
       init({
-        // options
+        debug: true,
+        visualDebug: true
       });
       let token = "";
       try {
@@ -96,8 +97,10 @@ function App() {
 
 
   return (<>
+      <FocusContext.Provider value={focusKey}>
+
     {androidTv && <div className="App"><TVSidebar></TVSidebar></div>}
-    <div className={classNames("App", androidTv ? "container-tv" : "container-fluid", "d-flex", "flex-column", "justify-content-between")}>
+    <div ref={ref} className={classNames("App", androidTv ? "container-tv" : "container-fluid", "d-flex", "flex-column", "justify-content-between")}>
       <Helmet>
         <title>SonicLair</title>
       </Helmet>
@@ -154,7 +157,10 @@ function App() {
         </CurrentTrackContext.Provider>
       </MenuContext.Provider>
     </div>
+    </FocusContext.Provider>
+
   </>
+  
   );
 }
 
