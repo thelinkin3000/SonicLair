@@ -1,49 +1,79 @@
 package tech.logica10.soniclair
 
 import android.content.Context
+import android.media.browse.MediaBrowser
 import com.google.gson.Gson
+import tech.logica10.soniclair.SubsonicModels.*
 
 class KeyValueStorage() {
-    companion object{
-        fun getActiveAccount() : Account{
-            val sharedPref = App.getContext().getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+    companion object {
+        fun getActiveAccount(): Account {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
             val activeAccount = sharedPref.getString("activeAccount", "");
-            return try{
-                val account : Account = Gson().fromJson(activeAccount, Account::class.java);
+            return try {
+                val account: Account = Gson().fromJson(activeAccount, Account::class.java);
                 account;
-            }
-            catch(exception: Exception){
-                Account(null,"","","");
+            } catch (exception: Exception) {
+                Account(null, "", "", "");
             }
         }
-        fun setActiveAccount(account:Account){
-            val sharedPref = App.getContext().getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
-            with(sharedPref.edit()){
+
+        fun setActiveAccount(account: Account) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+            with(sharedPref.edit()) {
                 putString("activeAccount", Gson().toJson(account));
                 apply()
             }
         }
 
-        fun getAccounts() : List<Account>{
-            val sharedPref = App.getContext().getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+        fun getAccounts(): List<Account> {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
             val activeAccount = sharedPref.getString("accounts", "");
-            return try{
-                val accounts : List<Account> = Gson().fromJson(activeAccount, Array<Account>::class.java).toList();
+            return try {
+                val accounts: List<Account> =
+                    Gson().fromJson(activeAccount, Array<Account>::class.java).toList();
                 accounts;
-            }
-            catch(exception: Exception){
+            } catch (exception: Exception) {
                 emptyList<Account>();
             }
         }
 
-        fun setAccounts(accounts:List<Account>){
-            val sharedPref = App.getContext().getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
-            with(sharedPref.edit()){
+        fun setAccounts(accounts: List<Account>) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+            with(sharedPref.edit()) {
                 val value = Gson().toJson(accounts);
                 putString("accounts", value);
                 apply()
             }
         }
-    }
 
+        fun getCachedSongs(): List<Song> {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+            val activeAccount = sharedPref.getString("cachedSongs", "");
+            return try {
+                val mediaItems: List<Song> =
+                    Gson().fromJson(activeAccount, Array<Song>::class.java)
+                        .toList();
+                mediaItems;
+            } catch (exception: Exception) {
+                emptyList();
+            }
+        }
+
+        fun setCachedSongs(accounts: List<Song>) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE);
+            with(sharedPref.edit()) {
+                val value = Gson().toJson(accounts);
+                putString("cachedSongs", value);
+                apply()
+            }
+        }
+
+    }
 }

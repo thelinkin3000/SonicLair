@@ -52,7 +52,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 @CapacitorPlugin(name = "VLC")
-public class VLCPlugin extends Plugin implements IBroadcastObserver {
+public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     private static LibVLC mLibVLC = null;
     private static MediaPlayer mMediaPlayer = null;
@@ -236,7 +236,7 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
         prevIntent.setAction("SLPREV");
         PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(MainActivity.context, 1, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        Notification.Action.Builder actionBuilder = new Notification.Action.Builder(android.R.drawable.ic_media_previous, "PREV", pendingPrevIntent);
+        Notification.Action.Builder actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_previous, "PREV", pendingPrevIntent);
         Notification.Action prevAction = actionBuilder.build();
         notificationBuilder.addAction(prevAction);
 
@@ -246,7 +246,7 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
         pauseIntent.setAction("SLPAUSE");
         PendingIntent pendingPauseIntent = PendingIntent.getBroadcast(MainActivity.context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        actionBuilder = new Notification.Action.Builder(android.R.drawable.ic_media_pause, "PAUSE", pendingPauseIntent);
+        actionBuilder = new Notification.Action.Builder(R.drawable.ic_play_arrow, "PAUSE", pendingPauseIntent);
         Notification.Action pauseAction = actionBuilder.build();
         notificationBuilder.addAction(pauseAction);
 
@@ -256,7 +256,7 @@ public class VLCPlugin extends Plugin implements IBroadcastObserver {
         nextIntent.setAction("SLNEXT");
         PendingIntent pendingNextIntent = PendingIntent.getBroadcast(MainActivity.context, 1, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        actionBuilder = new Notification.Action.Builder(android.R.drawable.ic_media_next, "NEXT", pendingNextIntent);
+        actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent);
         Notification.Action nextAction = actionBuilder.build();
         notificationBuilder.addAction(nextAction);
         Globals.RegisterObserver(this);

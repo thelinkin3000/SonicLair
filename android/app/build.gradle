@@ -7,8 +7,8 @@ android {
         applicationId "tech.logica10.soniclair"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "0.0.1-beta-vlcbackend"
+        versionCode 9
+        versionName "0.0.1-beta3-vlcbackend-coroutines"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -32,6 +32,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
+    }
+    packagingOptions {
+        resources.excludes += "DebugProbesKt.bin"
     }
 }
 
@@ -58,6 +61,8 @@ dependencies {
     implementation "androidx.core:core-ktx:1.7.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2")
+
 }
 
 apply from: 'capacitor.build.gradle'

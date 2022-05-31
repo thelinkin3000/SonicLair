@@ -16,10 +16,10 @@ class AndroidTVPlugin : Plugin() {
         val uiModeManager: UiModeManager =
             MainActivity.context.getSystemService(UI_MODE_SERVICE) as UiModeManager;
         val ret = JSObject();
-        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
-            ret.put("androidTv", true);
+        if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
+            ret.put("value", true);
         } else {
-            ret.put("androidTv", false);
+            ret.put("value", false);
         }
         call.resolve(ret);
     }

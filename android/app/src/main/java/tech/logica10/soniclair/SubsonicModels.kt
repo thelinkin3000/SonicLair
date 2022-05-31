@@ -12,7 +12,6 @@ class SubsonicModels {
         val type: String = ""
         val version: String = ""
         val error: SubsonicError? = null
-
     }
 
     class Context(

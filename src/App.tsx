@@ -46,46 +46,34 @@ function App() {
   }), [menuContext]);
   const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
-    console.log("MOUNTED APP")
     const fetch = async () => {
       let token = "";
       try {
-        console.log("SPOTI")
-
         token = await GetSpotifyToken();
       }
       catch (e) {
-        console.log("spotifyerr");
         await Toast.show({
           text: 'There was an error obtaining a token from spotify. Artist images may look off.',
         });
       }
-      try{
-        const c = await VLC.getActiveAccount();
-        console.log("BEFORE STATUS")
-        
-        if(c.status === "ok"){
-          setContext(c.value!);
-        }
-        else{
-          setContext({username:null, password:"", url:"", type:""});
-        }
-        console.log("AFTER STATUS")
-  
-        // if (Capacitor.getPlatform() == "android") {
-        //   StatusBar.setBackgroundColor({ color: "282c34" });
-        // }
-        console.log("AFTER ANDROID")
-        setTried(true);
-        document.addEventListener("contextmenu", (event) => {
-          event.preventDefault();
-        });
-        document.addEventListener("click", () => { setMenuContext({ body: "", show: false, x: 0, y: 0 }) });
+      const c = await VLC.getActiveAccount();
+
+      if (c.status === "ok") {
+        setContext(c.value!);
       }
-      catch(e:any){
-        console.error("cosito",e);
+      else {
+        setContext({ username: null, password: "", url: "", type: "" });
       }
-     
+
+      if (Capacitor.getPlatform() == "android") {
+        StatusBar.setBackgroundColor({ color: "282c34" });
+      }
+      
+      setTried(true);
+      document.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      });
+      document.addEventListener("click", () => { setMenuContext({ body: "", show: false, x: 0, y: 0 }) });
     }
     if (!tried) {
       fetch();

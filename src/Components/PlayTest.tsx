@@ -22,27 +22,20 @@ export default function PlayTest() {
     const [accounts, setAccounts] = useState<IAccount[]>([]);
     const controls = useAnimation();
     useEffect(() => {
-        console.log("MOUNTED PLAYTEST!");
         setTimeout(async () => {
-            try{
-                if (context.username !== "" && context.username !== null) {
-                    navigate("/home")
-                }
-                else if (context.username === null) {
-                    controls.start({ rotate: 0, scale: 1 });
-
-                    const ret = await VLC.getAccounts();
-                    if (ret.status === "ok") {
-                        setAccounts(ret.value!);
-                    }
-                    else {
-                        Toast.show({ text: ret.error });
-                    }
-                }
-
+            if (context.username !== "" && context.username !== null) {
+                navigate("/home")
             }
-            catch(e:any){
-                console.error("loading of playtest",e);
+            else if (context.username === null) {
+                controls.start({ rotate: 0, scale: 1 });
+
+                const ret = await VLC.getAccounts();
+                if (ret.status === "ok") {
+                    setAccounts(ret.value!);
+                }
+                else {
+                    Toast.show({ text: ret.error });
+                }
             }
         }, 1000);
     }, [context]);
@@ -110,7 +103,7 @@ export default function PlayTest() {
 
                     <button type="submit" className={"btn btn-primary mb-3"}>Log In!</button>
                     {accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">
-                        {accounts.map(s => (<AccountItem account={s} del={del}/>))}
+                        {accounts.map(s => (<AccountItem account={s} del={del} />))}
                     </div>}
                 </motion.div>
             </form>

@@ -1,7 +1,7 @@
 import { faForwardStep, faPause, faPlay, faVolumeHigh, faVolumeLow } from "@fortawesome/free-solid-svg-icons";
 import { ChangeEvent, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
-import { CurrentTrackContext } from "../AudioContext"
+import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContext"
 import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -12,6 +12,7 @@ import VLC from "../Plugins/VLC";
 import { Backend } from "../Plugins/Audio";
 // import AndroidTV from "../Plugins/AndroidTV";
 import { Capacitor } from "@capacitor/core";
+import AndroidTV from "../Plugins/AndroidTV";
 
 interface IListener {
     event: string;
@@ -20,8 +21,7 @@ interface IListener {
 
 
 export default function AudioControl({ }) {
-    const { currentTrack, setCurrentTrack, playlist, setPlaylistAndPlay, setPlaylist } = useContext(CurrentTrackContext);
-    const { context } = useContext(AppContext);
+    const { currentTrack, setCurrentTrack } = useContext(CurrentTrackContext);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [playTime, setPlayTime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
@@ -30,8 +30,6 @@ export default function AudioControl({ }) {
 
     const navigate = useNavigate();
     const [volume, setVolume] = useState<number>(1);
-    const vlcListeners = useRef<any[]>([]);
-    const mediaListeners = useRef<any[]>([]);
 
     const changeVolume = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const vol = parseFloat(e.target.value);
@@ -44,23 +42,18 @@ export default function AudioControl({ }) {
         VLC.seek({ time: time });
     }, [audioInstance, currentTrack]);
     useEffect(() => {
-        const fetch = async () => {
-            
-            // try{
-            //     if(Capacitor.isPluginAvailable("AndroidTV")){
-            //         setAndroidTV((await AndroidTV.get()).androidTv);
-            //     }
-            // }
-            // catch(e:any){
-            //     console.error("ERROR ANDROID TV", e);
-            // }
-            
+        const fetch = async () => {            
+            try{
+                if(Capacitor.isPluginAvailable("AndroidTV")){
+                    setAndroidTV((await AndroidTV.get()).value);
+                }
+            }
+            catch(e:any){
+                console.error("ERROR ANDROID TV", e);
+            }
         }
         fetch();
-
     },[]);
-
-
 
     useEffect(() => {
         if (currentTrack.id === "") {
@@ -101,9 +94,6 @@ export default function AudioControl({ }) {
         });
         (VLC as any).addListener('stopped', (info: any) => {
             setIsPlaying(false);
-            if (playlist.indexOf(currentTrack) !== (playlist.length - 1)) {
-                setCurrentTrack(playlist[playlist.indexOf(currentTrack) + 1]);
-            }
         });
         (VLC as any).addListener('progress', (info: any) => {
             setPlayTime(info.time);
@@ -113,10 +103,10 @@ export default function AudioControl({ }) {
         });
 
         return () => {
-            // setCurrentTrack(CurrentTrackContextDefValue);
-            // setPlaylist([]);
+            //setCurrentTrack(CurrentTrackContextDefValue);
+
         }
-    }, [playlist, currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
+    }, [currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
 
     const goToAlbum = useCallback(() => {
         navigate(`/album`, { state: { id: currentTrack.parent } });
