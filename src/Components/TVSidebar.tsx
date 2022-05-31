@@ -1,40 +1,48 @@
-import { faHouseChimney, faMagnifyingGlass, faUserAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHouseChimney, faMagnifyingGlass, faUser, faUserAlt, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "./TVSidebar.scss";
 import { useNavigate } from "react-router-dom";
 import { faPlayCircle } from "@fortawesome/free-regular-svg-icons";
-
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import classnames from "classnames";
+import { useCallback, useEffect } from "react";
 
 export default function TVSidebar() {
-    const navigate = useNavigate();
-
-    const nav = (path: string) => {
-        navigate(path);
-    };
-
+    const { ref, focusKey, focusSelf } = useFocusable();
+    useEffect(() => {
+        setTimeout(() => focusSelf(),500);
+    },[])
     return (
-        <div className="sidebar-tv d-flex flex-column">
-            <div onClick={() => nav("/home")}
-                className="sidebar-item d-flex align-items-center justify-content-start text-white p-3 mt-3">
-                <FontAwesomeIcon icon={faHouseChimney} />
-                <span className="item-text">Home</span>
+
+        <FocusContext.Provider value={focusKey}>
+            <div ref={ref} className="sidebar-tv d-flex flex-column">
+                <TVSidebarButton path="/home" icon={faHouseChimney} text="Home" />
+                <TVSidebarButton path="/search" icon={faMagnifyingGlass} text="Search" />
+                <TVSidebarButton path="/account" icon={faUserAlt} text="Account" />
+                <div className="m-auto"></div>
+                <TVSidebarButton path="/playing" icon={faPlayCircle} text="Now Playing" />
             </div>
-            <div onClick={() => nav("/search")}
-                className="sidebar-item d-flex align-items-center justify-content-start text-white p-3">
-                <FontAwesomeIcon icon={faMagnifyingGlass} />
-                <span className="item-text">Search</span>
-            </div>
-            <div onClick={() => nav("/account")}
-                className="sidebar-item last-item d-flex align-items-center justify-content-start text-white p-3">
-                <FontAwesomeIcon icon={faUserAlt} />
-                <span className="item-text">Account</span>
-            </div>
-            <div className="m-auto"></div>
-            <div onClick={() => nav("/playing")}
-                className="sidebar-item last-item d-flex align-items-center justify-content-start text-white p-3 mb-3">
-                <FontAwesomeIcon icon={faPlayCircle} />
-                <span className="item-text">Playing</span>
-            </div>
-        </div>
+        </FocusContext.Provider>
     )
+}
+
+interface TVSidebarButtonProps {
+    path: string;
+    text: string;
+    icon: IconDefinition;
+}
+
+function TVSidebarButton({ path, text, icon }: TVSidebarButtonProps) {
+    const navigate = useNavigate();
+    const nav = useCallback(() => {
+        navigate(path)
+
+    },[path, navigate]);
+    const { ref, focused } = useFocusable({onEnterPress:nav});
+    return (
+        <div ref={ref} onClick={nav}
+            className={classnames("sidebar-item", "d-flex", "align-items-center", "justify-content-start", "text-white", "p-3", "mb-3", focused ? "sidebar-item-focused" : "")}>
+            <FontAwesomeIcon icon={icon} />
+            <span className="item-text">{text}</span>
+        </div>)
 }

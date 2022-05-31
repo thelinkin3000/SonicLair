@@ -4,28 +4,33 @@
     margin: 10 10 10 0;
 }
 
+.album-item-focused {
+    background-color: $items-color-hover  !important;
+}
+
 .album-item {
     transition: 0.3s;
-    background-color: $item-background-translucid !important;
+    background-color: $item-background-translucid ;
     // background-color: $items-color !important;
     border-radius: 5% !important;
     // max-width:170px;
-    max-width:170px;
+    max-width: 170px;
     width: calc(100% - 20px);
     // min-height: calc(190px + 2.5em);
     height: calc(100% - 20px);
     margin: 10px;
-    padding:10px !important;
-    
+    padding: 10px !important;
+
     .album-image-container {
-        overflow:hidden;
+        overflow: hidden;
+
         img {
             max-width: 100%;
-            max-height:100%;
+            max-height: 100%;
 
-            width:auto;
-            height:auto;
-            display:block;
+            width: auto;
+            height: auto;
+            display: block;
             border-radius: 5%;
         }
     }
@@ -35,9 +40,9 @@
     }
 
     .no-overflow {
-        width:150px;
+        width: 150px;
         height: 3.5rem;
-        overflow:hidden;
+        overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
     }

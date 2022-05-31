@@ -28,6 +28,7 @@ import NowPlaying from './Components/NowPlaying';
 import AndroidTV from './Plugins/AndroidTV';
 import classNames from 'classnames';
 import TVSidebar from './Components/TVSidebar';
+import { init } from '@noriginmedia/norigin-spatial-navigation';
 
 
 function App() {
@@ -52,6 +53,9 @@ function App() {
   const currentTrackContextValue = React.useMemo(() => ({ currentTrack, setCurrentTrack, playlist, setPlaylist, setPlaylistAndPlay }), [currentTrack]);
   useEffect(() => {
     const fetch = async () => {
+      init({
+        // options
+      });
       let token = "";
       try {
         token = await GetSpotifyToken();
@@ -93,7 +97,6 @@ function App() {
 
   return (<>
     {androidTv && <div className="App"><TVSidebar></TVSidebar></div>}
-
     <div className={classNames("App", androidTv ? "container-tv" : "container-fluid", "d-flex", "flex-column", "justify-content-between")}>
       <Helmet>
         <title>SonicLair</title>
@@ -101,10 +104,6 @@ function App() {
       <MenuContext.Provider value={menuContextValue}>
         <CurrentTrackContext.Provider value={currentTrackContextValue}>
           <AppContext.Provider value={contextValue}>
-            {!androidTv && <>
-              <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
-              <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} /></>}
-
             {
               context.username === "" &&
               <div className="h-100 w-100 d-flex align-items-center justify-content-center">
@@ -112,10 +111,23 @@ function App() {
               </div>
             }
             {
-              context.username === null && <PlayTest />
+              context.username === null && 
+              <PlayTest />
             }
-            {context.username !== "" && context.username !== null &&
-              <>
+            <>
+              {context.username !== "" && context.username !== null && !androidTv &&
+                <Routes>
+                  <Route path="/" element={<PlayTest />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/artists" element={<Artists />} />
+                  <Route path="/artist" element={<Artist />} />
+                  <Route path="/album" element={<Album />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/albums" element={<Albums />} />
+                  <Route path="/search" element={<Search />} />
+                </Routes>
+              }
+              {context.username !== "" && context.username !== null && androidTv &&
                 <Routes>
                   <Route path="/" element={<PlayTest />} />
                   <Route path="/home" element={<Home />} />
@@ -127,15 +139,17 @@ function App() {
                   <Route path="/search" element={<Search />} />
                   <Route path="/playing" element={<NowPlaying />} />
                 </Routes>
-                {
-                  !androidTv && <>
+              }
+              {
+                !androidTv && 
+                <>
                   <AudioControl />
-
-                    <CardContextMenu {...menuContext} />
-                  </>
-                }
-              </>
-            }
+                  <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+                  <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+                  <CardContextMenu {...menuContext} />
+                </>
+              }
+            </>
           </AppContext.Provider>
         </CurrentTrackContext.Provider>
       </MenuContext.Provider>

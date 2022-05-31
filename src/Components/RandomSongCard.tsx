@@ -7,6 +7,9 @@ import { Toast } from "@capacitor/toast";
 import VLC from "../Plugins/VLC";
 import _ from "lodash";
 import Loading from "./Loading";
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import classNames from "classnames";
+import { off } from "process";
 
 
 export default function RandomSongCard({ item }: { item: IAlbumSongResponse }) {
@@ -22,16 +25,21 @@ export default function RandomSongCard({ item }: { item: IAlbumSongResponse }) {
         }
         func();
     }, [item]);
-
+    
     const play = useCallback(async () => {
         const ret = await VLC.playRadio({ song: item.id });
         if (ret.status === "error") {
             await Toast.show({ text: ret.error });
         }
     }, [item]);
-
+    const { focused, ref } = useFocusable({onEnterPress: play});
+    useEffect(() => {
+        if(focused){
+            ref.current.scrollIntoView();
+        }
+    },[focused]);
     return (
-        <div className="list-group-item d-flex flex-column align-items-center justify-content-between album-item"
+        <div ref={ref} className={classNames("d-flex","flex-column","align-items-center","justify-content-between", focused ? "album-item-focused" : "","album-item")}
             onClick={() => play()}>
             <div className="d-flex align-items-center justify-content-center album-image-container">
                 {coverArt === "" ? <Loading></Loading> : <img src={coverArt} className="album-image"></img>}
