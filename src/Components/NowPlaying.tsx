@@ -68,13 +68,13 @@ export default function NowPlaying({ }) {
             <div className="m-auto"></div>
             <FocusContext.Provider value={focusKey}>
                 <div className="d-flex flex-row align-items-start justify-content-center p-0" ref={ref}>
-                    <TVActionButton func={seekBackward} content={(<><FontAwesomeIcon size="2x" icon={faRotateLeft}></FontAwesomeIcon>10s</>)}></TVActionButton>
-                    <TVActionButton func={playPrev} content={(<FontAwesomeIcon size="2x" icon={faForwardStep} flip="horizontal"></FontAwesomeIcon>)}></TVActionButton>
+                    <TVActionButton func={seekBackward} content={(<><i className="ri-rewind-fill"></i>10s</>)}></TVActionButton>
+                    <TVActionButton func={playPrev} content={(<i className="ri-arrow-left-fill"></i>)}></TVActionButton>
                     <TVActionButton func={togglePlaying} content={playing ?
-                        <FontAwesomeIcon size="2x" icon={faPause}></FontAwesomeIcon> :
-                        <FontAwesomeIcon size="2x" icon={faPlay}></FontAwesomeIcon>}></TVActionButton>
-                    <TVActionButton func={playNext} content={(<FontAwesomeIcon size="2x" icon={faForwardStep}></FontAwesomeIcon>)}></TVActionButton>
-                    <TVActionButton func={seekForward} content={(<><FontAwesomeIcon size="2x" icon={faRotateRight}></FontAwesomeIcon>10s</>)}></TVActionButton>
+                        <i className="ri-pause-fill"></i> :
+                        <i className="ri-play-fill"></i>}></TVActionButton>
+                    <TVActionButton func={playNext} content={(<i className="ri-arrow-right-fill"></i>)}></TVActionButton>
+                    <TVActionButton func={seekForward} content={(<><i className="ri-speed-fill"></i>10s</>)}></TVActionButton>
                 </div>
             </FocusContext.Provider>
             <div className="w-50 d-flex flex-row justify-content-between text-white">

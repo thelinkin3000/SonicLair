@@ -12,6 +12,13 @@ import com.getcapacitor.annotation.CapacitorPlugin
 @CapacitorPlugin(name = "AndroidTV")
 class AndroidTVPlugin : Plugin() {
     @PluginMethod()
+    fun getIpAddr(call:PluginCall){
+        val ret = JSObject();
+        ret.put("value", App.pairString);
+        call.resolve(ret);
+    }
+
+    @PluginMethod()
     fun get(call: PluginCall) {
         val uiModeManager: UiModeManager =
             MainActivity.context.getSystemService(UI_MODE_SERVICE) as UiModeManager;
@@ -23,4 +30,6 @@ class AndroidTVPlugin : Plugin() {
         }
         call.resolve(ret);
     }
+
+
 }

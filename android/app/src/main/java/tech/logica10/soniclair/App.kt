@@ -1,15 +1,16 @@
 package tech.logica10.soniclair
 
 import android.app.Application
+import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Debug
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.util.*
 
 class App : Application() {
     override fun onCreate() {
@@ -30,6 +31,29 @@ class App : Application() {
             }
             return@launch
         }
+        val uiModeManager: UiModeManager =
+            this.applicationContext.getSystemService(UI_MODE_SERVICE) as UiModeManager;
+        if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
+            try {
+                val interfaces: List<NetworkInterface> =
+                    Collections.list(NetworkInterface.getNetworkInterfaces())
+                for (intf in interfaces) {
+                    if(intf.name.subSequence(0,2) == "rm" || intf.name.subSequence(0,5) == "radio"){
+                        continue;
+                    }
+                    val addrs: List<InetAddress> = Collections.list(intf.getInetAddresses())
+                    for (addr in addrs) {
+                        if (!addr.isLoopbackAddress()
+                            && (addr.hostAddress.subSequence(0,7) == "192.168"
+                                    || addr.hostAddress.subSequence(0,2) == "10"
+                                    || addr.hostAddress.subSequence(0,3) == "172")) {
+                            pairString = "SONICLAIRIP:${addr.hostAddress.toString()}"
+                        }
+                    }
+                }
+            } catch (ex: Exception) {
+            } // for now eat exceptions
+        }
     }
 
     companion object {
@@ -38,5 +62,6 @@ class App : Application() {
         @JvmStatic
         val context: Context
             get() = application!!.applicationContext
+        var pairString: String? = null;
     }
 }

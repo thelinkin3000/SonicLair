@@ -1,6 +1,7 @@
 param (
     [switch]$a = $false,
-    [switch]$b = $false
+    [switch]$b = $false,
+    [switch]$c = $false
 )
 
 function Write-Success {
@@ -15,10 +16,10 @@ function Write-ErrorMessage {
     Write-Host "[Error] There's been an error. Check the output for more information." -ForegroundColor Red
 }
 npm run build
-npx cap sync
+npx cap sync android
 cd android
 cd ..
-if (($a -eq $true) -or ($b -eq $true)) {
+if (($a -eq $true) -or ($b -eq $true) -or ($c -eq $true)) {
     try {
         Write-Host "Cleaning gradle workspace"
         cd android

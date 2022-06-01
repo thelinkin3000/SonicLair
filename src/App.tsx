@@ -30,6 +30,7 @@ import classNames from 'classnames';
 import TVSidebar from './Components/TVSidebar';
 import { FocusContext, init, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import HomeTV from './Components/HomeTV';
+import QRScan from './Components/QRScan';
 
 
 function App() {
@@ -131,6 +132,7 @@ function App() {
                   <Route path="/account" element={<Account />} />
                   <Route path="/albums" element={<Albums />} />
                   <Route path="/search" element={<Search />} />
+                  <Route path="/qr" element={<QRScan/>} />
                 </Routes>
                 <AudioControl />
                 <CardContextMenu {...menuContext} />

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor-community/barcode-scanner": "^2.1.1",
     "@capacitor/android": "^3.5.1",
     "@capacitor/app": "^1.1.1",
     "@capacitor/cli": "^3.5.1",
@@ -38,6 +39,7 @@
     "react-helmet": "^6.1.0",
     "react-hook-form": "^7.30.0",
     "react-lines-ellipsis": "^0.15.0",
+    "react-qr-code": "^2.0.7",
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
     "react-virtualized-auto-sizer": "^1.0.6",

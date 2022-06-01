@@ -62,6 +62,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2")
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+
 
 }
 

@@ -224,3 +224,23 @@ input[type=range]:focus::-webkit-slider-runnable-track {
   border-radius: 5%;
   transition: 0.5s;
 }
+
+.icon-large-tv{
+  font-size: 1.3rem;
+}
+
+.btn-selected {
+  background-color: $items-color-hover !important;
+  color: white !important;
+}
+
+.btn-primary{
+  background-color: $items-color !important;
+}
+
+.soniclair-modal{
+  border-radius: 5%;
+  background-color: $color-background-app;
+  border-color: $items-color-hover;
+  border-width: 5px;
+}

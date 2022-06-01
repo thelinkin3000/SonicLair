@@ -1,4 +1,4 @@
-import { faCompactDisc, faHouseChimney, faMagnifyingGlass, faUserAlt, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { faCompactDisc, faHouseChimney, faMagnifyingGlass, faQrcode, faUserAlt, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classnames from "classnames";
 import { Dispatch, SetStateAction } from "react";
@@ -34,6 +34,7 @@ export default function Sidebar({ setNavbarCollapsed, navbarCollapsed }: { navba
                 <div onClick={() => nav("/artists")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faUsers} /></div>
                 <div onClick={() => nav("/albums")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faCompactDisc} /></div>
                 <div onClick={() => nav("/search")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faMagnifyingGlass} /></div>
+                <div onClick={() => nav("/qr")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faQrcode} /></div>
                 <div onClick={() => nav("/account")} className="sidebar-item last-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faUserAlt} /></div>
 
             </motion.div>
