@@ -316,8 +316,15 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getTopAlbums(PluginCall call) throws JSONException {
         try {
-
-            call.resolve(OkArrayResponse(subsonicClient.getTopAlbums()));
+            String type = call.getString("type");
+            if(type == null){
+                type = "frequent";
+            }
+            Integer size = call.getInt("size");
+            if(size == null){
+                size = 10;
+            }
+            call.resolve(OkArrayResponse(subsonicClient.getTopAlbums(type, size)));
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }

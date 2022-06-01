@@ -1,4 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, WebPlugin, Plugin } from '@capacitor/core';
 import { IAlbumsResponse } from '../Models/API/Responses/IAlbumsResponse';
 import { IArtistInfo, IArtistInfoResponse, ISearchResult } from '../Models/API/Responses/IArtistInfoResponse';
 import { IAlbumArtistResponse, IAlbumResponse, IAlbumSongResponse, IArtistResponse, IInnerAlbumResponse, IInnerArtistResponse } from '../Models/API/Responses/IArtistResponse';
@@ -11,7 +11,7 @@ export interface IBackendResponse<T> {
     value: T | null;
 }
 
-export interface IBackendPlugin {
+export interface IBackendPlugin extends Plugin{
     play(): Promise<IBackendResponse<string>>;
     pause(): Promise<IBackendResponse<string>>;
     setVolume(options: { volume: number }): Promise<IBackendResponse<string>>;
@@ -25,7 +25,7 @@ export interface IBackendPlugin {
     getAlbumArt(options: { id: string }): Promise<IBackendResponse<string>>;
     getArtistInfo(options: { id: string }): Promise<IBackendResponse<IArtistInfo>>;
     search(options: { query: string }): Promise<IBackendResponse<ISearchResult>>;
-    getTopAlbums(): Promise<IBackendResponse<IAlbumArtistResponse[]>>;
+    getTopAlbums(options: {type:string | null, size: number | null}): Promise<IBackendResponse<IAlbumArtistResponse[]>>;
     getRandomSongs(): Promise<IBackendResponse<IAlbumSongResponse[]>>;
     login(options: { username: string, password: string, url: string }): Promise<IBackendResponse<IAccount>>;
     getActiveAccount() : Promise<IBackendResponse<IAccount>>;

@@ -8,6 +8,7 @@ import { Toast } from '@capacitor/toast';
 import AccountItem from './AccountItem';
 import VLC from '../Plugins/VLC';
 import { IAccount } from "../Models/AppContext";
+import AndroidTV from "../Plugins/AndroidTV";
 
 
 interface FormData {
@@ -20,6 +21,7 @@ export default function PlayTest() {
     const { context, setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const [accounts, setAccounts] = useState<IAccount[]>([]);
+    const [androidTv, setAndroidTt] = useState<boolean>(false);
     const controls = useAnimation();
     useEffect(() => {
         setTimeout(async () => {
@@ -37,6 +39,7 @@ export default function PlayTest() {
                     Toast.show({ text: ret.error });
                 }
             }
+            setAndroidTt((await AndroidTV.get()).value);
         }, 1000);
     }, [context]);
 
@@ -61,7 +64,7 @@ export default function PlayTest() {
     }
 
     return (
-        <div className={"row d-flex align-items-center"} style={{ height: "100vh" }}>
+        <div className={"row d-flex align-items-center"} style={androidTv ? {height:"100%", width:"100vw"}:{ height: "100vh" }}>
             <form onSubmit={onSubmit}>
                 <motion.div
                     className="container"

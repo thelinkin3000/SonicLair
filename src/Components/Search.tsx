@@ -1,30 +1,39 @@
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
 import { ISearchResponse, ISearchResult } from "../Models/API/Responses/IArtistInfoResponse";
+import AndroidTV from "../Plugins/AndroidTV";
 import VLC from "../Plugins/VLC";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import RandomSongCard from "./RandomSongCard";
 
 export default function Search() {
-    const { context } = useContext(AppContext);
     const [searchValue, setSearchValue] = useState<string>("");
     const [result, setResult] = useState<ISearchResult | null>(null);
     const setValue = (ev: any) => {
+        console.log("changing");
         setSearchValue(ev.target.value);
     }
-    const timeoutRef = useRef<NodeJS.Timeout>(setTimeout(() => {},500));
-
+    const [androidTv, setAndroidTv] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout>(setTimeout(() => { }, 500));
+    const songsRef = useRef(null);
+    const albumsRef = useRef(null);
+    const artistsRef = useRef(null);
+    const { focused, ref } = useFocusable();
     useEffect(() => {
         const fetch = async () => {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(async () => {
-                const result = await VLC.search({query: searchValue});
-                if(result.status === "ok"){
+                const result = await VLC.search({ query: searchValue });
+                if (result.status === "ok") {
+                    console.log(searchValue);
+                    console.log(result.value!);
                     setResult(result.value!);
 
                 }
-            },350);
+            }, 350);
+            setAndroidTv((await AndroidTV.get()).value);
         };
         if (searchValue !== "") {
             fetch();
@@ -34,52 +43,61 @@ export default function Search() {
             setResult(null);
         }
     }, [searchValue]);
+    useEffect(() => {
+        if (focused) {
+            ref.current.focus();
+        }
+        else {
+            ref.current.blur();
+        }
+    }, [focused]);
     return (<>
         <div className="text-white section-header text-start">Search</div>
-        <input type="text" className="form-control mb-2" value={searchValue} onChange={setValue} />
+        <input ref={ref} type="text" className="form-control mb-2" value={searchValue} onChange={setValue} />
         {result === null ? <span className="text-white w-100 text-center">
-                Write in the textbox to search artists, albums and songs
-            </span> : ""}
+            Write in the textbox to search artists, albums and songs
+        </span> : ""}
         <div className="d-flex flex-column align-items-center justify-content-start overflow-auto" style={{ height: "100%" }}>
 
-            {result?.artist && (
+            {result?.artist && !androidTv && (
                 <>
-                    <div className="col-12 text-start" style={{ height: "auto" }}>
+                    <div ref={artistsRef} className="col-12 text-start" style={{ height: "auto" }}>
                         <span className="section-header text-white">Artists</span>
                         <hr className="text-white w-100" />
                     </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
                             {result.artist?.map(s => <div style={{ margin: "10px" }}>
-                                <ArtistCard item={s} forceWidth={true} />
+                                <ArtistCard item={s} forceWidth={true} parentRef={artistsRef} />
                             </div>
                             )}
 
                         </div>
                     </div></>)}
             {result?.album &&
-                (<><div className="col-12 text-start" style={{ height: "auto" }}>
-                    <span className="section-header text-white">Albums</span>
-                    <hr className="text-white w-100" />
-                </div>
+                (<>
+                    <div ref={albumsRef} className="col-12 text-start" style={{ height: "auto" }}>
+                        <span className="section-header text-white">Albums</span>
+                        <hr className="text-white w-100" />
+                    </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
                             {result.album?.map(s => <div style={{ margin: "10px" }}>
-                                <AlbumCard item={s} forceWidth={true} />
+                                <AlbumCard item={s} forceWidth={true} parentRef={albumsRef} />
                             </div>
                             )}
 
                         </div>
                     </div></>)}
             {result?.song &&
-                (<><div className="col-12 text-start">
+                (<><div ref={songsRef} className="col-12 text-start">
                     <span className="section-header text-white">Songs</span>
                     <hr className="text-white w-100" />
                 </div>
                     <div className="col-12 overflow-scroll scrollable scrollable-hidden" style={{ height: "auto" }}>
                         <div className="d-flex flex-row">
                             {result.song?.map(s => <div style={{ margin: "10px" }}>
-                                <RandomSongCard item={s} />
+                                <RandomSongCard item={s} parentRef={songsRef} />
                             </div>
                             )}
 

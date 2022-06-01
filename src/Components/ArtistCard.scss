@@ -1,9 +1,12 @@
 @import "../Styles/colors.scss";
 
+.artist-item-focused {
+    background-color: $items-color-hover  !important;
+}
 
 .artist-item {
     transition: 0.3s;
-    background-color: $item-background-translucid !important;
+    background-color: $item-background-translucid;
     // background-color: $items-color !important;
     border-radius: 5% !important;
     // max-width:170px;

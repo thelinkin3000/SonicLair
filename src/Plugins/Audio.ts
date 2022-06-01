@@ -95,9 +95,9 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         return Promise.resolve(this.OKResponse(this.context.accounts));
     }
 
-    async getTopAlbums(): Promise<IBackendResponse<IAlbumArtistResponse[]>> {
+    async getTopAlbums({type, size}: {type:string | null, size: number | null}): Promise<IBackendResponse<IAlbumArtistResponse[]>> {
         const params = this.GetBasicParams();
-        const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${this.context.activeAccount.url}/rest/getAlbumList2`, { params: { ...params, type: "frequent", size: 10 } });
+        const ret = await axios.get<{ "subsonic-response": IAlbumsResponse; }>(`${this.context.activeAccount.url}/rest/getAlbumList2`, { params: { ...params, type: type ?? "frequent", size: size ?? 10 } });
         if (ret?.status === 200) {
             if (ret?.data["subsonic-response"]?.status === "ok") {
                 return this.OKResponse(ret.data["subsonic-response"]!.albumList2.album);
@@ -459,7 +459,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     };
 
     async _playCurrent() {
-        this.notifyListeners("currentTrack", { currentTrack: this.currentTrack });
         if ("mediaSession" in navigator) {
             let albumArt = "";
             const ret = await this.getAlbumArt({ id: this.currentTrack.albumId });
@@ -474,8 +473,11 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             });
             navigator.mediaSession.playbackState = "playing";
         }
+        console.log("notifying");
+        await this.notifyListeners("currentTrack", { currentTrack: this.currentTrack });
         this.audio.src = `${this.context.activeAccount.url}/rest/stream?${this.getSongParams(this.currentTrack)}`;
         await this.audio.play();
+        
     }
 
     _prev() {
@@ -536,5 +538,11 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             error: error ?? "There was an error.",
             value: null
         }
+    }
+
+    removeAllListeners(): Promise<void> {
+        debugger;
+        super.removeAllListeners();
+        return Promise.resolve();
     }
 }

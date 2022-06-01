@@ -5,7 +5,7 @@ import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContex
 import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import _, {  } from 'lodash';
+import _, { } from 'lodash';
 import { useLocation, useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
@@ -19,9 +19,7 @@ interface IListener {
 }
 
 export default function AudioControl({ }) {
-    const { currentTrack, setCurrentTrack } = useContext(CurrentTrackContext);
-    const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [playTime, setPlayTime] = useState<number>(0);
+    const { currentTrack, setCurrentTrack, playtime, setPlaying, setPlaytime, playing } = useContext(CurrentTrackContext);
     const [coverArt, setCoverArt] = useState<string>("");
     const audioInstance = useRef<Backend>(new Backend());
     const [androidTV, setAndroidTV] = useState<boolean>(false);
@@ -40,18 +38,18 @@ export default function AudioControl({ }) {
         VLC.seek({ time: time });
     }, [audioInstance, currentTrack]);
     useEffect(() => {
-        const fetch = async () => {            
-            try{
-                if(Capacitor.isPluginAvailable("AndroidTV")){
+        const fetch = async () => {
+            try {
+                if (Capacitor.isPluginAvailable("AndroidTV")) {
                     setAndroidTV((await AndroidTV.get()).value);
                 }
             }
-            catch(e:any){
+            catch (e: any) {
                 console.error("ERROR ANDROID TV", e);
             }
         }
         fetch();
-    },[]);
+    }, []);
 
     useEffect(() => {
         if (currentTrack.id === "") {
@@ -72,7 +70,7 @@ export default function AudioControl({ }) {
     }, []);
 
     const togglePlaying = () => {
-        if (isPlaying) {
+        if (playing) {
             VLC.pause();
         }
         else {
@@ -80,43 +78,39 @@ export default function AudioControl({ }) {
         }
     };
 
-    useEffect(() => {
-        (VLC as any).removeAllListeners();
-        // I'm sorry typescript gods.
-
-        (VLC as any).addListener('play', (info: any) => {
-            setIsPlaying(true);
-        });
-        (VLC as any).addListener('paused', (info: any) => {
-            setIsPlaying(false);
-        });
-        (VLC as any).addListener('stopped', (info: any) => {
-            setIsPlaying(false);
-        });
-        (VLC as any).addListener('progress', (info: any) => {
-            setPlayTime(info.time);
-        });
-        (VLC as any).addListener('currentTrack', (info: any) => {
-            setCurrentTrack(info.currentTrack);
-        });
-
-        return () => {
-            //setCurrentTrack(CurrentTrackContextDefValue);
-
-        }
-    }, [currentTrack, isPlaying, setIsPlaying, setCurrentTrack]);
-
     const goToAlbum = useCallback(() => {
         navigate(`/album`, { state: { id: currentTrack.parent } });
     }, [currentTrack]);
 
     const hide = useCallback(() => {
-        if(currentTrack.id === "" || location.pathname.match(/playing/)){
+        if (currentTrack.id === "" || location.pathname.match(/playing/)) {
             return "d-none"
         }
         return "d-flex";
-    },[currentTrack, location.pathname]);
+    }, [currentTrack, location.pathname]);
+    useEffect(() => {
+        // I'm sorry typescript gods.
+        VLC.removeAllListeners();
+        VLC.addListener('play', (info: any) => {
+            setPlaying(true);
+        });
+        (VLC as any).addListener('paused', (info: any) => {
+            setPlaying(false);
+        });
+        (VLC as any).addListener('stopped', (info: any) => {
+            setPlaying(false);
+        });
+        (VLC as any).addListener('currentTrack', (info: any) => {
+            setCurrentTrack(info.currentTrack);
+        });
+        (VLC as any).addListener('progress', (info: any) => {
+            setPlaytime(info.time);
+        });
 
+        return () => {
+            //setCurrentTrack(CurrentTrackContextDefValue);
+        }
+    }, [setPlaying, setCurrentTrack, setPlaytime]);
     return (
         <div className={classnames("flex-column justify-content-between w-100", "mt-3", hide())}>
             <div className="d-flex flex-row align-items-center justify-content-between w-100">
@@ -131,14 +125,11 @@ export default function AudioControl({ }) {
                 {/* </div> */}
                 <div className="d-flex  flex-grow-1 flex-column align-items-end justify-content-end">
                     <div className="d-flex flex-row align-items-center justify-content-center p-0">
-                    <button type="button" className="btn btn-link text-white" onClick={() => navigate("playing")}>
-                            <FontAwesomeIcon flip="horizontal" icon={faForwardStep}></FontAwesomeIcon>
-                        </button>
                         <button type="button" className="btn btn-link text-white" onClick={playPrev}>
                             <FontAwesomeIcon flip="horizontal" icon={faForwardStep}></FontAwesomeIcon>
                         </button>
                         <button type="button" className="btn btn-link text-white" onClick={togglePlaying}>
-                            {isPlaying ?
+                            {playing ?
                                 <FontAwesomeIcon icon={faPause}></FontAwesomeIcon> :
                                 <FontAwesomeIcon icon={faPlay}></FontAwesomeIcon>
                             }
@@ -147,7 +138,7 @@ export default function AudioControl({ }) {
                             <FontAwesomeIcon icon={faForwardStep}></FontAwesomeIcon>
                         </button>
                     </div>
-                    <div className={classnames("hide-mobile-flex","flex-row","align-items-center","justify-content-center", androidTV ?  "d-none" : "")}>
+                    <div className={classnames("hide-mobile-flex", "flex-row", "align-items-center", "justify-content-center", androidTV ? "d-none" : "")}>
                         <FontAwesomeIcon icon={faVolumeLow} className="text-white" />
                         <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => changeVolume(e)} className="mx-2"></input>
                         <FontAwesomeIcon icon={faVolumeHigh} className="text-white" />
@@ -155,11 +146,11 @@ export default function AudioControl({ }) {
                 </div>
             </div>
             <div className="w-100 d-flex flex-row justify-content-between text-white">
-                <span>{SecondsToHHSS((playTime ?? 0) * (currentTrack?.duration ?? 0))}</span>
+                <span>{SecondsToHHSS((playtime ?? 0) * (currentTrack?.duration ?? 0))}</span>
                 <span>{SecondsToHHSS(currentTrack.duration)}</span>
             </div>
             <div className="w-100 mb-3">
-                <input disabled={androidTV} type="range" className="w-100" min={0} max={1} step={0.01} value={playTime} onChange={(e) => changePlayTime(e)}></input>
+                <input disabled={androidTV} type="range" className="w-100" min={0} max={1} step={0.01} value={playtime} onChange={(e) => changePlayTime(e)}></input>
             </div>
         </div>
     )

@@ -2,6 +2,8 @@ package tech.logica10.soniclair;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.getcapacitor.BridgeActivity;
 

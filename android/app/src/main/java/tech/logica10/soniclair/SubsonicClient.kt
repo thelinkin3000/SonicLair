@@ -60,7 +60,7 @@ class SubsonicClient(var account: Account) {
                 )
             )
         }
-        return ret;
+        return ret
     }
 
     inline fun <reified T : Any> makeSubsonicRequest(
@@ -108,7 +108,7 @@ class SubsonicClient(var account: Account) {
         return makeSubsonicRequest<SearchResponse>(
             listOf("rest","search3"),
             params
-        ).searchResult3;
+        ).searchResult3
     }
 
 
@@ -156,7 +156,7 @@ class SubsonicClient(var account: Account) {
         return makeSubsonicRequest<AlbumResponse>(
             listOf("rest", "getAlbum"),
             params
-        ).album;
+        ).album
     }
 
     fun getArtistInfo(id: String): ArtistInfo{
@@ -165,13 +165,13 @@ class SubsonicClient(var account: Account) {
         return makeSubsonicRequest<ArtistInfoResponse>(
             listOf("rest", "getArtistInfo2"),
             params
-        ).artistInfo2;
+        ).artistInfo2
     }
 
-    fun getTopAlbums(): List<Album> {
+    fun getTopAlbums(type:String = "frequent", size: Int = 10): List<Album> {
         val params = getBasicParams().asMap()
-        params.set("type", "frequent")
-        params.set("size", "10")
+        params.set("type", type.toString())
+        params.set("size", size.toString())
 
         return makeSubsonicRequest<AlbumsResponse>(
             listOf("rest", "getAlbumList2"),
@@ -230,7 +230,7 @@ class SubsonicClient(var account: Account) {
         return makeSubsonicRequest<SongResponse>(
             listOf("rest", "getSong"),
             params
-        ).song;
+        ).song
     }
 
     fun login(username: String, password: String, url: String): Account {

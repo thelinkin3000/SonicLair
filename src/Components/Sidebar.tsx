@@ -1,20 +1,14 @@
-import { faBurger, faCompactDisc, faHouseChimney, faMagnifyingGlass, faUserAlt, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { faCompactDisc, faHouseChimney, faMagnifyingGlass, faUserAlt, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classnames from "classnames";
-import { MotionConfig } from "framer-motion";
-import { Dispatch, SetStateAction, useContext, useEffect } from "react";
+import { Dispatch, SetStateAction } from "react";
 import "./Sidebar.scss";
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from "react-router-dom";
-import { faUser } from "@fortawesome/free-regular-svg-icons";
-import { AppContext } from "../AppContext";
-import { IAppContext } from "../Models/AppContext";
 
 
 export default function Sidebar({ setNavbarCollapsed, navbarCollapsed }: { navbarCollapsed: boolean, setNavbarCollapsed: Dispatch<SetStateAction<boolean>> }) {
-    const controls = useAnimation();
     const navigate = useNavigate();
-    const {context} = useContext(AppContext);
     const variants = {
         visible: { opacity: 1, scale: 1 },
         hidden: { opacity: 0, scale: 0 },

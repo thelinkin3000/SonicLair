@@ -5,22 +5,49 @@ import { useNavigate } from "react-router-dom";
 import { faPlayCircle } from "@fortawesome/free-regular-svg-icons";
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import classnames from "classnames";
-import { useCallback, useEffect } from "react";
+import { useCallback, useContext, useEffect } from "react";
+import VLC from "../Plugins/VLC";
+import { CurrentTrackContext } from "../AudioContext";
 
 export default function TVSidebar() {
-    const { ref, focusKey, focusSelf } = useFocusable();
+    const { ref, focusKey, focusSelf, hasFocusedChild } = useFocusable({trackChildren: true});
+    const {setPlaying, setCurrentTrack, setPlaytime} = useContext(CurrentTrackContext);
     useEffect(() => {
         setTimeout(() => focusSelf(),500);
     },[])
+    useEffect(() => {
+        // I'm sorry typescript gods.
+        VLC.removeAllListeners();
+        VLC.addListener('play', (info: any) => {
+          setPlaying(true);
+        });
+        (VLC as any).addListener('paused', (info: any) => {
+          setPlaying(false);
+        });
+        (VLC as any).addListener('stopped', (info: any) => {
+          setPlaying(false);
+        });
+        (VLC as any).addListener('currentTrack', (info: any) => {
+          setCurrentTrack(info.currentTrack);
+        });
+        (VLC as any).addListener('progress', (info: any) => {
+          setPlaytime(info.time);
+        });
+    
+        return () => {
+          //setCurrentTrack(CurrentTrackContextDefValue);
+        }
+      }, [setPlaying, setCurrentTrack, setPlaytime]);
     return (
 
         <FocusContext.Provider value={focusKey}>
-            <div ref={ref} className="sidebar-tv d-flex flex-column">
+            <div ref={ref} className={classnames("d-flex","flex-column", hasFocusedChild ? "sidebar-tv-focused" : "sidebar-tv")}>
                 <TVSidebarButton path="/home" icon={faHouseChimney} text="Home" />
                 <TVSidebarButton path="/search" icon={faMagnifyingGlass} text="Search" />
                 <TVSidebarButton path="/account" icon={faUserAlt} text="Account" />
                 <div className="m-auto"></div>
                 <TVSidebarButton path="/playing" icon={faPlayCircle} text="Now Playing" />
+                
             </div>
         </FocusContext.Provider>
     )

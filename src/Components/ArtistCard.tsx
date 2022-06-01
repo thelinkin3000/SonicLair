@@ -2,15 +2,16 @@ import { IArtist } from "../Models/API/Responses/IArtist";
 import "./ArtistCard.scss";
 import "../Styles/colors.scss";
 import { useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
 import Loading from "./Loading";
 import GetSpotifyArtist from "../Api/GetSpotifyArtist";
 import VLC from "../Plugins/VLC";
-export default function ArtistCard({ item, forceWidth }: { item: IArtist, forceWidth?: boolean }) {
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import classNames from "classnames";
+export default function ArtistCard({ item, forceWidth, parentRef }: { item: IArtist, forceWidth?: boolean, parentRef?:React.RefObject<any> }) {
     const navigate = useNavigate();
     const { context } = useContext(AppContext);
-    const ref = useRef<HTMLDivElement>(null);
     const [coverArt, setCoverArt] = useState<string>("");
     const [style, setStyle] = useState<any>({});
     useEffect(() => {
@@ -40,9 +41,16 @@ export default function ArtistCard({ item, forceWidth }: { item: IArtist, forceW
         }
     }
 
+    const { focused, ref } = useFocusable();
+    useEffect(() => {
+        if (focused) {
+            parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+            ref.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+        }
+    }, [focused]);
 
     return (
-        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className="list-group-item d-flex flex-column align-items-center justify-content-between artist-item"
+        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex","flex-column","align-items-center","justify-content-between","artist-item",focused ? "artist-item-focused" : "")}
             onClick={() => navigate(`/artist`, { state: { id: item.id } })}>
             <div className="d-flex align-items-center justify-content-center artist-image-container">
                 {coverArt !== "" ? <img style={style} src={coverArt} onLoad={onload} className="artist-image"></img> : <Loading />}

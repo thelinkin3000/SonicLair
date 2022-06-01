@@ -1,13 +1,28 @@
+@import "../Styles/colors.scss";
+
 .current-track-img-tv {
-    max-height: 40vh;
-    height: auto;
+    max-height: 30vh;
+    height: 500px;
     width: auto;
     margin: 0 0.5rem 0 0;
     border-radius: 5%;
+    transition: 2s;
+}
+
+.current-track-stopped {
     box-shadow:
-        0 0 10px 5px #fff,
-        0 0 15px 10px #0ff;
-    animation: pulse 2s infinite;
+        0 0 5px 2px #fff,
+        0 0 7px 5px #0ff;
+    animation: dying-pulse 2s normal forwards ease-in-out;
+}
+
+.current-track-playing {
+    transition: 2s;
+
+    box-shadow:
+        0 0 5px 2px #fff,
+        0 0 7px 5px #0ff;
+    animation: pulse 2s infinite ease-in-out;
 }
 
 .current-track-header {
@@ -17,8 +32,10 @@
 
 }
 
-.fade-right {
-    // mask-image: linear-gradient(270deg, rgb(0,0,0,0) 0%,rgb(0,0,0,0) 25%,rgb(40, 44, 52) 90%,rgb(40, 44, 52) 100%);
+.btn-tv-selected {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(40, 44, 52, 1)) !important;
+    background-color: $items-color-hover !important;
+    transition: 0.5s;
 }
 
 .shadow-down {
@@ -35,25 +52,36 @@
 @keyframes pulse {
     0% {
         box-shadow:
-            0 0 15px 10px #fff,
-            0 0 20px 15px #0ff,
+            0 0 5px 2px #fff,
+            0 0 7px 5px #0ff,
     }
 
     25% {
         box-shadow:
-            0 0 15px 10px #0ff,
-            0 0 20px 15px #7df,
+            0 0 5px 2px #0ff,
+            0 0 7px 5px #7df,
     }
 
     50% {
         box-shadow:
-            0 0 15px 10px #7df,
-            0 0 20px 15px #478499,
+            0 0 5px 2px #7df,
+            0 0 7px 5px #478499,
     }
 
     75% {
         box-shadow:
-            0 0 15px 10px #478499,
-            0 0 20px 15px #fff,
+            0 0 5px 2px #478499,
+            0 0 7px 5px #fff,
+    }
+}
+
+@keyframes dying-pulse{
+    from {
+        box-shadow:
+            0 0 5px 2px #fff,
+            0 0 7px 5px #0ff,
+    }
+    to {
+        box-shadow: none;
     }
 }
