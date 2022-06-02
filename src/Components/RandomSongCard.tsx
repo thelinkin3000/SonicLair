@@ -31,8 +31,8 @@ export default function RandomSongCard({ item, parentRef }: { item: IAlbumSongRe
 
     useEffect(() => {
         if (focused) {
-            parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-            ref.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+            parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "center" });
+            ref.current.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
         }
     }, [focused]);
     useEffect(() => {

@@ -2,17 +2,26 @@ import "./AlbumCard.scss";
 import "../Styles/colors.scss";
 import { useNavigate } from "react-router-dom";
 import { IAlbumArtistResponse } from "../Models/API/Responses/IArtistResponse";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import Loading from "./Loading";
 import VLC from "../Plugins/VLC";
 import classnames from "classnames";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { Column } from "react-virtualized";
+import { StateContext } from "../AppContext";
 
-export default function AlbumCard({ item, forceWidth, parentRef }:
-    { item: IAlbumArtistResponse, forceWidth: boolean | undefined, parentRef?: React.RefObject<any> }) {
+interface AlbumCardProps { 
+    item: IAlbumArtistResponse, 
+    forceWidth: boolean | undefined, 
+    parentRef?: React.RefObject<any>,
+    columnIndex?: number,
+    rowIndex?: number }
+
+export default function AlbumCard({ item, forceWidth, parentRef, columnIndex, rowIndex }: AlbumCardProps) {
     const navigate = useNavigate();
     const [coverArt, setCoverArt] = useState<string>("");
-
+    const {stateContext, setStateContext} = useContext(StateContext);
+    
     useEffect(() => {
         const func = async () => {
             const ret = await VLC.getAlbumArt({ id: item.id });
@@ -20,11 +29,9 @@ export default function AlbumCard({ item, forceWidth, parentRef }:
                 setCoverArt(ret.value!);
             }
         };
-        if (coverArt === "") {
-            func();
-        }
+        func();
 
-    }, [coverArt])
+    }, [coverArt, item])
 
     const [style, setStyle] = useState<any>({});
     const onload = (ev: any) => {
@@ -41,17 +48,25 @@ export default function AlbumCard({ item, forceWidth, parentRef }:
     const { focused, ref } = useFocusable({ onEnterPress: play });
     useEffect(() => {
         if (focused) {
-            parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-            ref.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+            parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "center" });
+            ref.current.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
         }
     }, [focused]);
+
+    const nav = useCallback(() => {
+        if(columnIndex !== undefined && rowIndex !== undefined){
+            setStateContext({...stateContext, selectedAlbum: [rowIndex, columnIndex]})
+        }
+        navigate(`/album`, { state: { id: item.id } })
+
+    },[item, rowIndex, columnIndex, setStateContext, stateContext]);
 
     return (
         <div
             ref={ref}
             style={forceWidth ? { width: "170px" } : {}}
             className={classnames("d-flex", "flex-column", "align-items-center", "justify-content-between", "album-item", focused ? "album-item-focused" : "")}
-            onClick={() => navigate(`/album`, { state: { id: item.id } })}>
+            onClick={nav}>
             <div className="d-flex align-items-center justify-content-center album-image-container">
                 {coverArt === "" ? <Loading></Loading> : <img style={style} onLoad={onload} src={coverArt} className="album-image"></img>}
 

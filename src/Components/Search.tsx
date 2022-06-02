@@ -20,7 +20,7 @@ export default function Search() {
     const songsRef = useRef(null);
     const albumsRef = useRef(null);
     const artistsRef = useRef(null);
-    const { focused, ref } = useFocusable();
+    const { focused, ref, focusSelf } = useFocusable();
     useEffect(() => {
         const fetch = async () => {
             clearTimeout(timeoutRef.current);
@@ -33,7 +33,6 @@ export default function Search() {
 
                 }
             }, 350);
-            setAndroidTv((await AndroidTVPlugin.get()).value);
         };
         if (searchValue !== "") {
             fetch();
@@ -51,6 +50,18 @@ export default function Search() {
             ref.current.blur();
         }
     }, [focused]);
+
+    useEffect(() => {
+        const r = async () => {
+
+            const androidTv = (await AndroidTVPlugin.get()).value;
+            if (androidTv) {
+                setAndroidTv(true);
+                focusSelf();
+            }
+        }
+        r();
+    }, []);
     return (<>
         <div className="text-white section-header text-start">Search</div>
         <input ref={ref} type="text" className="form-control mb-2" value={searchValue} onChange={setValue} />

@@ -6,6 +6,7 @@
 
 .album-item-focused {
     background-color: $items-color-hover  !important;
+    transform: scale(1.1);
 }
 
 .album-item {

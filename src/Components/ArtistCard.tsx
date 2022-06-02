@@ -2,18 +2,29 @@ import { IArtist } from "../Models/API/Responses/IArtist";
 import "./ArtistCard.scss";
 import "../Styles/colors.scss";
 import { useNavigate } from "react-router-dom";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from "../AppContext";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AppContext, StateContext } from "../AppContext";
 import Loading from "./Loading";
 import GetSpotifyArtist from "../Api/GetSpotifyArtist";
 import VLC from "../Plugins/VLC";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-export default function ArtistCard({ item, forceWidth, parentRef }: { item: IArtist, forceWidth?: boolean, parentRef?:React.RefObject<any> }) {
+
+interface ArtistCardProps {
+    item: IArtist,
+    forceWidth?: boolean,
+    parentRef?: React.RefObject<any>,
+    columnIndex?: number,
+    rowIndex?: number,
+}
+
+export default function ArtistCard({ item, forceWidth, parentRef, columnIndex, rowIndex }: ArtistCardProps) {
     const navigate = useNavigate();
     const { context } = useContext(AppContext);
     const [coverArt, setCoverArt] = useState<string>("");
     const [style, setStyle] = useState<any>({});
+    const { stateContext, setStateContext } = useContext(StateContext);
+
     useEffect(() => {
         const fetch = async () => {
             const items = await GetSpotifyArtist(await VLC.getSpotifyToken(), item.name);
@@ -49,9 +60,16 @@ export default function ArtistCard({ item, forceWidth, parentRef }: { item: IArt
         }
     }, [focused]);
 
+    const nav = useCallback(() => {
+        debugger;
+        if(columnIndex !== undefined && rowIndex !== undefined){
+            setStateContext({...stateContext, selectedArtist:[rowIndex, columnIndex]});
+        }
+        navigate(`/artist`, { state: { id: item.id } });
+    },[columnIndex, rowIndex, item]);
     return (
-        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex","flex-column","align-items-center","justify-content-between","artist-item",focused ? "artist-item-focused" : "")}
-            onClick={() => navigate(`/artist`, { state: { id: item.id } })}>
+        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", "artist-item", focused ? "artist-item-focused" : "")}
+            onClick={nav}>
             <div className="d-flex align-items-center justify-content-center artist-image-container">
                 {coverArt !== "" ? <img style={style} src={coverArt} onLoad={onload} className="artist-image"></img> : <Loading />}
             </div>

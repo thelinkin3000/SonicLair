@@ -19,12 +19,8 @@ export default function NowPlaying({ }) {
         VLC.seek({ time: time });
     }, [currentTrack]);
 
-    const { ref, focusKey, focusSelf } = useFocusable();
+    const { ref, focusKey } = useFocusable();
     useEffect(() => {
-        setTimeout(
-            () => {
-                focusSelf()
-            }, 1000);
         const fetch = async () => {
             setCoverArt((await VLC.getAlbumArt({ id: currentTrack.coverArt })).value!);
         }
@@ -58,7 +54,7 @@ export default function NowPlaying({ }) {
     return (
         <div className={"d-flex flex-column align-items-center justify-content-between h-100"}>
             <div className="m-auto"></div>
-            <img className={classnames("current-track-img-tv", playing ? "current-track-playing" : "current-track-stopped" )} src={coverArt}></img>
+            <img className={classnames("current-track-img-tv")} src={coverArt}></img>
             <div className={`current-track-header flex-row align-items-center justify-content-start`}>
                 <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-center fade-right" >
                     <span className="text-white no-wrap w-100" style={{ overflow: "hidden", whiteSpace: "nowrap", fontWeight: 800 }}>{currentTrack.title}</span>
@@ -72,7 +68,7 @@ export default function NowPlaying({ }) {
                     <TVActionButton func={playPrev} content={(<i className="ri-arrow-left-fill"></i>)}></TVActionButton>
                     <TVActionButton func={togglePlaying} content={playing ?
                         <i className="ri-pause-fill"></i> :
-                        <i className="ri-play-fill"></i>}></TVActionButton>
+                        <i className="ri-play-fill"></i>} preferred={true}></TVActionButton>
                     <TVActionButton func={playNext} content={(<i className="ri-arrow-right-fill"></i>)}></TVActionButton>
                     <TVActionButton func={seekForward} content={(<><i className="ri-speed-fill"></i>10s</>)}></TVActionButton>
                 </div>
@@ -91,13 +87,18 @@ export default function NowPlaying({ }) {
 interface TVActionButtonProps {
     func: () => void;
     content: any;
+    preferred?: boolean;
 }
 
-function TVActionButton({ func, content }: TVActionButtonProps) {
-    const { ref, focused } = useFocusable({ onEnterPress: func });
-
+function TVActionButton({ func, content, preferred }: TVActionButtonProps) {
+    const { ref, focused, focusSelf } = useFocusable({ onEnterPress: func });
+    useEffect(() => {
+        if(preferred){
+            focusSelf();
+        }
+    },[preferred])
     return (
-        <div ref={ref} className={classnames("m-2", "p-2", "text-white", "tv-button",focused ? "btn-tv-selected" : "")} onClick={func}>
+        <div ref={ref} className={classnames("m-2", "p-2", "text-white", "tv-button", focused ? "btn-tv-selected" : "")} onClick={func}>
             <div className="d-flex flex-column align-items-center ">
                 {content}
             </div>

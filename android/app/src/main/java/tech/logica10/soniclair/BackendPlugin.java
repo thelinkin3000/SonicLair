@@ -413,7 +413,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getAccounts(PluginCall call){
         try {
-            JSObject ret = OkResponse(KeyValueStorage.Companion.getAccounts());
+            JSObject ret = OkArrayResponse(KeyValueStorage.Companion.getAccounts());
             call.resolve(ret);
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));

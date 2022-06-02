@@ -9,8 +9,6 @@ export const AppContextDefValue: IAccount = {
 
 };
 
-
-
 export const AppContext = React.createContext<{ context: IAccount, setContext: Dispatch<SetStateAction<IAccount>> }>
     ({ context: AppContextDefValue, setContext: (c) => { } });
 
@@ -30,3 +28,16 @@ export const MenuContextDefValue: IMenuContext = {
 
 export const MenuContext = React.createContext<{ menuContext: IMenuContext, setMenuContext: Dispatch<SetStateAction<IMenuContext>> }>
     ({ menuContext: MenuContextDefValue, setMenuContext: (c) => { } });
+
+export interface IStateContext {
+    selectedAlbum: number[];
+    selectedArtist: number[];
+}
+
+export const StateContextDefValue: IStateContext = {
+    selectedAlbum: [0,0],
+    selectedArtist: [0,0],
+}
+
+export const StateContext = React.createContext<{ stateContext: IStateContext, setStateContext: Dispatch<SetStateAction<IStateContext>> }>
+    ({ stateContext: StateContextDefValue, setStateContext: () => { } });

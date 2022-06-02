@@ -46,7 +46,7 @@ export default function TVSidebar() {
                 <TVSidebarButton path="/search" icon={<i className="ri-search-2-fill icon-large-tv"></i>} text="Search" />
                 <TVSidebarButton path="/account" icon={<i className="ri-user-fill icon-large-tv"></i>} text="Account" />
                 <div className="m-auto"></div>
-                <TVSidebarButton path="/playing" icon={<i className="ri-play-circle-fill icon-large-tv"></i>} text="Now Playing" />
+                <TVSidebarButton path="/playing" icon={<i className="ri-play-circle-fill icon-large-tv"></i>} text="Playing" />
                 
             </div>
         </FocusContext.Provider>

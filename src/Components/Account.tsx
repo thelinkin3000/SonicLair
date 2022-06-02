@@ -1,22 +1,24 @@
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import classNames from "classnames";
 import { useCallback, useContext } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
 import { AppContext } from "../AppContext";
 import "./Account.scss";
 
 export default function Account() {
     const { context, setContext } = useContext(AppContext);
-    const navigate = useNavigate();
     const logout = useCallback(() => {
         const newContext = {
-            username: null, 
-            url: "", 
-            password: "", 
+            username: null,
+            url: "",
+            password: "",
             type: ""
         };
         setContext(newContext);
     }, [context, setContext]);
+
+    const { focused, ref } = useFocusable({ onEnterPress: logout });
 
     return (<div className="d-flex flex-column align-items-center justify-content-start h-100">
         <div className="text-white account-icon-container">
@@ -32,7 +34,7 @@ export default function Account() {
             running {context.type}
         </div>
         <div className="logout-button-container" >
-            <button className="btn btn-primary mt-10" onClick={logout}>Logout</button>
+            <button ref={ref} className={classNames("btn", "mt-10", focused ? "btn-selected" : "btn-primary")} onClick={logout}>Logout</button>
         </div>
 
     </div>)

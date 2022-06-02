@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
-import { AppContext } from "../AppContext";
+import { AppContext, StateContext } from "../AppContext";
 import { IAlbumArtistResponse } from "../Models/API/Responses/IArtistResponse";
 import AlbumCard from "./AlbumCard";
 import "./Artists.scss";
@@ -17,16 +17,16 @@ export default function Albums() {
     const [fetched, setFetched] = useState<boolean>(false);
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
-
+    const { stateContext } = useContext(StateContext);
     useEffect(() => {
         const fetch = async () => {
             const al = await VLC.getAlbums();
-            if(al.status === "ok"){
+            if (al.status === "ok") {
                 setAlbums(al.value!);
                 setFilteredAlbums(al.value!);
             }
             setFetched(true);
-            
+
         }
         if (!fetched) {
             fetch();
@@ -60,11 +60,18 @@ export default function Albums() {
             return (<></>);
         }
         return (<div style={{ ...style }}>
-            <AlbumCard item={data[index]} forceWidth={false} />
+            <AlbumCard item={data[index]} forceWidth={false} columnIndex={columnIndex} rowIndex={rowIndex} />
         </div>
         )
     }, [columnCount]);
 
+    const gridRef = (r: Grid) => {
+        if (r && stateContext.selectedAlbum !== [0, 0]) {
+            console.log(`scrolling ${JSON.stringify({ align: "center", rowIndex: stateContext.selectedAlbum[0], columnIndex: stateContext.selectedAlbum[1] })}`)
+            console.log(r);
+            r.scrollToItem({ align: "center", rowIndex: stateContext.selectedAlbum[0], columnIndex: stateContext.selectedAlbum[1] });
+        }
+    }
 
 
 
@@ -87,7 +94,7 @@ export default function Albums() {
             </div>
             <input ref={searchRef} className={classNames("form-control", "mb-2", canSearch ? "" : "d-none")} placeholder="Search..." onKeyUp={search} />
             <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
-                <Grid {...gridProps}
+                <Grid ref={gridRef} {...gridProps}
                     itemData={filteredAlbums}
                 >
                     {AlbumCardWrapper}

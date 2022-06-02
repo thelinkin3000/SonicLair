@@ -80,7 +80,7 @@ export default function PlayTest() {
     const { ref: passwordRef, focused: passwordFocused } = useFocusable();
     const { ref: urlRef, focused: urlFocused } = useFocusable();
     const { focusKey, ref: parentRef } = useFocusable();
-    const { ref: buttonRef, focused: buttonFocused } = useFocusable({ onEnterPress: () => { handleSubmit(hash) } });
+    const { ref: buttonRef, focused: buttonFocused } = useFocusable({ onEnterPress: () => { onSubmit() } });
     const { ref: qrRef, focused: qrFocused } = useFocusable({ onEnterPress: () => { setShowQr(!showQr) } });
     useEffect(() => {
         if (usernameFocused) {

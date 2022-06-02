@@ -2,7 +2,7 @@ import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from "../AppContext";
+import { AppContext, StateContext } from "../AppContext";
 import { IArtist } from "../Models/API/Responses/IArtist";
 import ArtistCard from "./ArtistCard";
 import "./Artists.scss";
@@ -17,6 +17,13 @@ export default function Artists() {
     const [fetched, setFetched] = useState<boolean>(false);
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
+    const { stateContext, setStateContext } = useContext(StateContext);
+
+    const gridRef = (ref: Grid) => {
+        if (ref && stateContext.selectedArtist !== [0, 0]) {
+            ref.scrollToItem({ columnIndex: stateContext.selectedArtist[1], rowIndex: stateContext.selectedArtist[0],  align: "center"});
+        }
+    }
 
     useEffect(() => {
         const fetch = async () => {
@@ -29,6 +36,7 @@ export default function Artists() {
             }
         }
         if (!fetched) {
+
             fetch();
         }
     }, [fetched]);
@@ -41,13 +49,13 @@ export default function Artists() {
     useEffect(() => {
         if (canSearch) {
             searchRef.current!.focus();
-
         }
     }, [canSearch]);
 
     const toggleSearch = () => {
         setCanSearch(!canSearch);
     }
+
 
     const { gridProps, autoFillRef, columnCount } = useAutoFill(filteredArtists);
 
@@ -58,7 +66,7 @@ export default function Artists() {
         }
         return (
             <div style={{ ...style }} id={"index"} >
-                <ArtistCard item={data[index]} />
+                <ArtistCard item={data[index]} columnIndex={columnIndex} rowIndex={rowIndex} />
             </div>
         )
     }, [columnCount]);
@@ -84,6 +92,7 @@ export default function Artists() {
             <div style={{ height: "100%", width: "100%" }} ref={autoFillRef}>
                 <Grid
                     {...gridProps}
+                    ref={gridRef}
                     itemData={filteredArtists}
                 >
                     {ArtistCardWrapper}
