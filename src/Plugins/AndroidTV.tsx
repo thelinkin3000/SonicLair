@@ -1,4 +1,5 @@
-import { registerPlugin } from '@capacitor/core';
+import { SupportedFormat } from '@capacitor-community/barcode-scanner';
+import { Plugin, registerPlugin, WebPlugin } from '@capacitor/core';
 
 export interface IAndroidTVResponse {
     value: boolean;
@@ -8,25 +9,25 @@ export interface IAndroidTVStringResponse{
     value: string;
 }
 
-export interface IBackendPlugin {
+export interface IAndroidTVPlugin extends Plugin{
     get(): Promise<IAndroidTVResponse>;
-    getIpAddr(): Promise<IAndroidTVStringResponse>;
+    getIp(): Promise<IAndroidTVStringResponse>;
 }
 
-class AndroidTVPlugin implements IBackendPlugin {
+class AndroidTV extends WebPlugin implements IAndroidTVPlugin{
     constructor() {
-
+        super();
     }
     get(): Promise<IAndroidTVResponse> {
-        return Promise.resolve({ value: true });
+        return Promise.resolve({ value: false });
     }
-    getIpAddr(): Promise<IAndroidTVStringResponse> {
-        return Promise.resolve({ value: "192.168.137.1" });
+    getIp(): Promise<IAndroidTVStringResponse> {
+        return Promise.resolve({ value: "127.0.0.1" });
     }
 }
 
-const AndroidTV = registerPlugin<IBackendPlugin>('AndroidTV', {
-    web: () => new AndroidTVPlugin(),
+const AndroidTVPlugin = registerPlugin<IAndroidTVPlugin>('AndroidTV', {
+    web: () => new AndroidTV(),
 });
 
-export default AndroidTV;
+export default AndroidTVPlugin;

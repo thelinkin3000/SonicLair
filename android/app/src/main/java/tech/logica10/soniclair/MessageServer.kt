@@ -10,14 +10,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class WebSocketMessage(
-    val message: String,
+    val data: String,
     val type: String
-)
-
-class WebSocketLogin(
-    val username: String,
-    val password: String,
-    val url: String
 )
 
 class MessageServer : WebSocketServer {
@@ -45,9 +39,9 @@ class MessageServer : WebSocketServer {
 
     override fun onMessage(conn: WebSocket, message: String) {
         try {
-            val message: WebSocketMessage = gson.fromJson(message, WebSocketMessage::class.java)
-            if(message.type == "login") {
-                Globals.NotifyObservers("WSLOGIN", message.message)
+            val m: WebSocketMessage = gson.fromJson(message, WebSocketMessage::class.java)
+            if(m.type == "login") {
+                Globals.NotifyObservers("WSLOGIN", m.data)
             }
         } catch (e: Exception) {
             return;

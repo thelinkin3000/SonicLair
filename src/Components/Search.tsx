@@ -2,7 +2,7 @@ import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
 import { ISearchResponse, ISearchResult } from "../Models/API/Responses/IArtistInfoResponse";
-import AndroidTV from "../Plugins/AndroidTV";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 import VLC from "../Plugins/VLC";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
@@ -33,7 +33,7 @@ export default function Search() {
 
                 }
             }, 350);
-            setAndroidTv((await AndroidTV.get()).value);
+            setAndroidTv((await AndroidTVPlugin.get()).value);
         };
         if (searchValue !== "") {
             fetch();

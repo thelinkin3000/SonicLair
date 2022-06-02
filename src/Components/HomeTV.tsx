@@ -6,7 +6,7 @@ import RandomSongCard from './RandomSongCard';
 import VLC from '../Plugins/VLC';
 import { Toast } from '@capacitor/toast';
 import classNames from 'classnames';
-import AndroidTV from '../Plugins/AndroidTV';
+import AndroidTVPlugin from '../Plugins/AndroidTV';
 import { useForm } from 'react-hook-form';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 
@@ -41,7 +41,7 @@ export default function HomeTV() {
       if (newAlbums.status === "ok") {
         setNewAlbums(newAlbums.value!);
       }
-      if((await AndroidTV.get()).value){
+      if((await AndroidTVPlugin.get()).value){
         setAndroidTv(true);
         focusSelf();
       }

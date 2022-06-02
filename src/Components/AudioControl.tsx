@@ -11,7 +11,7 @@ import classnames from "classnames";
 import VLC from "../Plugins/VLC";
 import { Backend } from "../Plugins/Audio";
 import { Capacitor } from "@capacitor/core";
-import AndroidTV from "../Plugins/AndroidTV";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 
 interface IListener {
     event: string;
@@ -41,7 +41,7 @@ export default function AudioControl({ }) {
         const fetch = async () => {
             try {
                 if (Capacitor.isPluginAvailable("AndroidTV")) {
-                    setAndroidTV((await AndroidTV.get()).value);
+                    setAndroidTV((await AndroidTVPlugin.get()).value);
                 }
             }
             catch (e: any) {

@@ -16,7 +16,7 @@ public class Globals {
     private static Globals single_instance = null;
 
     // Declaring a variable of type String
-    private List<IBroadcastObserver> observers;
+    private final List<IBroadcastObserver> observers;
     private ArrayList<MediaBrowser.MediaItem> mediaItems;
     private MediaSession mediaSession;
 

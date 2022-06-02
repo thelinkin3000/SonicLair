@@ -5,6 +5,7 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Debug
+import android.os.Message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ class App : Application() {
                     // Repopulate the media items cache
                     val subsonicClient = SubsonicClient(KeyValueStorage.getActiveAccount())
                     val s = subsonicClient.getRandomSongs()
-                    KeyValueStorage.setCachedSongs(songs)
+                    KeyValueStorage.setCachedSongs(s)
                 }
             }
             return@launch
@@ -47,10 +48,12 @@ class App : Application() {
                             && (addr.hostAddress.subSequence(0,7) == "192.168"
                                     || addr.hostAddress.subSequence(0,2) == "10"
                                     || addr.hostAddress.subSequence(0,3) == "172")) {
-                            pairString = "SONICLAIRIP:${addr.hostAddress.toString()}"
+                            pairString = addr.hostAddress.toString()
                         }
                     }
                 }
+                server = MessageServer(30001);
+                server!!.start()
             } catch (ex: Exception) {
             } // for now eat exceptions
         }
@@ -63,5 +66,6 @@ class App : Application() {
         val context: Context
             get() = application!!.applicationContext
         var pairString: String? = null;
+        var server: MessageServer? = null;
     }
 }

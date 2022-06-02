@@ -404,7 +404,16 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     public void getActiveAccount(PluginCall call) throws JSONException {
         try {
             JSObject ret = OkResponse(KeyValueStorage.Companion.getActiveAccount());
-            ret.remove("url");
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void getAccounts(PluginCall call){
+        try {
+            JSObject ret = OkResponse(KeyValueStorage.Companion.getAccounts());
             call.resolve(ret);
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));

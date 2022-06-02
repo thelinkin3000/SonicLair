@@ -8,10 +8,10 @@ import { Toast } from '@capacitor/toast';
 import AccountItem from './AccountItem';
 import VLC from '../Plugins/VLC';
 import { IAccount } from "../Models/AppContext";
-import AndroidTV from "../Plugins/AndroidTV";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import QRCode from "react-qr-code";
+import { QRCode } from 'react-qrcode-logo';
 
 
 interface FormData {
@@ -35,7 +35,6 @@ export default function PlayTest() {
             }
             else if (context.username === null) {
                 controls.start({ rotate: 0, scale: 1 });
-
                 const ret = await VLC.getAccounts();
                 if (ret.status === "ok") {
                     setAccounts(ret.value!);
@@ -43,13 +42,20 @@ export default function PlayTest() {
                 else {
                     Toast.show({ text: ret.error });
                 }
+                const androidTv = (await AndroidTVPlugin.get()).value;
+                setAndroidTv(androidTv);
+                if (androidTv) {
+                    setLocalIp((await AndroidTVPlugin.getIp()).value);
+                }
             }
-            const androidTv = (await AndroidTV.get()).value;
-            setAndroidTv(androidTv);
-            const localIp: string = (await AndroidTV.getIpAddr()).value; 
-            setLocalIp(localIp);
         }, 1000);
     }, [context]);
+
+    useEffect(() => {
+        AndroidTVPlugin.addListener("login", (info: any) => {
+            hash(info);
+        });
+    }, []);
 
     const hash = async (data: FormData) => {
         const ret = await VLC.login(data);
@@ -106,8 +112,8 @@ export default function PlayTest() {
             <div className={classNames(showQr ? "d-flex" : "d-none", "soniclair-modal", "flex-column", "align-items-center", "justify-content-center")} style={{ width: "80vw", height: "80vh", top: "10vh", left: "10vw", position: "absolute" }}>
                 <div className="p-5 d-flex align-items-center justify-content-around" style={{ backgroundColor: "white" }}>
                     <QRCode value={localIp}></QRCode>
-
                 </div>
+                    <span className="text-white">{localIp}</span>
             </div>
             <div ref={parentRef} className={"row d-flex align-items-center"} style={androidTv ? { height: "100%", width: "100vw" } : { height: "100vh" }}>
                 <form onSubmit={onSubmit}>
@@ -123,7 +129,7 @@ export default function PlayTest() {
                         <div className="col-12 mb-3">
                             <img src={logo} className="App-logo" alt="logo" />
                             <p className="text-white logo-text">
-                                SonicLair {localIp}
+                                SonicLair
                             </p>
                         </div>
                     </motion.div>
@@ -150,7 +156,9 @@ export default function PlayTest() {
                         {errors && errors.url && <div className="col-12 text-danger">{errors.url.message}</div>}
 
                         <button ref={buttonRef} type="submit" className={classNames("btn", buttonFocused ? "btn-selected" : "btn-primary", "mb-3")}>Log In!</button>
-                        <button ref={qrRef} type="button" onClick={() => { setShowQr(!showQr) }} className={classNames("btn", qrFocused ? "btn-selected" : "btn-primary", "mb-3")}>Display QR</button>
+                        
+                        {androidTv &&
+                            <button ref={qrRef} type="button" onClick={() => { setShowQr(!showQr) }} className={classNames("btn", qrFocused ? "btn-selected" : "btn-primary", "mb-3")}>Display QR</button>}
 
 
                         {accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">

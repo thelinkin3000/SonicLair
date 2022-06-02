@@ -25,7 +25,7 @@ import Search from './Components/Search';
 import VLC from './Plugins/VLC';
 import Account from './Components/Account';
 import NowPlaying from './Components/NowPlaying';
-import AndroidTV from './Plugins/AndroidTV';
+import AndroidTVPlugin from './Plugins/AndroidTV';
 import classNames from 'classnames';
 import TVSidebar from './Components/TVSidebar';
 import { FocusContext, init, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
@@ -73,7 +73,7 @@ function App() {
         });
       }
       if (Capacitor.isPluginAvailable("AndroidTV")) {
-        setAndroidTv((await AndroidTV.get()).value);
+        setAndroidTv((await AndroidTVPlugin.get()).value);
       }
 
       const c = await VLC.getActiveAccount();

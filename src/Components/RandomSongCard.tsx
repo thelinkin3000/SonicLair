@@ -9,7 +9,7 @@ import _ from "lodash";
 import Loading from "./Loading";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import AndroidTV from "../Plugins/AndroidTV";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 import { useNavigate } from "react-router-dom";
 
 
@@ -41,7 +41,7 @@ export default function RandomSongCard({ item, parentRef }: { item: IAlbumSongRe
             if (s.status === "ok") {
                 setCoverArt(s.value!);
             }
-            setAndroidTv((await AndroidTV.get()).value);
+            setAndroidTv((await AndroidTVPlugin.get()).value);
         }
         func();
     }, [item]);

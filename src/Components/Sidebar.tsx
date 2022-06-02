@@ -5,6 +5,7 @@ import { Dispatch, SetStateAction } from "react";
 import "./Sidebar.scss";
 import { motion } from 'framer-motion';
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 
 
 export default function Sidebar({ setNavbarCollapsed, navbarCollapsed }: { navbarCollapsed: boolean, setNavbarCollapsed: Dispatch<SetStateAction<boolean>> }) {
@@ -34,7 +35,8 @@ export default function Sidebar({ setNavbarCollapsed, navbarCollapsed }: { navba
                 <div onClick={() => nav("/artists")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faUsers} /></div>
                 <div onClick={() => nav("/albums")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faCompactDisc} /></div>
                 <div onClick={() => nav("/search")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faMagnifyingGlass} /></div>
-                <div onClick={() => nav("/qr")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faQrcode} /></div>
+                {Capacitor.getPlatform() == "android" && <div onClick={() => nav("/qr")} className="sidebar-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faQrcode} /></div>}
+                
                 <div onClick={() => nav("/account")} className="sidebar-item last-item d-flex align-items-center justify-content-center text-white"><FontAwesomeIcon icon={faUserAlt} /></div>
 
             </motion.div>
