@@ -8,19 +8,13 @@
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 20vh;
   pointer-events: none;
 }
 
 .logo-header {
   height: 5vh;
 }
-
-// @media (prefers-reduced-motion: no-preference) {
-//   .App-logo {
-//     animation: App-logo-spin infinite 20s linear;
-//   }
-// }
 
 .App-header {
   background-color: #282c34;
@@ -89,7 +83,7 @@
 }
 
 ::-webkit-scrollbar-corner {
-  background: rgba(0,0,0,0);
+  background: rgba(0, 0, 0, 0);
 }
 
 .btn {
@@ -97,12 +91,12 @@
 }
 
 .list-group-item {
-  background-color: $items-color  !important;
-  color: $color-text-primary  !important;
+  background-color: $items-color !important;
+  color: $color-text-primary !important;
   transition: 0.3s;
 
   &:hover {
-    background-color: $items-color-hover  !important;
+    background-color: $items-color-hover !important;
 
   }
 }
@@ -130,7 +124,7 @@
 }
 
 .text-white {
-  color: $color-text-primary  !important;
+  color: $color-text-primary !important;
 }
 
 .text-header {
@@ -174,7 +168,7 @@
   user-select: none;
 }
 
-input[type=range]{
+input[type=range] {
   -webkit-appearance: none;
 }
 
@@ -204,47 +198,66 @@ input[type=range]:focus::-webkit-slider-runnable-track {
   background: #737272;
 }
 
-.container-tv-100{
+.container-tv-100 {
   width: 100vw;
   height: 100vh;
   overflow-x: hidden;
   overflow-y: hidden;
 }
 
-.container-tv{
+.container-tv {
   margin-left: 15px;
   max-width: 95vw;
-  width:100%;
-  height:100%;
+  width: 100%;
+  height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-.tv-button{
+.tv-button {
   border-radius: 5%;
   transition: 0.5s;
 }
 
-.icon-large-tv{
+.icon-large-tv {
   font-size: 1.3rem;
 }
 
 .btn-selected {
   background-color: $items-color-hover !important;
   color: white !important;
+  transform: scale(1.1);
 }
 
-.btn-primary{
+.btn-primary {
   background-color: $items-color !important;
 }
 
-.soniclair-modal{
+
+
+
+
+.soniclair-modal {
   border-radius: 5%;
   background-color: $color-background-app;
   border-color: $items-color-hover;
   border-width: 5px;
 }
 
-.body-transparent{
+.body-transparent {
   background-color: transparent !important;
+}
+
+.form-focused::placeholder {
+  color: white !important;
+}
+
+.form-focused {
+  background-color: #282c34 !important;
+  color: white !important;
+
+}
+
+.form-control {
+  transition: 0.5s !important;
 }

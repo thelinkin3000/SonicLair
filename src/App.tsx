@@ -114,8 +114,6 @@ function App() {
               <title>SonicLair</title>
             </Helmet>
             <MenuContext.Provider value={menuContextValue}>
-              <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
-              <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
               {
                 context.username === "" &&
                 <div className="h-100 w-100 d-flex align-items-center justify-content-center">
@@ -127,6 +125,8 @@ function App() {
               }
               {context.username !== "" && context.username !== null &&
                 <>
+                <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
+                <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
                   <Routes>
                     <Route path="/" element={<PlayTest />} />
                     <Route path="/home" element={<Home />} />

@@ -46,6 +46,7 @@ export default function PlayTest() {
                 setAndroidTv(androidTv);
                 if (androidTv) {
                     setLocalIp((await AndroidTVPlugin.getIp()).value);
+                    focusSelf();
                 }
             }
         }, 1000);
@@ -76,21 +77,35 @@ export default function PlayTest() {
         setAccounts(accounts.filter(s => s.url !== url));
     }
 
-    const { ref: usernameRef, focused: usernameFocused, focusSelf } = useFocusable();
-    const { ref: passwordRef, focused: passwordFocused } = useFocusable();
-    const { ref: urlRef, focused: urlFocused } = useFocusable();
+    const { ref: usernameRef, focused: usernameFocused, focusSelf } = useFocusable(
+        {
+            onEnterPress: () => { setFocus("username"); }
+        }
+    );
+    const { ref: passwordRef, focused: passwordFocused } = useFocusable({
+        onEnterPress: () => { setFocus("password"); }
+    });
+    const { ref: urlRef, focused: urlFocused } = useFocusable({
+        onEnterPress: () => { setFocus("url"); }
+    });
     const { focusKey, ref: parentRef } = useFocusable();
     const { ref: buttonRef, focused: buttonFocused } = useFocusable({ onEnterPress: () => { onSubmit() } });
-    const { ref: qrRef, focused: qrFocused } = useFocusable({ onEnterPress: () => { setShowQr(!showQr) } });
+    const { ref: qrRef, focused: qrFocused, focusSelf: focusQr } = useFocusable({
+        onEnterPress: () => {
+            setShowQr(!showQr);
+        }
+    });
+
+
     useEffect(() => {
         if (usernameFocused) {
-            setFocus("username");
+            // setFocus("username");
         }
         if (passwordFocused) {
-            setFocus("password");
+            // setFocus("password");
         }
         if (urlFocused) {
-            setFocus("url");
+            // setFocus("url");
         }
         if (buttonFocused) {
             buttonRef.current.focus();
@@ -100,22 +115,16 @@ export default function PlayTest() {
         }
     }, [usernameFocused, passwordFocused, urlFocused, buttonFocused, qrFocused]);
 
-    useEffect(() => {
-        setTimeout(() => {
-            focusSelf();
-        }, 500);
-
-    }, [])
-
     return (
         <FocusContext.Provider value={focusKey}>
-            <div className={classNames(showQr ? "d-flex" : "d-none", "soniclair-modal", "flex-column", "align-items-center", "justify-content-center")} style={{ width: "80vw", height: "80vh", top: "10vh", left: "10vw", position: "absolute" }}>
-                <div className="p-5 d-flex align-items-center justify-content-around" style={{ backgroundColor: "white" }}>
-                    <QRCode value={localIp}></QRCode>
-                </div>
-                    <span className="text-white">{localIp}</span>
-            </div>
+
             <div ref={parentRef} className={"row d-flex align-items-center"} style={androidTv ? { height: "100%", width: "100vw" } : { height: "100vh" }}>
+                <div className={classNames(showQr ? "d-flex" : "d-none", "soniclair-modal", "flex-column", "align-items-center", "justify-content-center")} style={{ width: "80vw", height: "80vh", top: "10vh", left: "10vw", position: "absolute", borderRadius: "15px" }}>
+                    <div className="p-5 d-flex align-items-center justify-content-around" style={{ backgroundColor: "white", borderRadius: "5px" }}>
+                        <QRCode style={{ borderRadius: "5px" }} qrStyle="dots" eyeRadius={5} removeQrCodeBehindLogo={true} bgColor="#282c34" fgColor="#ebebeb" ecLevel="H" value={localIp}></QRCode>
+                    </div>
+                    <span className="text-white">{localIp}</span>
+                </div>
                 <form onSubmit={onSubmit}>
                     <motion.div
                         className="container"
@@ -143,26 +152,28 @@ export default function PlayTest() {
                             damping: 20
                         }}>
                         <div ref={usernameRef} className={"col-12 mb-3"}>
-                            <input {...register("username", { required: true })} className={"form-control"} placeholder={"Username"} />
+                            <input {...register("username", { required: true })} className={classNames("form-control", usernameFocused ? "form-focused" : "")} placeholder={"Username"} />
                         </div>
                         {errors && errors.username && <div className="col-12 text-danger">{errors.username.message}</div>}
                         <div ref={passwordRef} className={"col-12 mb-3"}>
-                            <input {...register("password", { required: true })} type={"password"} className={"form-control"} placeholder={"Password"} />
+                            <input {...register("password", { required: true })} type={"password"} className={classNames("form-control", passwordFocused ? "form-focused" : "")} placeholder={"Password"} />
                         </div>
                         {errors && errors.password && <div className="col-12 text-danger">{errors.password.message}</div>}
                         <div ref={urlRef} className={"col-12 mb-3"}>
-                            <input {...register("url", { required: true })} className={"form-control"} placeholder={"Server URL"} />
+                            <input {...register("url", { required: true })} className={classNames("form-control", urlFocused ? "form-focused" : "")} placeholder={"Server URL"} />
                         </div>
                         {errors && errors.url && <div className="col-12 text-danger">{errors.url.message}</div>}
 
                         <button ref={buttonRef} type="submit" className={classNames("btn", buttonFocused ? "btn-selected" : "btn-primary", "mb-3")}>Log In!</button>
-                        
+
                         {androidTv &&
-                            <button ref={qrRef} type="button" onClick={() => { setShowQr(!showQr) }} className={classNames("btn", qrFocused ? "btn-selected" : "btn-primary", "mb-3")}>Display QR</button>}
+                            <button ref={qrRef} type="button" onClick={() => { setShowQr(!showQr) }} className={classNames("btn", qrFocused ? "btn-selected" : "btn-primary", "mb-3","ms-3")}>Display QR</button>}
 
 
-                        {accounts.length > 0 && <div className="d-flex flex-column align-items-center justify-content-center">
-                            {accounts.map(s => (<AccountItem account={s} del={del} />))}
+                        {accounts.length > 0 && !androidTv && <div className="d-flex flex-column align-items-center justify-content-center">
+                            {accounts.map(s => (
+                                <AccountItem account={s} del={del} />
+                            ))}
                         </div>}
                     </motion.div>
                 </form>
