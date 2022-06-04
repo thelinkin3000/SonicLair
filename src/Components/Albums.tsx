@@ -18,6 +18,14 @@ export default function Albums() {
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const { stateContext } = useContext(StateContext);
+    const setRef = useRef<number>(0);
+
+    const gridRef = (ref: Grid) => {
+        if (ref && (stateContext.selectedAlbum[0] != 0 || stateContext.selectedAlbum[1] != 0)) {
+            ref.scrollToItem({ columnIndex: stateContext.selectedAlbum[1], rowIndex: stateContext.selectedAlbum[0], align: "center" });
+        }
+    }
+
     useEffect(() => {
         const fetch = async () => {
             const al = await VLC.getAlbums();
@@ -34,9 +42,12 @@ export default function Albums() {
     }, [fetched]);
 
     const search = (val: any) => {
-        if (val.target.value.length === 0)
+        if (val.target.value.length === 0) {
             setFilteredAlbums(albums);
-        setFilteredAlbums(albums.filter(s => s.name.toUpperCase().indexOf(val.target.value.toUpperCase()) !== -1));
+        }
+        else {
+            setFilteredAlbums(albums.filter(s => s.name.toUpperCase().indexOf(val.target.value.toUpperCase()) !== -1));
+        }
     }
 
     useEffect(() => {
@@ -44,9 +55,6 @@ export default function Albums() {
             searchRef.current!.focus();
         }
     }, [canSearch]);
-
-
-
 
     const toggleSearch = () => {
         setCanSearch(!canSearch);
@@ -59,21 +67,11 @@ export default function Albums() {
         if (data[index] === undefined) {
             return (<></>);
         }
-        return (<div style={{ ...style }}>
+        return (<div style={{ ...style }} key={`${rowIndex},${columnIndex}`} id={`${rowIndex},${columnIndex}`}>
             <AlbumCard item={data[index]} forceWidth={false} columnIndex={columnIndex} rowIndex={rowIndex} />
         </div>
         )
     }, [columnCount]);
-
-    const gridRef = (r: Grid) => {
-        if (r && stateContext.selectedAlbum !== [0, 0]) {
-            console.log(`scrolling ${JSON.stringify({ align: "center", rowIndex: stateContext.selectedAlbum[0], columnIndex: stateContext.selectedAlbum[1] })}`)
-            console.log(r);
-            r.scrollToItem({ align: "center", rowIndex: stateContext.selectedAlbum[0], columnIndex: stateContext.selectedAlbum[1] });
-        }
-    }
-
-
 
     if (albums.length === 0) {
         return (<div className="row" style={{ height: "100%" }}>
@@ -82,7 +80,6 @@ export default function Albums() {
             </div>
         </div>);
     }
-
 
     return (<>
         <div className="artist-container d-flex flex-column">
@@ -94,14 +91,14 @@ export default function Albums() {
             </div>
             <input ref={searchRef} className={classNames("form-control", "mb-2", canSearch ? "" : "d-none")} placeholder="Search..." onKeyUp={search} />
             <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
-                <Grid ref={gridRef} {...gridProps}
-                    itemData={filteredAlbums}
-                >
+                <Grid ref={gridRef}
+                    {...gridProps}
+                    useIsScrolling={true}
+                    style={{overflowY:"auto",overflowX:"hidden"}}
+                    itemData={filteredAlbums}>
                     {AlbumCardWrapper}
                 </Grid>
             </div>
-
-
         </div>
     </>
 

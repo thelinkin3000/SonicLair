@@ -34,12 +34,10 @@ import QRScan from './Components/QRScan';
 
 function App() {
   const [context, setContext] = useState<IAccount>(AppContextDefValue);
-  const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
-  const [playing, setPlaying] = useState<boolean>(false);
+
   const [menuContext, setMenuContext] = useState<IMenuContext>(MenuContextDefValue);
   const [stateContext, setStateContext] = useState<IStateContext>(StateContextDefValue);
   const [androidTv, setAndroidTv] = useState<boolean>(false);
-  const [playtime, setPlaytime] = useState<number>(0);
   const { focusKey, ref } = useFocusable();
   const [tried, setTried] = useState<boolean>(false);
   const contextValue = React.useMemo(() => ({
@@ -49,11 +47,7 @@ function App() {
   const menuContextValue = React.useMemo(() => ({
     menuContext, setMenuContext
   }), [menuContext]);
-  const currentTrackContextValue = React.useMemo(() => ({
-    currentTrack, setCurrentTrack,
-    playing, setPlaying,
-    playtime, setPlaytime
-  }), [currentTrack, playing, playtime]);
+
   const stateContextValue = React.useMemo(() => ({
     stateContext, setStateContext
   }), [stateContext]);
@@ -107,87 +101,85 @@ function App() {
   return (<>
     <StateContext.Provider value={stateContextValue}>
 
-      <CurrentTrackContext.Provider value={currentTrackContextValue}>
-        <AppContext.Provider value={contextValue}>
-          {!androidTv && <div className="App container-fluid d-flex flex-column justify-content-between">
-            <Helmet>
-              <title>SonicLair</title>
-            </Helmet>
-            <MenuContext.Provider value={menuContextValue}>
-              {
-                context.username === "" &&
-                <div className="h-100 w-100 d-flex align-items-center justify-content-center">
-                  <Loading />
-                </div>
-              }
-              {
-                context.username === null && <PlayTest />
-              }
-              {context.username !== "" && context.username !== null &&
-                <>
+      <AppContext.Provider value={contextValue}>
+        {!androidTv && <div className="App container-fluid d-flex flex-column justify-content-between">
+          <Helmet>
+            <title>SonicLair</title>
+          </Helmet>
+          <MenuContext.Provider value={menuContextValue}>
+            {
+              context.username === "" &&
+              <div className="h-100 w-100 d-flex align-items-center justify-content-center">
+                <Loading />
+              </div>
+            }
+            {
+              context.username === null && <PlayTest />
+            }
+            {context.username !== "" && context.username !== null &&
+              <>
                 <Navbar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
                 <Sidebar navbarCollapsed={navbarCollapsed} setNavbarCollapsed={setNavbarCollapsed} />
-                  <Routes>
-                    <Route path="/" element={<PlayTest />} />
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/artists" element={<Artists />} />
-                    <Route path="/artist" element={<Artist />} />
-                    <Route path="/album" element={<Album />} />
-                    <Route path="/account" element={<Account />} />
-                    <Route path="/albums" element={<Albums />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/qr" element={<QRScan />} />
-                  </Routes>
-                  <AudioControl />
-                  <CardContextMenu {...menuContext} />
-                </>
-              }
-            </MenuContext.Provider>
-          </div>}
-          {androidTv &&
-            <FocusContext.Provider value={focusKey}>
-              <div className="App container-tv-100 d-flex flex-column w-100">
-                <div className="d-flex w-100 justify-content-center align-items-center my-2">
-                  <img src="favicon.svg" style={{ height: "4vh" }}></img>
-                  <span className="section-header px-3 text-white">SonicLair</span>
-                </div>
-                <div className="d-flex flex-row h-100 w-100 no-overflow">
-
-                  {
-                    context.username === "" &&
-                    <div className="h-100 w-100 d-flex align-items-center justify-content-center">
-                      <Loading />
-                    </div>
-                  }
-                  {
-                    context.username === null && <PlayTest />
-                  }
-                  {context.username !== "" && context.username !== null &&
-                    <>
-                      <TVSidebar />
-                      <div className="container-tv d-flex flex-column justify-content-between">
-
-                        <Routes>
-                          <Route path="/" element={<PlayTest />} />
-                          <Route path="/home" element={<HomeTV />} />
-                          <Route path="/playing" element={<NowPlaying />} />
-                          <Route path="/artists" element={<Artists />} />
-                          <Route path="/artist" element={<Artist />} />
-                          <Route path="/album" element={<Album />} />
-                          <Route path="/account" element={<Account />} />
-                          <Route path="/albums" element={<Albums />} />
-                          <Route path="/search" element={<Search />} />
-                        </Routes>
-                      </div>
-
-                    </>
-                  }
-
-                </div>
+                <Routes>
+                  <Route path="/" element={<PlayTest />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/artists" element={<Artists />} />
+                  <Route path="/artist" element={<Artist />} />
+                  <Route path="/album" element={<Album />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/albums" element={<Albums />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/qr" element={<QRScan />} />
+                </Routes>
+                <AudioControl />
+                <CardContextMenu {...menuContext} />
+              </>
+            }
+          </MenuContext.Provider>
+        </div>}
+        {androidTv &&
+          <FocusContext.Provider value={focusKey}>
+            <div className="App container-tv-100 d-flex flex-column w-100">
+              <div className="d-flex w-100 justify-content-center align-items-center my-2">
+                <img src="favicon.svg" style={{ height: "4vh" }}></img>
+                <span className="section-header px-3 text-white">SonicLair</span>
               </div>
-            </FocusContext.Provider>}
-        </AppContext.Provider>
-      </CurrentTrackContext.Provider>
+              <div className="d-flex flex-row h-100 w-100 no-overflow">
+
+                {
+                  context.username === "" &&
+                  <div className="h-100 w-100 d-flex align-items-center justify-content-center">
+                    <Loading />
+                  </div>
+                }
+                {
+                  context.username === null && <PlayTest />
+                }
+                {context.username !== "" && context.username !== null &&
+                  <>
+                    <TVSidebar />
+                    <div className="container-tv d-flex flex-column justify-content-between">
+
+                      <Routes>
+                        <Route path="/" element={<PlayTest />} />
+                        <Route path="/home" element={<HomeTV />} />
+                        <Route path="/playing" element={<NowPlaying />} />
+                        <Route path="/artists" element={<Artists />} />
+                        <Route path="/artist" element={<Artist />} />
+                        <Route path="/album" element={<Album />} />
+                        <Route path="/account" element={<Account />} />
+                        <Route path="/albums" element={<Albums />} />
+                        <Route path="/search" element={<Search />} />
+                      </Routes>
+                    </div>
+
+                  </>
+                }
+
+              </div>
+            </div>
+          </FocusContext.Provider>}
+      </AppContext.Provider>
     </StateContext.Provider>
   </>
 

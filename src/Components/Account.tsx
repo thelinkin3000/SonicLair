@@ -20,7 +20,8 @@ export default function Account() {
 
     const { focused, ref } = useFocusable({ onEnterPress: logout });
 
-    return (<div className="d-flex flex-column align-items-center justify-content-start h-100">
+    return (
+    <div className="d-flex flex-column align-items-center justify-content-start h-100">
         <div className="text-white account-icon-container">
             <FontAwesomeIcon icon={faUser} size="5x"></FontAwesomeIcon>
         </div>
@@ -36,6 +37,5 @@ export default function Account() {
         <div className="logout-button-container" >
             <button ref={ref} className={classNames("btn", "mt-10", focused ? "btn-selected" : "btn-primary")} onClick={logout}>Logout</button>
         </div>
-
     </div>)
 }

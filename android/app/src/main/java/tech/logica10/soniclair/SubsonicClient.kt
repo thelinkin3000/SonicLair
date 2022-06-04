@@ -3,16 +3,26 @@ package tech.logica10.soniclair
 import android.media.MediaDescription
 import android.media.browse.MediaBrowser
 import android.net.Uri
+import android.util.Log
 import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okio.BufferedSink
+import okio.buffer
+import okio.sink
+import tech.logica10.soniclair.App.Companion.context
 import tech.logica10.soniclair.SubsonicModels.*
+import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.Path
 
 
 class Account(val username: String?, val password: String, val url: String, var type: String)
@@ -39,7 +49,7 @@ class SubsonicClient(var account: Account) {
         )
     }
 
-    fun getAsMediaItems(songs: List<Song>) : List<MediaBrowser.MediaItem>{
+    fun getAsMediaItems(songs: List<Song>): List<MediaBrowser.MediaItem> {
         val builder = MediaDescription.Builder()
         val ret = mutableListOf<MediaBrowser.MediaItem>()
         for (item in songs) {
@@ -61,6 +71,47 @@ class SubsonicClient(var account: Account) {
             )
         }
         return ret
+    }
+
+    fun getSongDownload(id: String): String {
+        val uriBuilder = Uri.parse(account.url).buildUpon()
+            .appendPath("rest")
+            .appendPath("download")
+        val map = this.getBasicParams().asMap()
+        for (key in map.keys) {
+            uriBuilder.appendQueryParameter(key, map[key])
+        }
+        uriBuilder.appendQueryParameter("id", id)
+        return uriBuilder.build().toString()
+    }
+
+    fun getSongsDirectory(): String {
+        return "${account.url}/songs/";
+    }
+
+    fun getLocalSongUri(id: String): String {
+        return Path(App.context.filesDir.path, getSongsDirectory(),id).toString();
+    }
+
+    fun downloadSong(id: String) {
+        val client = OkHttpClient()
+        val request: Request = Request.Builder().url(getSongDownload(id)).build()
+        Log.i("SonicLair", "Downloading song ${id}");
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            Log.i("SonicLair", "Downloading song ${id} failed");
+        }
+        val dirPath = Path(App.context.filesDir.path, getSongsDirectory()).toString();
+        val dir = File(dirPath);
+        if (!dir.exists())
+            dir.mkdirs()
+        val file = File(getLocalSongUri(id));
+        response.body!!.source().use { bufferedSource ->
+            val bufferedSink: BufferedSink = file.sink().buffer()
+            bufferedSink.writeAll(bufferedSource)
+            bufferedSink.close()
+            Log.i("SonicLair", "Downloading song ${id} complete!");
+        }
     }
 
     inline fun <reified T : Any> makeSubsonicRequest(
@@ -106,7 +157,7 @@ class SubsonicClient(var account: Account) {
         val params = getBasicParams().asMap()
         params.set("query", query)
         return makeSubsonicRequest<SearchResponse>(
-            listOf("rest","search3"),
+            listOf("rest", "search3"),
             params
         ).searchResult3
     }
@@ -159,7 +210,7 @@ class SubsonicClient(var account: Account) {
         ).album
     }
 
-    fun getArtistInfo(id: String): ArtistInfo{
+    fun getArtistInfo(id: String): ArtistInfo {
         val params = getBasicParams().asMap()
         params.set("id", id)
         return makeSubsonicRequest<ArtistInfoResponse>(
@@ -168,7 +219,7 @@ class SubsonicClient(var account: Account) {
         ).artistInfo2
     }
 
-    fun getTopAlbums(type:String = "frequent", size: Int = 10): List<Album> {
+    fun getTopAlbums(type: String = "frequent", size: Int = 10): List<Album> {
         val params = getBasicParams().asMap()
         params.set("type", type.toString())
         params.set("size", size.toString())
@@ -224,7 +275,7 @@ class SubsonicClient(var account: Account) {
         ).similarSongs2.song
     }
 
-    fun getSong(id: String): Song{
+    fun getSong(id: String): Song {
         val params = getBasicParams().asMap()
         params.set("id", id)
         return makeSubsonicRequest<SongResponse>(
@@ -283,6 +334,16 @@ class SubsonicClient(var account: Account) {
         list.add(this.account)
         KeyValueStorage.setAccounts(list)
         return this.account
+    }
+
+    fun downloadPlaylist(playlist: List<Song>) {
+        playlist.forEach {
+            CoroutineScope(IO).launch {
+                if (!File(context.filesDir, it.id).exists()) {
+                    downloadSong(it.id)
+                }
+            }
+        };
     }
 
 }

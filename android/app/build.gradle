@@ -7,8 +7,8 @@ android {
         applicationId "tech.logica10.soniclair"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 13
-        versionName "0.0.1-beta5-vlcbackend-androidtv3"
+        versionCode 14
+        versionName "0.0.1-beta6-scrolling-rerenders"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

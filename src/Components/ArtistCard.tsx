@@ -28,7 +28,7 @@ export default function ArtistCard({ item, forceWidth, parentRef, columnIndex, r
     useEffect(() => {
         const fetch = async () => {
             const items = await GetSpotifyArtist(await VLC.getSpotifyToken(), item.name);
-            if (items.length > 0 && items[0].name === item.name) {
+            if (items.length > 0 && items[0].name === item.name && items[0].images && items[0].images.length > 0) {
                 setCoverArt(items[0].images[0].url);
             }
             else {
@@ -36,7 +36,7 @@ export default function ArtistCard({ item, forceWidth, parentRef, columnIndex, r
                 if (ret.status === "ok") {
                     setCoverArt(ret.value!.largeImageUrl);
                 }
-                // If it fails we save ourselves the error, it would flood the UI with toasts.
+                // If it fails we swallow the error, it would flood the UI with toasts.
             }
         }
         const handler = setTimeout(fetch, 500);
@@ -61,14 +61,13 @@ export default function ArtistCard({ item, forceWidth, parentRef, columnIndex, r
     }, [focused]);
 
     const nav = useCallback(() => {
-        debugger;
         if(columnIndex !== undefined && rowIndex !== undefined){
             setStateContext({...stateContext, selectedArtist:[rowIndex, columnIndex]});
         }
         navigate(`/artist`, { state: { id: item.id } });
     },[columnIndex, rowIndex, item]);
     return (
-        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", "artist-item", focused ? "artist-item-focused" : "")}
+        <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", "artist-item","not-selectable" , focused ? "artist-item-focused" : "")}
             onClick={nav}>
             <div className="d-flex align-items-center justify-content-center artist-image-container">
                 {coverArt !== "" ? <img style={style} src={coverArt} onLoad={onload} className="artist-image"></img> : <Loading />}

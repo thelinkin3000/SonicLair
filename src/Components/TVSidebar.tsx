@@ -11,33 +11,10 @@ import { CurrentTrackContext } from "../AudioContext";
 
 export default function TVSidebar() {
     const { ref, focusKey, focusSelf, hasFocusedChild } = useFocusable({trackChildren: true});
-    const {setPlaying, setCurrentTrack, setPlaytime} = useContext(CurrentTrackContext);
     useEffect(() => {
         setTimeout(() => focusSelf(),500);
     },[])
-    useEffect(() => {
-        // I'm sorry typescript gods.
-        VLC.removeAllListeners();
-        VLC.addListener('play', (info: any) => {
-          setPlaying(true);
-        });
-        (VLC as any).addListener('paused', (info: any) => {
-          setPlaying(false);
-        });
-        (VLC as any).addListener('stopped', (info: any) => {
-          setPlaying(false);
-        });
-        (VLC as any).addListener('currentTrack', (info: any) => {
-          setCurrentTrack(info.currentTrack);
-        });
-        (VLC as any).addListener('progress', (info: any) => {
-          setPlaytime(info.time);
-        });
     
-        return () => {
-          //setCurrentTrack(CurrentTrackContextDefValue);
-        }
-      }, [setPlaying, setCurrentTrack, setPlaytime]);
     return (
 
         <FocusContext.Provider value={focusKey}>

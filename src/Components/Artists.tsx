@@ -18,10 +18,11 @@ export default function Artists() {
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const { stateContext, setStateContext } = useContext(StateContext);
+    const setRef = useRef<number>(0);
 
     const gridRef = (ref: Grid) => {
-        if (ref && stateContext.selectedArtist !== [0, 0]) {
-            ref.scrollToItem({ columnIndex: stateContext.selectedArtist[1], rowIndex: stateContext.selectedArtist[0],  align: "center"});
+        if (ref && (stateContext.selectedArtist[0] != 0 || stateContext.selectedArtist[1] != 0)) {
+            ref.scrollToItem({ columnIndex: stateContext.selectedArtist[1], rowIndex: stateContext.selectedArtist[0], align: "center" });
         }
     }
 
@@ -42,9 +43,13 @@ export default function Artists() {
     }, [fetched]);
 
     const search = (val: any) => {
-        if (val.target.value.length === 0)
+        if (val.target.value.length === 0) {
             setFilteredArtists(artists);
-        setFilteredArtists(artists.filter(s => s.name.toUpperCase().indexOf(val.target.value.toUpperCase()) !== -1));
+        }
+        else {
+
+            setFilteredArtists(artists.filter(s => s.name.toUpperCase().indexOf(val.target.value.toUpperCase()) !== -1));
+        }
     }
     useEffect(() => {
         if (canSearch) {
@@ -65,7 +70,7 @@ export default function Artists() {
             return (<></>);
         }
         return (
-            <div style={{ ...style }} id={"index"} >
+            <div style={{ ...style }} id={`${rowIndex},${columnIndex}`} key={`${rowIndex},${columnIndex}`}>
                 <ArtistCard item={data[index]} columnIndex={columnIndex} rowIndex={rowIndex} />
             </div>
         )
@@ -94,6 +99,7 @@ export default function Artists() {
                     {...gridProps}
                     ref={gridRef}
                     itemData={filteredArtists}
+                    style={{overflowY:"auto",overflowX:"hidden"}}
                 >
                     {ArtistCardWrapper}
                 </Grid>

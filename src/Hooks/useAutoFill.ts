@@ -33,18 +33,18 @@ export default function useAutoFill<T>(data: T[] ) {
         width: width,
     });
     const autoFillRef = useCallback((r: HTMLDivElement | undefined | null, force?: boolean) => {
-        console.log(called);
-
+        console.log("called");
         if (!r || called && !force)
             return;
         listRef.current = r;
-        setCalled(true);
-        console.log("called ref");
         setWidth(r.clientWidth);
         setHeight(r.clientHeight);
-        const width = r.clientWidth;
+        // -10 cause of scrollbar width
+        const width = r.clientWidth - 11;
         const height = r.clientHeight;
+        // Calculate how many columns we'll have
         let columns = floor(width / 180);
+        // Calculate exactly how many pixels per column
         let w = 180 + floor(width % 180 / columns);
         let h = 250;
         if (width < (185 * 2)) {
@@ -54,6 +54,7 @@ export default function useAutoFill<T>(data: T[] ) {
             h = w + 50;
         }
         const rowCount = Math.ceil(data.length / columns);
+        console.log("rows", rowCount);
         setColumnCount(columns);
         setColumnWidth(w);
         setGridProps({
@@ -68,8 +69,6 @@ export default function useAutoFill<T>(data: T[] ) {
     }, [setCalled, setWidth, setHeight, data, setColumnWidth, setGridProps]);
     const size = useWindowSize();
     useEffect(() => {
-        setCalled(false);
-        console.log(listRef);
         autoFillRef(listRef.current, true);
     }, [size]);
 

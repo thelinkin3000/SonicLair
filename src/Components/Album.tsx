@@ -88,7 +88,7 @@ export default function Album() {
         </div>
         <div className="scrollable" style={{ height: "100%", overflow: "auto" }}>
             <div className="list-group" >
-                {album && album?.song.map(s => <SongItem item={s} />)}
+                {album && album?.song.map(s => <SongItem item={s} key={s.id}/>)}
             </div>
         </div>
     </>

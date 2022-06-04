@@ -12,6 +12,7 @@ import VLC from "../Plugins/VLC";
 import { Backend } from "../Plugins/Audio";
 import { Capacitor } from "@capacitor/core";
 import AndroidTVPlugin from "../Plugins/AndroidTV";
+import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 
 interface IListener {
     event: string;
@@ -19,7 +20,9 @@ interface IListener {
 }
 
 export default function AudioControl({ }) {
-    const { currentTrack, setCurrentTrack, playtime, setPlaying, setPlaytime, playing } = useContext(CurrentTrackContext);
+    const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
+    const [playing, setPlaying] = useState<boolean>(false);
+    const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
     const audioInstance = useRef<Backend>(new Backend());
     const [androidTV, setAndroidTV] = useState<boolean>(false);

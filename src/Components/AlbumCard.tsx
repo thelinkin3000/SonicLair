@@ -9,6 +9,7 @@ import classnames from "classnames";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Column } from "react-virtualized";
 import { StateContext } from "../AppContext";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 
 interface AlbumCardProps { 
     item: IAlbumArtistResponse, 
@@ -21,15 +22,19 @@ export default function AlbumCard({ item, forceWidth, parentRef, columnIndex, ro
     const navigate = useNavigate();
     const [coverArt, setCoverArt] = useState<string>("");
     const {stateContext, setStateContext} = useContext(StateContext);
-    
+    const [androidTv, setAndroidTv ]= useState<boolean>(false);
     useEffect(() => {
         const func = async () => {
             const ret = await VLC.getAlbumArt({ id: item.id });
             if (ret.status === "ok") {
                 setCoverArt(ret.value!);
             }
+            setAndroidTv((await AndroidTVPlugin.get()).value);
         };
-        func();
+        const handler = setTimeout(func, 500);
+        return () => {
+            clearTimeout(handler);
+        }
 
     }, [coverArt, item])
 
@@ -47,11 +52,11 @@ export default function AlbumCard({ item, forceWidth, parentRef, columnIndex, ro
     }, [item]);
     const { focused, ref } = useFocusable({ onEnterPress: play });
     useEffect(() => {
-        if (focused) {
+        if (focused && androidTv) {
             parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "center" });
             ref.current.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
         }
-    }, [focused]);
+    }, [focused, androidTv]);
 
     const nav = useCallback(() => {
         if(columnIndex !== undefined && rowIndex !== undefined){
@@ -65,7 +70,7 @@ export default function AlbumCard({ item, forceWidth, parentRef, columnIndex, ro
         <div
             ref={ref}
             style={forceWidth ? { width: "170px" } : {}}
-            className={classnames("d-flex", "flex-column", "align-items-center", "justify-content-between", "album-item", focused ? "album-item-focused" : "")}
+            className={classnames("d-flex", "flex-column", "align-items-center", "justify-content-between", "album-item","not-selectable", focused ? "album-item-focused" : "")}
             onClick={nav}>
             <div className="d-flex align-items-center justify-content-center album-image-container">
                 {coverArt === "" ? <Loading></Loading> : <img style={style} onLoad={onload} src={coverArt} className="album-image"></img>}

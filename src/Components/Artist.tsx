@@ -1,23 +1,18 @@
-import { floor } from "lodash";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useLocation } from "react-router-dom";
 import { FixedSizeGrid as Grid } from "react-window";
 import { GridChildComponentProps } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
 
 import GetSpotifyArtist from "../Api/GetSpotifyArtist";
 import { AppContext } from "../AppContext";
-import { GetAsParams } from "../Helpers";
 import useWindowSize from "../Hooks/useWindowSize";
-import { IArtistInfoResponse } from "../Models/API/Responses/IArtistInfoResponse";
-import { IAlbumArtistResponse, IArtistResponse, IInnerArtistResponse } from "../Models/API/Responses/IArtistResponse";
+import { IAlbumArtistResponse, IInnerArtistResponse } from "../Models/API/Responses/IArtistResponse";
 import AlbumCard from "./AlbumCard";
 import "./Artist.scss";
 import Loading from "./Loading";
 import useAutoFill from "../Hooks/useAutoFill";
 import VLC from "../Plugins/VLC";
-import GetSpotifyToken from "../Api/GetSpotifyToken";
 import { Toast } from "@capacitor/toast";
 
 
@@ -117,7 +112,7 @@ export default function Artist() {
 
     }, [width, height]);
 
-    const { width: listWidth, height: listHeight, columnWidth, gridProps, autoFillRef, columnCount } = useAutoFill(albums);
+    const { gridProps, autoFillRef, columnCount } = useAutoFill(albums);
 
     const AlbumCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IAlbumArtistResponse[]>) => {
         const index = rowIndex * columnCount + columnIndex;

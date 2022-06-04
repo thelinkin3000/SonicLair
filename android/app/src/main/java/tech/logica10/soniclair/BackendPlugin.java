@@ -2,6 +2,7 @@ package tech.logica10.soniclair;
 
 import static androidx.core.content.ContextCompat.getSystemService;
 
+import static kotlinx.coroutines.CoroutineScopeKt.CoroutineScope;
 import static tech.logica10.soniclair.SubsonicModels.*;
 
 import android.app.Notification;
@@ -35,7 +36,13 @@ import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +51,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import kotlinx.coroutines.Dispatchers;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -73,6 +81,10 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     private ExecutorService executorService;
     private String spotifyToken = "";
     private Boolean wasPlaying = false;
+    private Notification.Action prevAction;
+    private Notification.Action pauseAction;
+    private Notification.Action playAction;
+    private Notification.Action nextAction;
 
     private PlaybackState.Builder getPlaybackStateBuilder() {
         return new PlaybackState.Builder()
@@ -187,9 +199,24 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        notificationBuilder.setActions(prevAction, playAction, nextAction);
+                        notificationBuilder.setStyle(mediaStyle);
+                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
                     } else if (event.type == MediaPlayer.Event.Paused || event.type == MediaPlayer.Event.Stopped) {
+                        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 0);
+                        mediaSession.setPlaybackState(b.build());
+                        mediaSession.setActive(true);
+                        notificationBuilder.setActions(prevAction, playAction, nextAction);
+                        notificationBuilder.setStyle(mediaStyle);
+                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
                         notifyListeners("paused", null);
                     } else if (event.type == MediaPlayer.Event.Playing) {
+                        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PLAYING, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 1);
+                        mediaSession.setPlaybackState(b.build());
+                        mediaSession.setActive(true);
+                        notificationBuilder.setActions(prevAction, pauseAction, nextAction);
+                        notificationBuilder.setStyle(mediaStyle);
+                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
                         notifyListeners("play", null);
                     }
                 }
@@ -206,16 +233,19 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         // PlayerService is your own Service or Activity responsible for media playback.
         mediaSession = Globals.GetMediaSession();
 
-        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 0);
+        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, 0, 0);
         mediaSession.setPlaybackState(b.build());
 
-        notificationBuilder = new Notification.Builder(MainActivity.context, "soniclairr");
+        notificationBuilder = new Notification.Builder(MainActivity.context, "soniclair");
+        notificationBuilder.setSmallIcon(R.drawable.ic_stat_soniclair);
+        notificationBuilder.setStyle(mediaStyle);
+        notificationBuilder.setChannelId("soniclair");
         // Create a Notification which is styled by your MediaStyle object.
         // This connects your media session to the media controls.
         // Don't forget to include a small icon.
         mediaStyle = new Notification.MediaStyle()
                 .setMediaSession(mediaSession.getSessionToken())
-                .setShowActionsInCompactView(1);
+                .setShowActionsInCompactView(1, 2);
 
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
 
@@ -237,18 +267,18 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(MainActivity.context, 1, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         Notification.Action.Builder actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_previous, "PREV", pendingPrevIntent);
-        Notification.Action prevAction = actionBuilder.build();
-        notificationBuilder.addAction(prevAction);
+        prevAction = actionBuilder.build();
 
-        // ********* PAUSE ********
+        // ********* PLAYPAUSE ********
         //This is the intent of PendingIntent
         Intent pauseIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
         pauseIntent.setAction("SLPAUSE");
         PendingIntent pendingPauseIntent = PendingIntent.getBroadcast(MainActivity.context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        actionBuilder = new Notification.Action.Builder(R.drawable.ic_play_arrow, "PAUSE", pendingPauseIntent);
-        Notification.Action pauseAction = actionBuilder.build();
-        notificationBuilder.addAction(pauseAction);
+        actionBuilder = new Notification.Action.Builder(R.drawable.ic_pause, "PAUSE", pendingPauseIntent);
+        pauseAction = actionBuilder.build();
+        actionBuilder = new Notification.Action.Builder(R.drawable.ic_play_arrow, "PLAY", pendingPauseIntent);
+        playAction = actionBuilder.build();
 
         // ********* NEXT ********
         //This is the intent of PendingIntent
@@ -257,10 +287,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         PendingIntent pendingNextIntent = PendingIntent.getBroadcast(MainActivity.context, 1, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent);
-        Notification.Action nextAction = actionBuilder.build();
-        notificationBuilder.addAction(nextAction);
-        Globals.RegisterObserver(this);
+        nextAction = actionBuilder.build();
 
+        Globals.RegisterObserver(this);
     }
 
     private JSObject ErrorResponse(String error) {
@@ -317,11 +346,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     public void getTopAlbums(PluginCall call) throws JSONException {
         try {
             String type = call.getString("type");
-            if(type == null){
+            if (type == null) {
                 type = "frequent";
             }
             Integer size = call.getInt("size");
-            if(size == null){
+            if (size == null) {
                 size = 10;
             }
             call.resolve(OkArrayResponse(subsonicClient.getTopAlbums(type, size)));
@@ -411,7 +440,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getAccounts(PluginCall call){
+    public void getAccounts(PluginCall call) {
         try {
             JSObject ret = OkArrayResponse(KeyValueStorage.Companion.getAccounts());
             call.resolve(ret);
@@ -475,9 +504,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 wakeLock.release();
             }
         }
-        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 0);
-        mediaSession.setPlaybackState(b.build());
-        mediaSession.setActive(true);
+
     }
 
     @PluginMethod()
@@ -501,8 +528,8 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         int value = call.getInt("volume", 100);
         mMediaPlayer.setVolume(value);
         call.resolve(OkStringResponse(""));
-
     }
+
 
     private void _playRadio(String id) throws Exception {
         playlist = subsonicClient.getSimilarSongs(id);
@@ -516,7 +543,30 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     private void _loadMedia() {
-        String uri = subsonicClient.getSongUri(currentTrack);
+        String uri = null;
+        File file = new File(subsonicClient.getLocalSongUri(currentTrack.getId()));
+        if (file.exists()) {
+            FileChannel channel = null;
+            FileLock lock = null;
+            try {
+                channel = new RandomAccessFile(file, "rw").getChannel();
+                lock = channel.tryLock();
+                uri = "file://" + file.getPath();
+            } catch (OverlappingFileLockException | IOException e) {
+                // File is locked, probably still downloading.
+                uri = subsonicClient.getSongUri(currentTrack);
+            }
+            if (lock != null && lock.isValid()) {
+                try {
+                    lock.release();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            uri = subsonicClient.getSongUri(currentTrack);
+        }
+
         if (uri != null) {
             final Media media = new Media(mLibVLC, Uri.parse(uri));
             if (mMediaPlayer.isPlaying())
@@ -547,6 +597,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
+        subsonicClient.downloadPlaylist(playlist);
         _loadMedia();
         _play();
         call.resolve(OkStringResponse(""));
@@ -635,6 +686,13 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         call.resolve(OkStringResponse(""));
     }
 
+
+    @PluginMethod()
+    public void getCurrentState(PluginCall call) throws JSONException {
+        CurrentState state = new CurrentState(mMediaPlayer.isPlaying(), mMediaPlayer.getPosition(), currentTrack);
+        call.resolve(OkResponse(state));
+    }
+
     private void _play() throws ExecutionException, InterruptedException, JSONException {
         wasPlaying = false;
         if (mMediaPlayer.getMedia() != null) {
@@ -669,15 +727,12 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         notifyListeners("play", null);
         String ct = String.format("{currentTrack: %s}", gson.toJson(currentTrack));
 
-        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PLAYING, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 1);
-        mediaSession.setPlaybackState(b.build());
-        mediaSession.setActive(true);
 
         notifyListeners("currentTrack", new JSObject(ct));
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, subsonicClient.getAlbumArt(currentTrack.getAlbumId()));
+                metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, currentTrack.getAlbum());
                 Uri albumArtUri = Uri.parse(subsonicClient.getAlbumArt(currentTrack.getAlbumId()));
                 Bitmap albumArtBitmap = null;
                 try {
@@ -696,12 +751,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 metadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, currentTrack.getArtist());
                 metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentTrack.getTitle());
                 mediaSession.setMetadata(metadataBuilder.build());
-                notificationBuilder.setSmallIcon(R.drawable.ic_stat_soniclair);
                 notificationBuilder.setLargeIcon(albumArtBitmap);
                 notificationBuilder.setContentTitle(currentTrack.getTitle());
                 notificationBuilder.setContentText(currentTrack.getAlbum());
-                notificationBuilder.setStyle(mediaStyle);
-                notificationBuilder.setChannelId("soniclair");
                 notificationManager.notify("SonicLair", 1, notificationBuilder.build());
             }
         });
@@ -743,8 +795,18 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         } catch (Exception e) {
             // Frankly my dear, I couldn't care less.
         }
+    }
 
+    private class CurrentState {
+        boolean playing;
+        float playtime;
+        Song currentTrack;
 
+        public CurrentState(boolean playing, float position, Song currentTrack) {
+            this.playing = playing;
+            this.playtime = position;
+            this.currentTrack = currentTrack;
+        }
     }
 }
 

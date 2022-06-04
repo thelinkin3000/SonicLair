@@ -11,6 +11,12 @@ export interface IBackendResponse<T> {
     value: T | null;
 }
 
+export interface ICurrentState{
+    playing: boolean;
+    playtime: number;
+    currentTrack: IAlbumSongResponse;
+}
+
 export interface IBackendPlugin extends Plugin{
     play(): Promise<IBackendResponse<string>>;
     pause(): Promise<IBackendResponse<string>>;
@@ -35,6 +41,7 @@ export interface IBackendPlugin extends Plugin{
     next(): Promise<IBackendResponse<string>>;
     getSpotifyToken(): Promise<string>;
     getSimilarSongs(options: { id: string }): Promise<IBackendResponse<IAlbumSongResponse[]>>;
+    getCurrentState():Promise<IBackendResponse<ICurrentState>>;
 }
 
 

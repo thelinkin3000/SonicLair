@@ -49,7 +49,7 @@ export default function RandomSongCard({ item, parentRef }: { item: IAlbumSongRe
 
 
     return (
-        <div ref={ref} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", focused ? "album-item-focused" : "", "album-item")}
+        <div ref={ref} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", "not-selectable" ,focused ? "album-item-focused" : "", "album-item")}
             onClick={() => play()}>
             <div className="d-flex align-items-center justify-content-center album-image-container">
                 {coverArt === "" ? <Loading></Loading> : <img src={coverArt} className="album-image"></img>}

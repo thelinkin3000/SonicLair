@@ -1,6 +1,6 @@
 import { faForwardStep, faPause, faPlay, faRotateLeft, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { ChangeEvent, useCallback, useContext, useEffect, useState } from "react";
-import { CurrentTrackContext } from "../AudioContext"
+import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContext"
 import { SecondsToHHSS } from "../Helpers";
 import "./NowPlaying.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -9,10 +9,13 @@ import { useNavigate } from "react-router-dom";
 import VLC from "../Plugins/VLC";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classnames from "classnames";
+import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 // import AndroidTV from "../Plugins/AndroidTV";
 
 export default function NowPlaying({ }) {
-    const { currentTrack, playing, playtime } = useContext(CurrentTrackContext);
+    const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
+    const [playing, setPlaying] = useState<boolean>(false);
+    const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
     const changePlayTime = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
         const time = parseFloat(e.target.value);
@@ -26,6 +29,18 @@ export default function NowPlaying({ }) {
         }
         fetch();
     }, [currentTrack, coverArt]);
+
+    useEffect(() => {
+        const get = async () => {
+            const current = await VLC.getCurrentState();
+            if(current.status === "ok"){
+                setCurrentTrack(current.value?.currentTrack!);
+                setPlaying(current.value?.playing!);
+                setPlaytime(current.value?.playtime!);
+            }
+        };
+        setTimeout(() => get(),500);
+    },[])
 
     const playNext = useCallback(() => {
         VLC.next();
@@ -50,6 +65,29 @@ export default function NowPlaying({ }) {
             VLC.play();
         }
     };
+    useEffect(() => {
+        // I'm sorry typescript gods.
+        VLC.removeAllListeners();
+        VLC.addListener('play', (info: any) => {
+          setPlaying(true);
+        });
+        (VLC as any).addListener('paused', (info: any) => {
+          setPlaying(false);
+        });
+        (VLC as any).addListener('stopped', (info: any) => {
+          setPlaying(false);
+        });
+        (VLC as any).addListener('currentTrack', (info: any) => {
+          setCurrentTrack(info.currentTrack);
+        });
+        (VLC as any).addListener('progress', (info: any) => {
+          setPlaytime(info.time);
+        });
+    
+        return () => {
+          //setCurrentTrack(CurrentTrackContextDefValue);
+        }
+      }, [setPlaying, setCurrentTrack, setPlaytime]);
 
     return (
         <div className={"d-flex flex-column align-items-center justify-content-between h-100"}>
