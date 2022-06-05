@@ -9,8 +9,11 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.AudioAttributes;
@@ -21,7 +24,10 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
@@ -67,213 +73,42 @@ import okhttp3.Response;
 @CapacitorPlugin(name = "VLC")
 public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
-    private static LibVLC mLibVLC = null;
-    private static MediaPlayer mMediaPlayer = null;
-    private static PowerManager.WakeLock wakeLock = null;
-
-    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = null;
-
-    private AudioManager mAudioManager;
-    private AudioAttributes mPlaybackAttributes;
     private SubsonicClient subsonicClient;
     private Gson gson;
-    private MediaSession mediaSession;
-    private Notification.Builder notificationBuilder;
-    private Notification.MediaStyle mediaStyle;
-    private MediaMetadata.Builder metadataBuilder;
-    private NotificationManager notificationManager;
-    private NotificationChannel channel;
-    private List<Song> playlist;
-    private Song currentTrack;
-    private ExecutorService executorService;
     private String spotifyToken = "";
-    private Boolean wasPlaying = false;
-    private Notification.Action prevAction;
-    private Notification.Action pauseAction;
-    private Notification.Action playAction;
-    private Notification.Action nextAction;
+    private MusicService.LocalBinder binder = null;
+    private Boolean mBound = false;
+    /**
+     * Defines callbacks for service binding, passed to bindService()
+     */
+    private final ServiceConnection connection = new ServiceConnection() {
 
-    private PlaybackState.Builder getPlaybackStateBuilder() {
-        return new PlaybackState.Builder()
-                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
-    }
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            binder = (MusicService.LocalBinder) service;
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
 
     @Override
     public void load() {
         // Set up
-        executorService = Executors.newFixedThreadPool(4);
         subsonicClient = new SubsonicClient(KeyValueStorage.Companion.getActiveAccount());
-        playlist = new ArrayList<Song>();
         final ArrayList<String> args = new ArrayList<>();
         args.add("-vvv");
         GsonBuilder builder = new GsonBuilder();
         builder.serializeNulls();
         gson = builder.create();
-
-
-        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
-            @Override
-            public void onAudioFocusChange(int focusChange) {
-                switch (focusChange) {
-                    case AudioManager.AUDIOFOCUS_GAIN:
-                        // We just gained focus, or got it back.
-                        // If we were playing something, and there's still something to play
-                        // we resume playing that.
-                        if (mMediaPlayer.getMedia() != null
-                                && mMediaPlayer.getPosition() < mMediaPlayer.getMedia().getDuration() && wasPlaying) {
-                            wasPlaying = false;
-                            mMediaPlayer.play();
-                            // Let the front end know
-                            notifyListeners("play", null);
-                            // Finally, we acquire the wakelock again
-                            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
-                        }
-                        break;
-                    case AudioManager.AUDIOFOCUS_LOSS:
-                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                        // We lost focus, let's pause playing
-                        if (mMediaPlayer.isPlaying()) {
-                            wasPlaying = true;
-                            mMediaPlayer.pause();
-                            // Let the front end know
-                            notifyListeners("paused", null);
-                        }
-                        // Release the wakelock to keep the battery of the user from
-                        // dying too young.
-                        if (wakeLock.isHeld()) {
-                            wakeLock.release();
-
-                        }
-                        break;
-                }
-            }
-        };
-
-
-        // initialization of the audio attributes and focus request
-        mAudioManager = (AudioManager) MainActivity.context.getSystemService(Context.AUDIO_SERVICE);
-
-        mPlaybackAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build();
-
-        requestAudioFocus();
-
-        if (mLibVLC == null) {
-            mLibVLC = new LibVLC(MainActivity.context, args);
-            mMediaPlayer = new MediaPlayer(mLibVLC);
-            mMediaPlayer.setEventListener(new MediaPlayer.EventListener() {
-                @Override
-                public void onEvent(MediaPlayer.Event event) {
-                    if (event.type == MediaPlayer.Event.TimeChanged) {
-                        float position = mMediaPlayer.getPosition();
-                        JSObject ret = new JSObject();
-                        ret.put("time", position);
-                        notifyListeners("progress", ret);
-                    } else if (event.type == MediaPlayer.Event.EndReached) {
-                        notifyListeners("stopped", null);
-                        try {
-                            _next();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        notificationBuilder.setActions(prevAction, playAction, nextAction);
-                        notificationBuilder.setStyle(mediaStyle);
-                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
-                    } else if (event.type == MediaPlayer.Event.Paused || event.type == MediaPlayer.Event.Stopped) {
-                        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 0);
-                        mediaSession.setPlaybackState(b.build());
-                        mediaSession.setActive(true);
-                        notificationBuilder.setActions(prevAction, playAction, nextAction);
-                        notificationBuilder.setStyle(mediaStyle);
-                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
-                        notifyListeners("paused", null);
-                    } else if (event.type == MediaPlayer.Event.Playing) {
-                        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PLAYING, (long) mMediaPlayer.getPosition() * currentTrack.getDuration(), 1);
-                        mediaSession.setPlaybackState(b.build());
-                        mediaSession.setActive(true);
-                        notificationBuilder.setActions(prevAction, pauseAction, nextAction);
-                        notificationBuilder.setStyle(mediaStyle);
-                        notificationManager.notify("SonicLair", 1, notificationBuilder.build());
-                        notifyListeners("play", null);
-                    }
-                }
-            });
-        }
-
-        // Acquire wakelock to stop Android from shutting us down
-        PowerManager powerManager = (PowerManager) MainActivity.context.getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "SonicLair::VLCWakeLock");
-
-        // ************* MEDIA SESSION ************
-        // Create a media session. NotificationCompat.MediaStyle
-        // PlayerService is your own Service or Activity responsible for media playback.
-        mediaSession = Globals.GetMediaSession();
-
-        PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, 0, 0);
-        mediaSession.setPlaybackState(b.build());
-
-
-        notificationBuilder = new Notification.Builder(MainActivity.context, "soniclair");
-        notificationBuilder.setSmallIcon(R.drawable.ic_stat_soniclair);
-        notificationBuilder.setStyle(mediaStyle);
-        notificationBuilder.setChannelId("soniclair");
-        // Create a Notification which is styled by your MediaStyle object.
-        // This connects your media session to the media controls.
-        // Don't forget to include a small icon.
-        mediaStyle = new Notification.MediaStyle()
-                .setMediaSession(mediaSession.getSessionToken())
-                .setShowActionsInCompactView(1, 2);
-
-        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-
-        metadataBuilder = new MediaMetadata.Builder();
-
-        notificationManager = getSystemService(MainActivity.context, NotificationManager.class);
-
-        channel = new NotificationChannel(
-                "soniclair",
-                "Soniclair",
-                NotificationManager.IMPORTANCE_MIN);
-        notificationManager.createNotificationChannel(channel);
-
-
-        // ********* PREV ********
-        //This is the intent of PendingIntent
-        Intent prevIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
-        prevIntent.setAction("SLPREV");
-        PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(MainActivity.context, 1, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        Notification.Action.Builder actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_previous, "PREV", pendingPrevIntent);
-        prevAction = actionBuilder.build();
-
-        // ********* PLAYPAUSE ********
-        //This is the intent of PendingIntent
-        Intent pauseIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
-        pauseIntent.setAction("SLPAUSE");
-        PendingIntent pendingPauseIntent = PendingIntent.getBroadcast(MainActivity.context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        actionBuilder = new Notification.Action.Builder(R.drawable.ic_pause, "PAUSE", pendingPauseIntent);
-        pauseAction = actionBuilder.build();
-        actionBuilder = new Notification.Action.Builder(R.drawable.ic_play_arrow, "PLAY", pendingPauseIntent);
-        playAction = actionBuilder.build();
-
-        // ********* NEXT ********
-        //This is the intent of PendingIntent
-        Intent nextIntent = new Intent(MainActivity.context, NotificationBroadcastReceiver.class);
-        nextIntent.setAction("SLNEXT");
-        PendingIntent pendingNextIntent = PendingIntent.getBroadcast(MainActivity.context, 1, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
-        actionBuilder = new Notification.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent);
-        nextAction = actionBuilder.build();
-
+        // Bind to LocalService
+        Intent intent = new Intent(App.getContext(), MusicService.class);
+        App.getContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
         Globals.RegisterObserver(this);
     }
 
@@ -328,28 +163,25 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getCameraPermissionStatus(PluginCall call){
-        if(ContextCompat.checkSelfPermission(MainActivity.context,
-                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED){
+    public void getCameraPermissionStatus(PluginCall call) {
+        if (ContextCompat.checkSelfPermission(MainActivity.context,
+                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED) {
             call.resolve(OkStringResponse(""));
-        }
-        else{
+        } else {
             call.resolve(ErrorResponse("Please provide permission to use the camera. This is needed for the QR scanner to work."));
         }
     }
 
     @PluginMethod()
-    public void getCameraPermission(PluginCall call){
-        if(ContextCompat.checkSelfPermission(MainActivity.context,
-                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED){
+    public void getCameraPermission(PluginCall call) {
+        if (ContextCompat.checkSelfPermission(MainActivity.context,
+                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED) {
             call.resolve(OkStringResponse(""));
-        }
-        else{
+        } else {
             MainActivity.requestPermissionLauncher.launch("android.permission.CAMERA");
             call.resolve(OkStringResponse(""));
         }
     }
-
 
 
     @PluginMethod()
@@ -468,136 +300,55 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         }
     }
 
-    public void requestAudioFocus() {
-        AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(mPlaybackAttributes)
-                .setAcceptsDelayedFocusGain(false)
-                .setWillPauseWhenDucked(false)
-                .setOnAudioFocusChangeListener(audioFocusChangeListener)
-                .build();
-        final Object mFocusLock = new Object();
-
-        // requesting audio focus
-        int res = mAudioManager.requestAudioFocus(mFocusRequest);
-        synchronized (mFocusLock) {
-            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                // What are you gonna do about it?
-                if (mMediaPlayer.isPlaying()) {
-                    mMediaPlayer.pause();
-                    // Let the front end know
-                    notifyListeners("paused", null);
-                }
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                // We don't do anything here, let's wait for the user to start playing music
-
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                // We don't do anything here, let's wait for the user to start playing music.
-            }
-        }
-    }
-
     @PluginMethod()
     public void play(PluginCall call) {
-        String value = call.getString("uri");
-        if (value != null) {
-            final Media media = new Media(mLibVLC, Uri.parse(value));
-            mMediaPlayer.setMedia(media);
-        }
-        if (mMediaPlayer.getMedia() != null) {
-            mMediaPlayer.play();
-            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
-        }
-        requestAudioFocus();
+        Intent intent = new Intent(App.getContext(), MusicService.class);
+        intent.setAction(Constants.Companion.getSERVICE_PLAY_PAUSE());
+        App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
-    }
-
-    private void _pause() {
-        if (mMediaPlayer.isPlaying()) {
-            mMediaPlayer.pause();
-            if (wakeLock.isHeld()) {
-                wakeLock.release();
-            }
-        }
-
     }
 
     @PluginMethod()
     public void pause(PluginCall call) {
-        _pause();
+        Intent intent = new Intent(App.getContext(), MusicService.class);
+        intent.setAction(Constants.Companion.getSERVICE_PLAY_PAUSE());
+        App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
     }
 
     @PluginMethod()
     public void seek(PluginCall call) {
         JSObject ret = new JSObject();
-        float value = call.getFloat("time");
-        mMediaPlayer.setPosition(value);
+        if (mBound) {
+            float value = call.getFloat("time");
+            binder.seek(value);
+        }
         call.resolve(OkStringResponse(""));
-
     }
 
     @PluginMethod()
     public void setVolume(PluginCall call) {
         JSObject ret = new JSObject();
-        int value = call.getInt("volume", 100);
-        mMediaPlayer.setVolume(value);
+        if (mBound) {
+            int value = call.getInt("volume", 100);
+            binder.setVolume(value);
+        }
         call.resolve(OkStringResponse(""));
-    }
-
-
-    private void _playRadio(String id) throws Exception {
-        playlist = subsonicClient.getSimilarSongs(id);
-        playlist.add(0, subsonicClient.getSong(id));
-        if (playlist.size() == 1) {
-            throw new Exception("The server did not report similar songs to this one.");
-        }
-        currentTrack = playlist.get(0);
-        _loadMedia();
-        _play();
-    }
-
-    private void _loadMedia() {
-        String uri = null;
-        File file = new File(subsonicClient.getLocalSongUri(currentTrack.getId()));
-        if (file.exists()) {
-            FileChannel channel = null;
-            FileLock lock = null;
-            try {
-                channel = new RandomAccessFile(file, "rw").getChannel();
-                lock = channel.tryLock();
-                uri = "file://" + file.getPath();
-            } catch (OverlappingFileLockException | IOException e) {
-                // File is locked, probably still downloading.
-                uri = subsonicClient.getSongUri(currentTrack);
-            }
-            if (lock != null && lock.isValid()) {
-                try {
-                    lock.release();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            uri = subsonicClient.getSongUri(currentTrack);
-        }
-
-        if (uri != null) {
-            final Media media = new Media(mLibVLC, Uri.parse(uri));
-            if (mMediaPlayer.isPlaying())
-                mMediaPlayer.pause();
-            mMediaPlayer.setMedia(media);
-            media.release();
-        }
     }
 
     @PluginMethod()
     public void playRadio(PluginCall call) throws ExecutionException, InterruptedException, JSONException {
         String id = call.getString("song");
-        try {
-            _playRadio(id);
-        } catch (Exception e) {
-            call.resolve(ErrorResponse(e.getMessage()));
+        if (!mBound) {
+            Intent intent = new Intent(App.getContext(), MusicService.class);
+            intent.setAction(Constants.Companion.getSERVICE_PLAY_RADIO());
+            intent.putExtra("id", id);
+            App.getContext().startService(intent);
+
+        } else {
+            binder.playRadio(id);
         }
+
         call.resolve(OkStringResponse(""));
     }
 
@@ -605,40 +356,24 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     public void playAlbum(PluginCall call) throws ExecutionException, InterruptedException, JSONException {
         String id = call.getString("album");
         Integer track = call.getInt("track");
-        try {
-            playlist = subsonicClient.getAlbum(id).getSong();
-            currentTrack = playlist.get(track);
-        } catch (Exception e) {
-            call.resolve(ErrorResponse(e.getMessage()));
+        if (!mBound) {
+            Intent intent = new Intent(App.getContext(), MusicService.class);
+            intent.setAction(Constants.Companion.getSERVICE_PLAY_ALBUM());
+            intent.putExtra("id", id);
+            intent.putExtra("track", track);
+            App.getContext().startService(intent);
+        } else {
+            binder.playAlbum(id, track);
         }
-        subsonicClient.downloadPlaylist(playlist);
-        _loadMedia();
-        _play();
         call.resolve(OkStringResponse(""));
-    }
-
-    private void _next() throws JSONException, ExecutionException, InterruptedException {
-        if (playlist.indexOf(currentTrack) < playlist.size() - 1) {
-            currentTrack = playlist.get(playlist.indexOf(currentTrack) + 1);
-            _loadMedia();
-            _play();
-        }
-
     }
 
     @PluginMethod()
     public void next(PluginCall call) throws JSONException, ExecutionException, InterruptedException {
-        _next();
+        Intent intent = new Intent(App.getContext(), MusicService.class);
+        intent.setAction(Constants.Companion.getSERVICE_NEXT());
+        App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
-
-    }
-
-    private void _prev() throws JSONException, ExecutionException, InterruptedException {
-        if (playlist.indexOf(currentTrack) > 0) {
-            currentTrack = playlist.get(playlist.indexOf(currentTrack) - 1);
-            _loadMedia();
-            _play();
-        }
 
     }
 
@@ -696,58 +431,20 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void prev(PluginCall call) throws JSONException, ExecutionException, InterruptedException {
-        _prev();
+        Intent intent = new Intent(App.getContext(), MusicService.class);
+        intent.setAction(Constants.Companion.getSERVICE_PREV());
+        App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
     }
 
-
     @PluginMethod()
     public void getCurrentState(PluginCall call) throws JSONException {
-        CurrentState state = new CurrentState(mMediaPlayer.isPlaying(), mMediaPlayer.getPosition(), currentTrack);
-        call.resolve(OkResponse(state));
-    }
-
-    private void _play() throws ExecutionException, InterruptedException, JSONException {
-        wasPlaying = false;
-        if (mMediaPlayer.getMedia() != null) {
-            mMediaPlayer.play();
-            wakeLock.acquire(currentTrack.getDuration() * 1000);
+        if (!mBound) {
+            call.resolve(ErrorResponse("Music service is not yet bound"));
+            return;
         }
-        requestAudioFocus();
-
-        notifyListeners("play", null);
-        String ct = String.format("{currentTrack: %s}", gson.toJson(currentTrack));
-
-
-        notifyListeners("currentTrack", new JSObject(ct));
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM, currentTrack.getAlbum());
-                Uri albumArtUri = Uri.parse(subsonicClient.getAlbumArt(currentTrack.getAlbumId()));
-                Bitmap albumArtBitmap = null;
-                try {
-                    albumArtBitmap = Glide.with(MainActivity.context)
-                            .asBitmap()
-                            .load(albumArtUri)
-                            .submit()
-                            .get();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, albumArtBitmap);
-                metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, currentTrack.getArtist());
-                metadataBuilder.putString(MediaMetadata.METADATA_KEY_ARTIST, currentTrack.getArtist());
-                metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentTrack.getTitle());
-                mediaSession.setMetadata(metadataBuilder.build());
-                notificationBuilder.setLargeIcon(albumArtBitmap);
-                notificationBuilder.setContentTitle(currentTrack.getTitle());
-                notificationBuilder.setContentText(currentTrack.getAlbum());
-                notificationManager.notify("SonicLair", 1, notificationBuilder.build());
-            }
-        });
+        CurrentState state = binder.getCurrentState();
+        call.resolve(OkResponse(state));
     }
 
     @Override
@@ -757,30 +454,36 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 switch (action) {
                     case "SLPLAY":
                     case "SLPAUSE":
-                        if (mMediaPlayer.isPlaying()) {
-                            _pause();
-                        } else {
-                            _play();
+                        if (mBound) {
+                            binder.playpause();
                         }
                         break;
                     case "SLPREV":
-                        _prev();
+                        if (mBound) {
+                            binder.prev();
+                        }
                         break;
                     case "SLNEXT":
-                        _next();
+                        if (mBound) {
+                            binder.next();
+                        }
                         break;
                     case "SLPLAYID":
-                        executorService.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    _playRadio(value);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-
-                            }
-                        });
+                        if (mBound) {
+                            binder.playRadio(value);
+                        } else {
+                            Intent intent = new Intent(App.getContext(), MusicService.class);
+                            intent.setAction(Constants.Companion.getSERVICE_PLAY_RADIO());
+                            intent.putExtra("id", value);
+                            App.getContext().startService(intent);
+                        }
+                }
+            } else if (action.startsWith("MS")) {
+                Log.i("SonicLair", "Notifying action" + action);
+                if (value != null) {
+                    notifyListeners(action.replace("MS", ""), new JSObject(value));
+                } else {
+                    notifyListeners(action.replace("MS", ""), null);
                 }
             }
         } catch (Exception e) {
@@ -788,16 +491,6 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         }
     }
 
-    private class CurrentState {
-        boolean playing;
-        float playtime;
-        Song currentTrack;
 
-        public CurrentState(boolean playing, float position, Song currentTrack) {
-            this.playing = playing;
-            this.playtime = position;
-            this.currentTrack = currentTrack;
-        }
-    }
 }
 

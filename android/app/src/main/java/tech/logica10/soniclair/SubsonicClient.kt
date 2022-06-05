@@ -86,7 +86,8 @@ class SubsonicClient(var account: Account) {
     }
 
     fun getSongsDirectory(): String {
-        return "${account.url}/songs/";
+        val uri = Uri.parse(account.url)
+        return "${uri.authority}/songs/";
     }
 
     fun getLocalSongUri(id: String): String {
@@ -94,7 +95,6 @@ class SubsonicClient(var account: Account) {
     }
 
     fun downloadSong(id: String) {
-        val client = OkHttpClient()
         val request: Request = Request.Builder().url(getSongDownload(id)).build()
         Log.i("SonicLair", "Downloading song ${id}");
         val response = client.newCall(request).execute()
@@ -339,7 +339,7 @@ class SubsonicClient(var account: Account) {
     fun downloadPlaylist(playlist: List<Song>) {
         playlist.forEach {
             CoroutineScope(IO).launch {
-                if (!File(context.filesDir, it.id).exists()) {
+                if (!File(getLocalSongUri(it.id)).exists()) {
                     downloadSong(it.id)
                 }
             }

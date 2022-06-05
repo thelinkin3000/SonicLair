@@ -2,13 +2,14 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AppContext } from "../AppContext";
 import { GetAsParams, SecondsToHHSS } from "../Helpers";
-import { IAlbumResponse, IInnerAlbumResponse } from "../Models/API/Responses/IArtistResponse";
+import { IAlbumResponse, IAlbumSongResponse, IInnerAlbumResponse } from "../Models/API/Responses/IArtistResponse";
 import "./Album.scss";
 import SongItem from "./SongItem";
 import Loading from "./Loading";
 import { Helmet } from "react-helmet";
 import VLC from "../Plugins/VLC";
 import { Toast } from "@capacitor/toast";
+import { CurrentTrackContextDefValue } from "../AudioContext";
 
 export default function Album() {
     const [album, setAlbum] = useState<IInnerAlbumResponse>();
@@ -17,6 +18,7 @@ export default function Album() {
     const { state }: any = useLocation();
     const [imgDimentions, setImgDimentions] = useState<any>();
     const [coverArt, setCoverArt] = useState<string>("");
+    const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
 
     useEffect(() => {
         const fetch = async () => {
@@ -39,6 +41,9 @@ export default function Album() {
             else {
                 Toast.show({ text: album.error });
             }
+            (VLC as any).addListener('currentTrack', (info: any) => {
+                setCurrentTrack(info.currentTrack);
+            });
         }
         fetch();
 
@@ -88,7 +93,7 @@ export default function Album() {
         </div>
         <div className="scrollable" style={{ height: "100%", overflow: "auto" }}>
             <div className="list-group" >
-                {album && album?.song.map(s => <SongItem item={s} key={s.id}/>)}
+                {album && album?.song.map(s => <SongItem item={s} key={s.id} currentTrack={currentTrack}/>)}
             </div>
         </div>
     </>

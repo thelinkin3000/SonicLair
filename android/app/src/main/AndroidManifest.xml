@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
     <uses-sdk tools:overrideLibrary="com.google.zxing.client.android" />
     <application
         android:allowBackup="true"
@@ -40,6 +42,9 @@
                 <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
         </service>
+        <service android:enabled="true" android:name=".MusicService"
+            android:foregroundServiceType="mediaPlayback"/>
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:name="tech.logica10.soniclair.MainActivity"

@@ -14,8 +14,7 @@ import VLC from "../Plugins/VLC";
 import { Toast } from "@capacitor/toast";
 
 
-export default function SongItem({ item }: { item: IAlbumSongResponse }) {
-    const { currentTrack } = useContext(CurrentTrackContext);
+export default function SongItem({ item, currentTrack }: { item: IAlbumSongResponse, currentTrack: IAlbumSongResponse }) {
     const listeners = useRef<{ event: string, listener: (ev: any) => void }[]>([]);
     const { setMenuContext } = useContext(MenuContext);
     const playRadio = useCallback(async () => {
