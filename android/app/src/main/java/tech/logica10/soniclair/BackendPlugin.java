@@ -11,6 +11,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -19,7 +20,11 @@ import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.Uri;
+import android.os.Build;
 import android.os.PowerManager;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.getcapacitor.JSObject;
@@ -65,7 +70,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     private static LibVLC mLibVLC = null;
     private static MediaPlayer mMediaPlayer = null;
     private static PowerManager.WakeLock wakeLock = null;
+
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = null;
+
     private AudioManager mAudioManager;
     private AudioAttributes mPlaybackAttributes;
     private SubsonicClient subsonicClient;
@@ -102,6 +109,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         GsonBuilder builder = new GsonBuilder();
         builder.serializeNulls();
         gson = builder.create();
+
 
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -142,6 +150,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
             }
         };
 
+
         // initialization of the audio attributes and focus request
         mAudioManager = (AudioManager) MainActivity.context.getSystemService(Context.AUDIO_SERVICE);
 
@@ -150,32 +159,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build();
 
-        AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(mPlaybackAttributes)
-                .setAcceptsDelayedFocusGain(false)
-                .setWillPauseWhenDucked(false)
-                .setOnAudioFocusChangeListener(audioFocusChangeListener)
-                .build();
-        final Object mFocusLock = new Object();
-
-        // requesting audio focus
-        int res = mAudioManager.requestAudioFocus(mFocusRequest);
-        synchronized (mFocusLock) {
-            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                // What are you gonna do about it?
-                if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
-                    mMediaPlayer.pause();
-                    wasPlaying = true;
-                    // Let the front end know
-                    notifyListeners("paused", null);
-                }
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                // We don't do anything here, let's wait for the user to start playing music
-
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                // We don't do anything here, let's wait for the user to start playing music.
-            }
-        }
+        requestAudioFocus();
 
         if (mLibVLC == null) {
             mLibVLC = new LibVLC(MainActivity.context, args);
@@ -235,6 +219,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
         PlaybackState.Builder b = getPlaybackStateBuilder().setState(PlaybackState.STATE_PAUSED, 0, 0);
         mediaSession.setPlaybackState(b.build());
+
 
         notificationBuilder = new Notification.Builder(MainActivity.context, "soniclair");
         notificationBuilder.setSmallIcon(R.drawable.ic_stat_soniclair);
@@ -341,6 +326,31 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
             call.resolve(ErrorResponse(e.getMessage()));
         }
     }
+
+    @PluginMethod()
+    public void getCameraPermissionStatus(PluginCall call){
+        if(ContextCompat.checkSelfPermission(MainActivity.context,
+                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED){
+            call.resolve(OkStringResponse(""));
+        }
+        else{
+            call.resolve(ErrorResponse("Please provide permission to use the camera. This is needed for the QR scanner to work."));
+        }
+    }
+
+    @PluginMethod()
+    public void getCameraPermission(PluginCall call){
+        if(ContextCompat.checkSelfPermission(MainActivity.context,
+                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED){
+            call.resolve(OkStringResponse(""));
+        }
+        else{
+            MainActivity.requestPermissionLauncher.launch("android.permission.CAMERA");
+            call.resolve(OkStringResponse(""));
+        }
+    }
+
+
 
     @PluginMethod()
     public void getTopAlbums(PluginCall call) throws JSONException {
@@ -458,17 +468,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         }
     }
 
-    @PluginMethod()
-    public void play(PluginCall call) {
-        String value = call.getString("uri");
-        if (value != null) {
-            final Media media = new Media(mLibVLC, Uri.parse(value));
-            mMediaPlayer.setMedia(media);
-        }
-        if (mMediaPlayer.getMedia() != null) {
-            mMediaPlayer.play();
-            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
-        }
+    public void requestAudioFocus() {
         AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(false)
@@ -494,6 +494,20 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 // We don't do anything here, let's wait for the user to start playing music.
             }
         }
+    }
+
+    @PluginMethod()
+    public void play(PluginCall call) {
+        String value = call.getString("uri");
+        if (value != null) {
+            final Media media = new Media(mLibVLC, Uri.parse(value));
+            mMediaPlayer.setMedia(media);
+        }
+        if (mMediaPlayer.getMedia() != null) {
+            mMediaPlayer.play();
+            wakeLock.acquire(mMediaPlayer.getMedia().getDuration() * 1000);
+        }
+        requestAudioFocus();
         call.resolve(OkStringResponse(""));
     }
 
@@ -699,31 +713,8 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
             mMediaPlayer.play();
             wakeLock.acquire(currentTrack.getDuration() * 1000);
         }
-        AudioFocusRequest mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(mPlaybackAttributes)
-                .setAcceptsDelayedFocusGain(false)
-                .setWillPauseWhenDucked(false)
-                .setOnAudioFocusChangeListener(audioFocusChangeListener)
-                .build();
-        final Object mFocusLock = new Object();
+        requestAudioFocus();
 
-        // requesting audio focus
-        int res = mAudioManager.requestAudioFocus(mFocusRequest);
-        synchronized (mFocusLock) {
-            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                // What are you gonna do about it?
-                if (mMediaPlayer.isPlaying()) {
-                    mMediaPlayer.pause();
-                    // Let the front end know
-                    notifyListeners("paused", null);
-                }
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                // We don't do anything here, let's wait for the user to start playing music
-
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                // We don't do anything here, let's wait for the user to start playing music.
-            }
-        }
         notifyListeners("play", null);
         String ct = String.format("{currentTrack: %s}", gson.toJson(currentTrack));
 

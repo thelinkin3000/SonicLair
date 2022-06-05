@@ -42,8 +42,7 @@ class AndroidTVPlugin : Plugin(), IBroadcastObserver {
     override fun update(action: String?, value: String?) {
         if (action.equals("WSLOGIN")) {
             try {
-                val account: Account = gson.fromJson(value, Account::class.java)
-                notifyListeners("login", JSObject(gson.toJson(account)))
+                notifyListeners("login", JSObject(value))
             } catch (e: Exception) {
 
             }

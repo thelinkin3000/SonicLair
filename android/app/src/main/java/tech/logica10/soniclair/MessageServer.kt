@@ -1,5 +1,6 @@
 package tech.logica10.soniclair
 
+import com.getcapacitor.JSObject
 import com.google.gson.Gson
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -39,10 +40,11 @@ class MessageServer : WebSocketServer {
 
     override fun onMessage(conn: WebSocket, message: String) {
         try {
-            val m: WebSocketMessage = gson.fromJson(message, WebSocketMessage::class.java)
-            if(m.type == "login") {
-                Globals.NotifyObservers("WSLOGIN", m.data)
+            val m: JSObject = JSObject(message);
+            if(m.has("type") && m.getString("type") == "login"){
+                Globals.NotifyObservers("WSLOGIN", m.getJSObject("data").toString())
             }
+
         } catch (e: Exception) {
             return;
         }

@@ -42,6 +42,8 @@ export interface IBackendPlugin extends Plugin{
     getSpotifyToken(): Promise<string>;
     getSimilarSongs(options: { id: string }): Promise<IBackendResponse<IAlbumSongResponse[]>>;
     getCurrentState():Promise<IBackendResponse<ICurrentState>>;
+    getCameraPermission():Promise<IBackendResponse<String>>;
+    getCameraPermissionStatus():Promise<IBackendResponse<String>>;
 }
 
 

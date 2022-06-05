@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Debug
 import android.os.Message
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,22 +40,24 @@ class App : Application() {
                 val interfaces: List<NetworkInterface> =
                     Collections.list(NetworkInterface.getNetworkInterfaces())
                 for (intf in interfaces) {
-                    if(intf.name.subSequence(0,2) == "rm" || intf.name.subSequence(0,5) == "radio"){
+                    if(intf.name.subSequence(0,2) == "rm" || (intf.name.length >= 6 && intf.name.subSequence(0,5) == "radio")){
                         continue;
                     }
                     val addrs: List<InetAddress> = Collections.list(intf.getInetAddresses())
                     for (addr in addrs) {
+                        val a: String = addr.hostAddress.replace("/","");
                         if (!addr.isLoopbackAddress()
-                            && (addr.hostAddress.subSequence(0,7) == "192.168"
-                                    || addr.hostAddress.subSequence(0,2) == "10"
-                                    || addr.hostAddress.subSequence(0,3) == "172")) {
-                            pairString = addr.hostAddress.toString()
+                            && (a.subSequence(0,7) == "192.168"
+                                    || a.subSequence(0,2) == "10"
+                                    || a.subSequence(0,3) == "172")) {
+                            pairString = a
                         }
                     }
                 }
                 server = MessageServer(30001);
                 server!!.start()
             } catch (ex: Exception) {
+                Log.e("SonicLair",ex.message!!);
             } // for now eat exceptions
         }
     }

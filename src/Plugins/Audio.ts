@@ -109,6 +109,12 @@ export class Backend extends WebPlugin implements IBackendPlugin {
       this._next();
     };
   }
+    getCameraPermission(): Promise<IBackendResponse<String>> {
+        throw new Error("Method not implemented.");
+    }
+    getCameraPermissionStatus(): Promise<IBackendResponse<String>> {
+        throw new Error("Method not implemented.");
+    }
   getCurrentState(): Promise<IBackendResponse<ICurrentState>> {
     return Promise.resolve(
       this.OKResponse({
