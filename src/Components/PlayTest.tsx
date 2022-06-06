@@ -62,7 +62,7 @@ export default function PlayTest() {
         const ret = await VLC.login(data);
         if (ret.status === "ok") {
             setContext(ret.value!);
-            navigate("/home");
+            navigate("/home", {replace: true, state:[]});
         }
         else {
             await Toast.show({
