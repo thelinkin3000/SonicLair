@@ -3,6 +3,9 @@ package tech.logica10.soniclair;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 
 import org.json.JSONException;
 
@@ -17,23 +20,23 @@ public class Globals {
 
     // Declaring a variable of type String
     private final List<IBroadcastObserver> observers;
-    private ArrayList<MediaBrowser.MediaItem> mediaItems;
-    private MediaSession mediaSession;
+    private ArrayList<MediaBrowserCompat.MediaItem> mediaItems;
+    private MediaSessionCompat mediaSession;
 
     // Constructor
     // Here we will be creating private constructor
     // restricted to this class itself
     private Globals()
     {
-        mediaItems = new ArrayList<MediaBrowser.MediaItem>();
+        mediaItems = new ArrayList<MediaBrowserCompat.MediaItem>();
         observers = new ArrayList<IBroadcastObserver>();
         // Create a media session. NotificationCompat.MediaStyle
         // PlayerService is your own Service or Activity responsible for media playback.
-        mediaSession = new MediaSession(App.getContext(), "Soniclair");
+        mediaSession = new MediaSessionCompat(App.getContext(), "Soniclair");
         mediaSession.setCallback(new SonicLairSessionCallbacks());
-        PlaybackState.Builder stateBuilder = new PlaybackState.Builder();
-        stateBuilder.setState(PlaybackState.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
-        stateBuilder.setActions(PlaybackState.ACTION_PLAY_PAUSE |  PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS);
+        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
+        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
+        stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE |  PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
 
     }
@@ -58,19 +61,19 @@ public class Globals {
         }
     }
 
-    public static ArrayList<MediaBrowser.MediaItem> GetMediaItems(){
+    public static ArrayList<MediaBrowserCompat.MediaItem> GetMediaItems(){
         return getInstance().mediaItems;
     }
 
-    public static void SetMediaItems(ArrayList<MediaBrowser.MediaItem> mediaItemArray) {
+    public static void SetMediaItems(ArrayList<MediaBrowserCompat.MediaItem> mediaItemArray) {
         getInstance().mediaItems = mediaItemArray;
     }
 
-    public static void SetMediaSession(MediaSession mediaSession){
+    public static void SetMediaSession(MediaSessionCompat mediaSession){
         getInstance().mediaSession = mediaSession;
     }
 
-    public static MediaSession GetMediaSession(){
+    public static MediaSessionCompat GetMediaSession(){
         return getInstance().mediaSession;
     }
 }

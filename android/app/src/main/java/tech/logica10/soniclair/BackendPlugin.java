@@ -1,38 +1,18 @@
 package tech.logica10.soniclair;
 
-import static androidx.core.content.ContextCompat.getSystemService;
+import static tech.logica10.soniclair.SubsonicModels.SearchResult;
 
-import static kotlinx.coroutines.CoroutineScopeKt.CoroutineScope;
-import static tech.logica10.soniclair.SubsonicModels.*;
-
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
-import android.media.MediaMetadata;
-import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
 import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 
-import com.bumptech.glide.Glide;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -43,26 +23,13 @@ import com.google.gson.GsonBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.videolan.libvlc.LibVLC;
-import org.videolan.libvlc.Media;
-import org.videolan.libvlc.MediaPlayer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import kotlinx.coroutines.Dispatchers;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -73,7 +40,7 @@ import okhttp3.Response;
 @CapacitorPlugin(name = "VLC")
 public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
-    private SubsonicClient subsonicClient;
+    private static SubsonicClient subsonicClient;
     private Gson gson;
     private String spotifyToken = "";
     private MusicService.LocalBinder binder = null;
@@ -100,7 +67,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @Override
     public void load() {
         // Set up
-        subsonicClient = new SubsonicClient(KeyValueStorage.Companion.getActiveAccount());
+        if(subsonicClient == null){
+            subsonicClient = new SubsonicClient(KeyValueStorage.Companion.getActiveAccount());
+        }
         final ArrayList<String> args = new ArrayList<>();
         args.add("-vvv");
         GsonBuilder builder = new GsonBuilder();

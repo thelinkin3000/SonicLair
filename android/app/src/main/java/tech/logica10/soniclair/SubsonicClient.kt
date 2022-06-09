@@ -1,8 +1,9 @@
 package tech.logica10.soniclair
 
-import android.media.MediaDescription
-import android.media.browse.MediaBrowser
+
 import android.net.Uri
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaDescriptionCompat
 import android.util.Log
 import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
@@ -16,7 +17,6 @@ import okhttp3.Response
 import okio.BufferedSink
 import okio.buffer
 import okio.sink
-import tech.logica10.soniclair.App.Companion.context
 import tech.logica10.soniclair.SubsonicModels.*
 import java.io.File
 import java.math.BigInteger
@@ -27,7 +27,14 @@ import kotlin.io.path.Path
 
 class Account(val username: String?, val password: String, val url: String, var type: String)
 
-class SubsonicClient(var account: Account) {
+class SubsonicClient(var initialAccount: Account) {
+    companion object{
+        var account: Account = Account(null, "","","");
+    }
+    init{
+        account = initialAccount;
+    }
+
     val client: OkHttpClient = OkHttpClient.Builder()
         .readTimeout(5000, TimeUnit.MILLISECONDS)
         .writeTimeout(5000, TimeUnit.MILLISECONDS)
@@ -49,9 +56,9 @@ class SubsonicClient(var account: Account) {
         )
     }
 
-    fun getAsMediaItems(songs: List<Song>): List<MediaBrowser.MediaItem> {
-        val builder = MediaDescription.Builder()
-        val ret = mutableListOf<MediaBrowser.MediaItem>()
+    fun getAsMediaItems(songs: List<Song>): List<MediaBrowserCompat.MediaItem> {
+        val builder = MediaDescriptionCompat.Builder()
+        val ret = mutableListOf<MediaBrowserCompat.MediaItem>()
         for (item in songs) {
             builder.setTitle(item.title)
             builder.setSubtitle(String.format("by %s", item.artist))
@@ -64,9 +71,9 @@ class SubsonicClient(var account: Account) {
             builder.setIconBitmap(albumArtBitmap)
             builder.setMediaId(item.id)
             ret.add(
-                MediaBrowser.MediaItem(
+                MediaBrowserCompat.MediaItem(
                     builder.build(),
-                    MediaBrowser.MediaItem.FLAG_PLAYABLE
+                    MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
                 )
             )
         }
@@ -321,8 +328,8 @@ class SubsonicClient(var account: Account) {
         if (ret.status != "ok") {
             throw Exception(ret.error?.message)
         }
-        this.account = Account(username, password, url, ret.type)
-        KeyValueStorage.setActiveAccount(this.account)
+        account = Account(username, password, url, ret.type)
+        KeyValueStorage.setActiveAccount(account)
         val accounts = KeyValueStorage.getAccounts()
         val exists = accounts.filter { it.url == url }.size == 1
         val list: List<Account>
@@ -331,9 +338,9 @@ class SubsonicClient(var account: Account) {
         } else {
             list = KeyValueStorage.getAccounts().toMutableList()
         }
-        list.add(this.account)
+        list.add(account)
         KeyValueStorage.setAccounts(list)
-        return this.account
+        return account
     }
 
     fun downloadPlaylist(playlist: List<Song>) {

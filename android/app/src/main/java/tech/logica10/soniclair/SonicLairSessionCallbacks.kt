@@ -4,9 +4,10 @@ import android.media.session.MediaSession
 import tech.logica10.soniclair.Globals
 import android.content.Intent
 import android.os.Bundle
+import android.support.v4.media.session.MediaSessionCompat
 import android.view.KeyEvent
 
-class SonicLairSessionCallbacks : MediaSession.Callback() {
+class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
     override fun onPlay() {
         super.onPlay()
         Globals.NotifyObservers("SLPAUSE", null)

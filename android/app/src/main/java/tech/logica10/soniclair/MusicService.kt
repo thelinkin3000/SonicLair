@@ -15,7 +15,13 @@ import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
@@ -51,34 +57,31 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         .build()
     private val subsonicClient: SubsonicClient = SubsonicClient(getActiveAccount())
     private val gson: Gson = GsonBuilder().serializeNulls().create()
-    private val mediaSession: MediaSession = Globals.GetMediaSession()
-    private val mediaStyle: Notification.MediaStyle = Notification.MediaStyle()
+    private val mediaSession: MediaSessionCompat = Globals.GetMediaSession()
+    private val mediaStyle: androidx.media.app.NotificationCompat.MediaStyle = androidx.media.app.NotificationCompat.MediaStyle()
         .setMediaSession(mediaSession.sessionToken)
         .setShowActionsInCompactView(1, 2)
-    private val notificationBuilder: Notification.Builder =
-        Notification.Builder(MainActivity.context, "soniclair")
+    private val notificationBuilder: NotificationCompat.Builder =
+        NotificationCompat.Builder(App.context, "soniclair")
             .setSmallIcon(R.drawable.ic_stat_soniclair)
             .setStyle(mediaStyle)
             .setChannelId("soniclair")
-    private val metadataBuilder: MediaMetadata.Builder = MediaMetadata.Builder()
-    private val notificationManager: NotificationManager = ContextCompat.getSystemService(
-        App.context,
-        NotificationManager::class.java
-    )!!
-    private val channel: NotificationChannel = NotificationChannel(
-        "soniclair",
-        "Soniclair",
-        NotificationManager.IMPORTANCE_LOW
-    )
+    private val metadataBuilder: MediaMetadataCompat.Builder = MediaMetadataCompat.Builder()
+    private val notificationManager: NotificationManagerCompat =
+        NotificationManagerCompat.from(App.context)
+    private val channel: NotificationChannelCompat = NotificationChannelCompat
+        .Builder("soniclair",NotificationManagerCompat.IMPORTANCE_LOW)
+        .setName("SonicLair")
+        .setDescription("Currently playing notification")
+        .build()
     private var playlist: MutableList<Song> = mutableListOf()
-    private val spotifyToken = ""
-    private var prevAction: Notification.Action? = null
-    private var pauseAction: Notification.Action? = null
-    private var playAction: Notification.Action? = null
-    private var nextAction: Notification.Action? = null
+    private var prevAction: NotificationCompat.Action? = null
+    private var pauseAction: NotificationCompat.Action? = null
+    private var playAction: NotificationCompat.Action? = null
+    private var nextAction: NotificationCompat.Action? = null
     private var isForeground: Boolean = false
     private val binder = LocalBinder()
-
+    private val NOTIF_ID = 1;
 
     private var mMediaPlayer: MediaPlayer? = null
 
@@ -89,27 +92,26 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         notificationBuilder.setContentTitle(currentTrack!!.title)
         notificationBuilder.setContentText(currentTrack!!.album)
         notificationBuilder.setChannelId("soniclair")
-        notificationBuilder.setActions(
-            prevAction,
-            if (play) playAction else pauseAction,
-            nextAction
-        )
+        notificationBuilder.clearActions()
+        notificationBuilder.addAction(prevAction)
+        notificationBuilder.addAction(if(play) playAction else pauseAction)
+        notificationBuilder.addAction(nextAction)
         val notif = notificationBuilder.build();
         if (!isForeground) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
-                    2, notif,
+                    NOTIF_ID, notif,
                     FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
                 )
             } else {
-                startForeground(2, notif)
+                startForeground(NOTIF_ID, notif)
             }
             isForeground = true
         }
-        notificationManager.notify("soniclair", 2,notif)
+        notificationManager.notify(NOTIF_ID,notif)
     }
 
-    fun updateMediaSession(playbackState: PlaybackState) {
+    fun updateMediaSession(playbackState: PlaybackStateCompat) {
         mediaSession.setPlaybackState(playbackState)
         mediaSession.isActive = true
     }
@@ -149,25 +151,25 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         mMediaPlayer!!.setEventListener(this)
         // ********* PREV ********
         //This is the intent of PendingIntent
-        val prevIntent = Intent(MainActivity.context, NotificationBroadcastReceiver::class.java)
+        val prevIntent = Intent(App.context, NotificationBroadcastReceiver::class.java)
         prevIntent.action = "SLPREV"
         val pendingPrevIntent = PendingIntent.getBroadcast(
-            MainActivity.context,
+            App.context,
             1,
             prevIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         var actionBuilder =
-            Notification.Action.Builder(R.drawable.ic_skip_previous, "PREV", pendingPrevIntent)
+            NotificationCompat.Action.Builder(R.drawable.ic_skip_previous, "PREV", pendingPrevIntent)
         prevAction = actionBuilder.build()
 
         // ********* PLAYPAUSE ********
         //This is the intent of PendingIntent
-        val pauseIntent = Intent(MainActivity.context, NotificationBroadcastReceiver::class.java)
+        val pauseIntent = Intent(App.context, NotificationBroadcastReceiver::class.java)
         pauseIntent.action = "SLPAUSE"
         val pendingPauseIntent = PendingIntent.getBroadcast(
-            MainActivity.context,
+            App.context,
             1,
             pauseIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -175,33 +177,36 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         actionBuilder =
-            Notification.Action.Builder(R.drawable.ic_pause, "PAUSE", pendingPauseIntent)
+            NotificationCompat.Action.Builder(R.drawable.ic_pause, "PAUSE", pendingPauseIntent)
         pauseAction = actionBuilder.build()
         actionBuilder =
-            Notification.Action.Builder(R.drawable.ic_play_arrow, "PLAY", pendingPauseIntent)
+            NotificationCompat.Action.Builder(R.drawable.ic_play_arrow, "PLAY", pendingPauseIntent)
         playAction = actionBuilder.build()
 
         // ********* NEXT ********
         //This is the intent of PendingIntent
-        val nextIntent = Intent(MainActivity.context, NotificationBroadcastReceiver::class.java)
+        val nextIntent = Intent(App.context, NotificationBroadcastReceiver::class.java)
         nextIntent.action = "SLNEXT"
         val pendingNextIntent = PendingIntent.getBroadcast(
-            MainActivity.context,
+            App.context,
             1,
             nextIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         // Specify any actions which your users can perform, such as pausing and skipping to the next track.
         actionBuilder =
-            Notification.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent)
+            NotificationCompat.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent)
         nextAction = actionBuilder.build()
 
-        notificationBuilder.style = mediaStyle
+        notificationBuilder.setStyle(mediaStyle)
     }
 
-    private fun getPlaybackStateBuilder(): PlaybackState.Builder {
-        return PlaybackState.Builder()
-            .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT or PlaybackState.ACTION_SKIP_TO_PREVIOUS)
+    private fun getPlaybackStateBuilder(): PlaybackStateCompat.Builder {
+        return PlaybackStateCompat.Builder()
+            .setActions(PlaybackStateCompat.ACTION_PLAY
+                    or PlaybackStateCompat.ACTION_PAUSE
+                    or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                    or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
     }
 
 
@@ -299,13 +304,9 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     private fun _playAlbum(id: String, track: Int) {
-        try {
-            playlist.clear()
-            playlist.addAll(subsonicClient.getAlbum(id).song)
-            currentTrack = playlist[track]
-        } catch (e: java.lang.Exception) {
-            Log.e("Soniclair", e.message!!)
-        }
+        playlist.clear()
+        playlist.addAll(subsonicClient.getAlbum(id).song)
+        currentTrack = playlist[track]
         subsonicClient.downloadPlaylist(playlist)
         _loadMedia()
         _play()
@@ -424,8 +425,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             updateNotification(null, true)
         } else if (event.type == MediaPlayer.Event.Paused || event.type == MediaPlayer.Event.Stopped) {
             notifyListeners("paused", null)
-            val b: PlaybackState.Builder = getPlaybackStateBuilder().setState(
-                PlaybackState.STATE_PAUSED,
+            val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                PlaybackStateCompat.STATE_PAUSED,
                 mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
                 0f
             )
@@ -434,8 +435,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         } else if (event.type == MediaPlayer.Event.Playing) {
             notifyListeners("play", null)
             notifyListeners("currentTrack", JSObject("{\"currentTrack\": ${gson.toJson(currentTrack!!)}}"))
-            val b: PlaybackState.Builder = getPlaybackStateBuilder().setState(
-                PlaybackState.STATE_PLAYING,
+            val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                PlaybackStateCompat.STATE_PLAYING,
                 mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
                 1f
             )

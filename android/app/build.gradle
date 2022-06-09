@@ -7,8 +7,8 @@ android {
         applicationId "tech.logica10.soniclair"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 18
-        versionName "0.0.1-beta9-android-back-button-exits"
+        versionCode 20
+        versionName "0.0.1-beta9-android-single-notif"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

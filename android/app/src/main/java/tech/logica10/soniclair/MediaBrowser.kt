@@ -5,16 +5,20 @@ import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Bundle
 import android.service.media.MediaBrowserService
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.media.MediaBrowserServiceCompat
 import kotlinx.coroutines.*
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class MediaBrowser : MediaBrowserService() {
-    private val mediaSession: MediaSession? = Globals.GetMediaSession()
-    private val stateBuilder: PlaybackState.Builder = PlaybackState.Builder()
+class MediaBrowser : MediaBrowserServiceCompat() {
+    private val mediaSession: MediaSessionCompat? = Globals.GetMediaSession()
+    private val stateBuilder: PlaybackStateCompat.Builder = PlaybackStateCompat.Builder()
     private val subsonicClient: SubsonicClient = SubsonicClient(getActiveAccount())
 
 
@@ -22,8 +26,8 @@ class MediaBrowser : MediaBrowserService() {
         super.onCreate()
         // Create a MediaSessionCompat
         stateBuilder.setState(
-            PlaybackState.STATE_PAUSED,
-            PlaybackState.PLAYBACK_POSITION_UNKNOWN,
+            PlaybackStateCompat.STATE_PAUSED,
+            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
             1f
         )
         // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
@@ -49,7 +53,7 @@ class MediaBrowser : MediaBrowserService() {
 
     override fun onLoadChildren(
         parentMediaId: String,
-        result: Result<List<MediaBrowser.MediaItem>>
+        result: Result<List<MediaBrowserCompat.MediaItem>>
     ) {
         // We're not logged in on a server, we bail
         if (getActiveAccount().username == null) {
@@ -78,7 +82,7 @@ class MediaBrowser : MediaBrowserService() {
 
     fun load(
         subsonicClient: SubsonicClient,
-        result: Result<List<MediaBrowser.MediaItem>>,
+        result: Result<List<MediaBrowserCompat.MediaItem>>,
         sendResult: Boolean
     ) {
         try {

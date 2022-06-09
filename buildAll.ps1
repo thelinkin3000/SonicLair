@@ -15,6 +15,7 @@ function Write-Success {
 function Write-ErrorMessage {
     Write-Host "[Error] There's been an error. Check the output for more information." -ForegroundColor Red
 }
+npm i
 npm run build
 npx cap sync android
 cd android
