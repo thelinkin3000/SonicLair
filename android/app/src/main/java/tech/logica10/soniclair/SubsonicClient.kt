@@ -28,10 +28,11 @@ import kotlin.io.path.Path
 class Account(val username: String?, val password: String, val url: String, var type: String)
 
 class SubsonicClient(var initialAccount: Account) {
-    companion object{
-        var account: Account = Account(null, "","","");
+    companion object {
+        var account: Account = Account(null, "", "", "");
     }
-    init{
+
+    init {
         account = initialAccount;
     }
 
@@ -97,8 +98,17 @@ class SubsonicClient(var initialAccount: Account) {
         return "${uri.authority}/songs/";
     }
 
+    fun getCoverArtsDirectory(): String {
+        val uri = Uri.parse(account.url)
+        return "${uri.authority}/albumArts/";
+    }
+
+    fun getLocalCoverArtUri(id: String): String {
+        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString();
+    }
+
     fun getLocalSongUri(id: String): String {
-        return Path(App.context.filesDir.path, getSongsDirectory(),id).toString();
+        return Path(App.context.filesDir.path, getSongsDirectory(), id).toString();
     }
 
     fun downloadSong(id: String) {
@@ -142,7 +152,7 @@ class SubsonicClient(var initialAccount: Account) {
         //4. Synchronous call to the REST API
         val response: Response = client.newCall(requestBuilder.build()).execute()
         if (!response.isSuccessful) {
-            throw Exception("There was an error reaching the server. Please check your connection.")
+            throw Exception(response.message)
         }
         val body = response.body?.string()
         val realResponse = JSObject(body).get("subsonic-response").toString()
@@ -241,12 +251,12 @@ class SubsonicClient(var initialAccount: Account) {
         val uriBuilder = Uri.parse(account.url).buildUpon()
             .appendPath("rest")
             .appendPath("getCoverArt")
-        val map = this.getBasicParams().asMap()
+        val map = this@SubsonicClient.getBasicParams().asMap()
         for (key in map.keys) {
             uriBuilder.appendQueryParameter(key, map[key])
         }
         uriBuilder.appendQueryParameter("id", id)
-        return uriBuilder.build().toString()
+        return uriBuilder.toString()
     }
 
     fun getRandomSongs(): List<Song> {

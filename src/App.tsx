@@ -58,6 +58,13 @@ function App() {
   const [androidTv, setAndroidTv] = useState<boolean>(false);
   const { focusKey, ref } = useFocusable();
   const [tried, setTried] = useState<boolean>(false);
+
+  useEffect(() => {
+    VLC.addListener("ex", (info) => {
+      Toast.show({ text: info.error });
+    });
+  }, []);
+
   const contextValue = React.useMemo(
     () => ({
       context,

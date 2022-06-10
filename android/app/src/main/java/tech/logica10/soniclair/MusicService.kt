@@ -4,13 +4,12 @@ import android.app.*
 import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.graphics.Bitmap
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
+import android.media.*
 import android.media.AudioManager.OnAudioFocusChangeListener
-import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
@@ -46,9 +45,9 @@ import java.util.concurrent.ExecutionException
 
 class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var wasPlaying: Boolean = false
-    val args = mutableListOf<String>("-vvv")
+    val args = mutableListOf("-vvv")
     private var mLibVLC: LibVLC? = null
-    private var currentTrack: SubsonicModels.Song? = null
+    private var currentTrack: Song? = null
     private val mAudioManager: AudioManager =
         App.context.getSystemService(AUDIO_SERVICE) as AudioManager
     private val mPlaybackAttributes: AudioAttributes = AudioAttributes.Builder()
@@ -79,16 +78,35 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var pauseAction: NotificationCompat.Action? = null
     private var playAction: NotificationCompat.Action? = null
     private var nextAction: NotificationCompat.Action? = null
+    private var cancelAction: NotificationCompat.Action? = null
     private var isForeground: Boolean = false
     private val binder = LocalBinder()
     private val NOTIF_ID = 1;
+    val connectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
+
+
 
     private var mMediaPlayer: MediaPlayer? = null
 
-    fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
+    inner class DeviceCallback: AudioDeviceCallback(){
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            this@MusicService._pause()
+        }
+    }
+
+    init {
+        Globals.RegisterObserver(this)
+        mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
+    }
+
+    private fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
         if (albumArtBitmap != null) {
             notificationBuilder.setLargeIcon(albumArtBitmap)
         }
+        val intent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, intent, flags))
         notificationBuilder.setContentTitle(currentTrack!!.title)
         notificationBuilder.setContentText(currentTrack!!.album)
         notificationBuilder.setChannelId("soniclair")
@@ -96,6 +114,9 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         notificationBuilder.addAction(prevAction)
         notificationBuilder.addAction(if(play) playAction else pauseAction)
         notificationBuilder.addAction(nextAction)
+        notificationBuilder.addAction(cancelAction)
+        notificationBuilder.setOngoing(true)
+
         val notif = notificationBuilder.build();
         if (!isForeground) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -198,6 +219,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             NotificationCompat.Action.Builder(R.drawable.ic_skip_next, "NEXT", pendingNextIntent)
         nextAction = actionBuilder.build()
 
+        val cancelIntent = Intent(App.context, NotificationBroadcastReceiver::class.java)
+        cancelIntent.action = "SLCANCEL"
+        val pendingCancelIntent = PendingIntent.getBroadcast(
+            App.context,
+            1,
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // Specify any actions which your users can perform, such as pausing and skipping to the next track.
+        actionBuilder =
+            NotificationCompat.Action.Builder(R.drawable.ic_action_cancel, "CANCEL", pendingCancelIntent)
+        cancelAction = actionBuilder.build()
+
         notificationBuilder.setStyle(mediaStyle)
     }
 
@@ -258,17 +292,18 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                     }
                 }
             }
-
-
         }
         return START_STICKY
     }
 
     override fun update(action: String?, value: String?) {
-        TODO("Not yet implemented")
+        if(action == "SLCANCEL"){
+            notificationManager.cancel(NOTIF_ID)
+            stopSelf()
+        }
     }
 
-    fun requestAudioFocus() {
+    private fun requestAudioFocus() {
         val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(mPlaybackAttributes)
             .setAcceptsDelayedFocusGain(false)
@@ -296,20 +331,41 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     @Throws(Exception::class)
     private fun _playRadio(id: String) {
         playlist.clear()
-        playlist.addAll(subsonicClient.getSimilarSongs(id))
-        playlist.add(0, subsonicClient.getSong(id))
-        currentTrack = playlist[0]
-        _loadMedia()
-        _play()
+        try{
+            playlist.addAll(subsonicClient.getSimilarSongs(id))
+            playlist.add(0, subsonicClient.getSong(id))
+            currentTrack = playlist[0]
+            if(connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork())
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true){
+                subsonicClient.downloadPlaylist(playlist)
+            }
+            _loadMedia()
+            _play()
+        }
+        catch(e: Exception){
+            Globals.NotifyObservers("EX", e.message)
+            // Nobody listening still
+        }
     }
 
     private fun _playAlbum(id: String, track: Int) {
         playlist.clear()
-        playlist.addAll(subsonicClient.getAlbum(id).song)
-        currentTrack = playlist[track]
-        subsonicClient.downloadPlaylist(playlist)
-        _loadMedia()
-        _play()
+        try{
+            playlist.addAll(subsonicClient.getAlbum(id).song)
+            currentTrack = playlist[track]
+
+            if(connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork())
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true){
+                subsonicClient.downloadPlaylist(playlist)
+            }
+            _loadMedia()
+            _play()
+        }
+        catch(e:Exception){
+            Globals.NotifyObservers("EX", e.message)
+            // Nobody listening still
+        }
+
     }
 
     private fun _pause() {
@@ -341,9 +397,9 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                     .submit()
                     .get()
             } catch (e: ExecutionException) {
-                e.printStackTrace()
+                Globals.NotifyObservers("EX", e.message)
             } catch (e: InterruptedException) {
-                e.printStackTrace()
+                Globals.NotifyObservers("EX", e.message)
             }
 
             updateMediaMetadata(albumArtBitmap)
@@ -452,7 +508,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             return CurrentState(
                 this@MusicService.mMediaPlayer!!.isPlaying,
                 this@MusicService.mMediaPlayer!!.position,
-                this@MusicService.currentTrack!!
+                this@MusicService.currentTrack ?: Song("","","",0,0,"","","","")
             )
         }
 

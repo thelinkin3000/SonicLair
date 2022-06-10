@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AppContext } from "../AppContext";
 import { GetAsParams, SecondsToHHSS } from "../Helpers";
@@ -10,6 +10,7 @@ import { Helmet } from "react-helmet";
 import VLC from "../Plugins/VLC";
 import { Toast } from "@capacitor/toast";
 import { CurrentTrackContextDefValue } from "../AudioContext";
+import { PluginListenerHandle } from "@capacitor/core";
 
 export default function Album() {
     const [album, setAlbum] = useState<IInnerAlbumResponse>();
@@ -19,7 +20,7 @@ export default function Album() {
     const [imgDimentions, setImgDimentions] = useState<any>();
     const [coverArt, setCoverArt] = useState<string>("");
     const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
-
+    const listener = useRef<PluginListenerHandle>();
     useEffect(() => {
         const fetch = async () => {
             if (state.id === 0 || !state.id) {
@@ -41,7 +42,10 @@ export default function Album() {
             else {
                 Toast.show({ text: album.error });
             }
-            (VLC as any).addListener('currentTrack', (info: any) => {
+            if(listener.current){
+                await listener.current.remove();
+            }
+            listener.current = await VLC.addListener('currentTrack', (info: any) => {
                 setCurrentTrack(info.currentTrack);
             });
         }

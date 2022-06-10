@@ -1,5 +1,5 @@
 import { faForwardStep, faPause, faPlay, faRotateLeft, faRotateRight } from "@fortawesome/free-solid-svg-icons";
-import { ChangeEvent, useCallback, useContext, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContext"
 import { SecondsToHHSS } from "../Helpers";
 import "./NowPlaying.scss";
@@ -10,6 +10,7 @@ import VLC from "../Plugins/VLC";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classnames from "classnames";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
+import { PluginListenerHandle } from "@capacitor/core";
 // import AndroidTV from "../Plugins/AndroidTV";
 
 export default function NowPlaying({ }) {
@@ -17,6 +18,7 @@ export default function NowPlaying({ }) {
     const [playing, setPlaying] = useState<boolean>(false);
     const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
+    const listeners = useRef<PluginListenerHandle[]>([]);
     const changePlayTime = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
         const time = parseFloat(e.target.value);
         VLC.seek({ time: time });
@@ -66,23 +68,28 @@ export default function NowPlaying({ }) {
         }
     };
     useEffect(() => {
-        // I'm sorry typescript gods.
-        VLC.removeAllListeners();
-        VLC.addListener('play', (info: any) => {
-          setPlaying(true);
-        });
-        (VLC as any).addListener('paused', (info: any) => {
-          setPlaying(false);
-        });
-        (VLC as any).addListener('stopped', (info: any) => {
-          setPlaying(false);
-        });
-        (VLC as any).addListener('currentTrack', (info: any) => {
-          setCurrentTrack(info.currentTrack);
-        });
-        (VLC as any).addListener('progress', (info: any) => {
-          setPlaytime(info.time);
-        });
+        const aw = async () => {
+            listeners.current.forEach(async (listener) => {
+                await listener.remove();
+            });
+            listeners.current = [
+            await VLC.addListener('play', (info: any) => {
+              setPlaying(true);
+            }),
+            await VLC.addListener('paused', (info: any) => {
+              setPlaying(false);
+            }),
+            await VLC.addListener('stopped', (info: any) => {
+              setPlaying(false);
+            }),
+            await VLC.addListener('currentTrack', (info: any) => {
+              setCurrentTrack(info.currentTrack);
+            }),
+            await VLC.addListener('progress', (info: any) => {
+              setPlaytime(info.time);
+            })]
+        }
+        aw();
     
         return () => {
           //setCurrentTrack(CurrentTrackContextDefValue);

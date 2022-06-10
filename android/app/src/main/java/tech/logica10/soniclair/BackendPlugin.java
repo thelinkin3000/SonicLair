@@ -455,6 +455,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                     notifyListeners(action.replace("MS", ""), null);
                 }
             }
+            else if(action.equals("EX")){
+                notifyListeners("EX",new JSObject("{\"error\":\"" + value + "} \"}"));
+            }
         } catch (Exception e) {
             // Frankly my dear, I couldn't care less.
         }
