@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AppContext } from "../AppContext";
-import { GetAsParams, SecondsToHHSS } from "../Helpers";
-import { IAlbumResponse, IAlbumSongResponse, IInnerAlbumResponse } from "../Models/API/Responses/IArtistResponse";
+import { SecondsToHHSS } from "../Helpers";
+import { IAlbumSongResponse, IInnerAlbumResponse } from "../Models/API/Responses/IArtistResponse";
 import "./Album.scss";
 import SongItem from "./SongItem";
 import Loading from "./Loading";
@@ -50,7 +50,6 @@ export default function Album() {
             });
         }
         fetch();
-
     }, [albumFetched, context, state.id]);
 
     const onLoadImage = useCallback((ev: any) => {
@@ -67,6 +66,7 @@ export default function Album() {
             });
         }
     }, []);
+
     if (!albumFetched) {
         return (<div className="row">
             <div className="col-12 d-flex align-items-center justify-content-center" style={{ height: "100%" }}>
@@ -74,12 +74,13 @@ export default function Album() {
             </div>
         </div>);
     }
+
     return (<>
         <Helmet>
             <title>{album?.name} - SonicLair</title>
         </Helmet>
         <div className="album-header d-flex flex-row align-items-center justify-content-start">
-            <img className="album-img" src={coverArt} style={{ ...imgDimentions }} onLoad={onLoadImage}></img>
+            <img alt="" className="album-img" src={coverArt} style={{ ...imgDimentions }} onLoad={onLoadImage}></img>
 
             <div className="ml-2 mb-2 h-100 flex-column align-items-start justify-content-end hide-desktop-flex">
                 <span className="text-white text-start text-header-mobile">{album?.name}</span>

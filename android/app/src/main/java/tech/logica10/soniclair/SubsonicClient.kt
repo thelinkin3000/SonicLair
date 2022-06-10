@@ -26,14 +26,15 @@ import kotlin.io.path.Path
 
 
 class Account(val username: String?, val password: String, val url: String, var type: String)
+class Settings(val cacheSize: Int)
 
 class SubsonicClient(var initialAccount: Account) {
     companion object {
-        var account: Account = Account(null, "", "", "");
+        var account: Account = Account(null, "", "", "")
     }
 
     init {
-        account = initialAccount;
+        account = initialAccount
     }
 
     val client: OkHttpClient = OkHttpClient.Builder()
@@ -95,40 +96,52 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getSongsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return "${uri.authority}/songs/";
+        return "${uri.authority}/songs/"
     }
 
     fun getCoverArtsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return "${uri.authority}/albumArts/";
+        return "${uri.authority}/albumArts/"
     }
 
     fun getLocalCoverArtUri(id: String): String {
-        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString();
+        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString()
     }
 
     fun getLocalSongUri(id: String): String {
-        return Path(App.context.filesDir.path, getSongsDirectory(), id).toString();
+        return Path(App.context.filesDir.path, getSongsDirectory(), id).toString()
     }
 
     fun downloadSong(id: String) {
-        val request: Request = Request.Builder().url(getSongDownload(id)).build()
-        Log.i("SonicLair", "Downloading song ${id}");
-        val response = client.newCall(request).execute()
-        if (!response.isSuccessful) {
-            Log.i("SonicLair", "Downloading song ${id} failed");
+        try{
+            val request: Request = Request.Builder().url(getSongDownload(id)).build()
+            Log.i("SonicLair", "Downloading song ${id}")
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.i("SonicLair", "Downloading song ${id} failed")
+            }
+            val dirPath = Path(App.context.filesDir.path, getSongsDirectory()).toString()
+            val dir = File(dirPath)
+            if (!dir.exists())
+                dir.mkdirs()
+            val file = File(getLocalSongUri(id))
+            response.body!!.source().use { bufferedSource ->
+                val bufferedSink: BufferedSink = file.sink().buffer()
+                bufferedSink.writeAll(bufferedSource)
+                bufferedSink.close()
+                Log.i("SonicLair", "Downloading song ${id} complete!")
+            }
         }
-        val dirPath = Path(App.context.filesDir.path, getSongsDirectory()).toString();
-        val dir = File(dirPath);
-        if (!dir.exists())
-            dir.mkdirs()
-        val file = File(getLocalSongUri(id));
-        response.body!!.source().use { bufferedSource ->
-            val bufferedSink: BufferedSink = file.sink().buffer()
-            bufferedSink.writeAll(bufferedSource)
-            bufferedSink.close()
-            Log.i("SonicLair", "Downloading song ${id} complete!");
+        catch(e: Exception){
+            Globals.NotifyObservers("EX", e.message);
+            // It's probable the download failed and we have a malformed file.
+            // Gotta prune it.
+            if(File(getLocalSongUri(id)).exists()){
+
+                File(getLocalSongUri(id)).delete()
+            }
         }
+
     }
 
     inline fun <reified T : Any> makeSubsonicRequest(
@@ -357,10 +370,25 @@ class SubsonicClient(var initialAccount: Account) {
         playlist.forEach {
             CoroutineScope(IO).launch {
                 if (!File(getLocalSongUri(it.id)).exists()) {
+                    if (KeyValueStorage.getSettings().cacheSize > 0) {
+                        val dir = File(getSongsDirectory())
+                        if (dir.exists()) {
+                            val files = dir.listFiles()?.toList()
+                                ?.sortedBy {  file -> file.lastModified() }?.toMutableList()
+                                ?: mutableListOf<File>()
+                            var size = files.sumOf { it.length() }
+                            while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024)) {
+                                files[0].delete()
+                                files.remove(files[0])
+                                size = files.sumOf { it.length() }
+                            }
+                        }
+                    }
                     downloadSong(it.id)
                 }
+
             }
-        };
+        }
     }
 
 }

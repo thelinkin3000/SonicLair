@@ -1,20 +1,20 @@
 package tech.logica10.soniclair
 
-import android.media.browse.MediaBrowser
-import android.media.session.MediaSession
-import android.media.session.PlaybackState
+import android.app.PendingIntent
+import android.app.SearchManager
+import android.content.Intent
 import android.os.Bundle
-import android.service.media.MediaBrowserService
+import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.util.Log
 import androidx.media.MediaBrowserServiceCompat
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+
 
 class MediaBrowser : MediaBrowserServiceCompat() {
     private val mediaSession: MediaSessionCompat? = Globals.GetMediaSession()
@@ -78,6 +78,19 @@ class MediaBrowser : MediaBrowserServiceCompat() {
         runBlocking(Dispatchers.IO) {
             load(subsonicClient, result, true)
         }
+    }
+
+    override fun onSearch(
+        query: String,
+        extras: Bundle?,
+        result: Result<MutableList<MediaBrowserCompat.MediaItem>>
+    ) {
+        val intent = Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)
+        intent.putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/*")
+        intent.putExtra(SearchManager.QUERY, query)
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val pendingIntent = PendingIntent.getBroadcast(App.context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        pendingIntent.send()
     }
 
     fun load(

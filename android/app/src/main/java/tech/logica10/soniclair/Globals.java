@@ -5,6 +5,7 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.MediaSessionCompat.Callback;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import org.json.JSONException;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class Globals {
+public class Globals{
     // Static variable reference of single_instance
     // of type Singleton
     private static Globals single_instance = null;
@@ -38,7 +39,7 @@ public class Globals {
         stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
         stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE |  PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
-
+        mediaSession.setCallback(new MediaCallbacks());
     }
 
     // Static method

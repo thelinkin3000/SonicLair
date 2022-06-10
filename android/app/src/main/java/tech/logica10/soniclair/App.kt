@@ -17,7 +17,6 @@ import java.util.*
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
-        Debug.waitForDebugger()
         application = this
         CoroutineScope(Dispatchers.IO).launch {
             // If we're logged in a server

@@ -2,8 +2,6 @@
 // In time.
 
 import {
-  ListenerCallback,
-  PluginListenerHandle,
   WebPlugin,
 } from "@capacitor/core";
 import axios from "axios";
@@ -30,7 +28,7 @@ import {
 import { IArtistsResponse } from "../Models/API/Responses/IArtistsResponse";
 import { ISubsonicResponse } from "../Models/API/Responses/SubsonicResponse";
 import { IAccount, IAppContext } from "../Models/AppContext";
-import { IBackendPlugin, IBackendResponse, ICurrentState } from "./VLC";
+import { IBackendPlugin, IBackendResponse, ICurrentState, ISettings } from "./VLC";
 
 export class Backend extends WebPlugin implements IBackendPlugin {
   playlist: IAlbumSongResponse[];
@@ -108,6 +106,12 @@ export class Backend extends WebPlugin implements IBackendPlugin {
       }
       this._next();
     };
+  }
+  getSettings(): Promise<IBackendResponse<ISettings>> {
+    throw new Error("Method not implemented.");
+  }
+  setSettings(options: ISettings): Promise<IBackendResponse<String>> {
+    throw new Error("Method not implemented.");
   }
     getCameraPermission(): Promise<IBackendResponse<String>> {
         throw new Error("Method not implemented.");

@@ -25,11 +25,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.Dispatchers;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -70,8 +71,6 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         if(subsonicClient == null){
             subsonicClient = new SubsonicClient(KeyValueStorage.Companion.getActiveAccount());
         }
-        final ArrayList<String> args = new ArrayList<>();
-        args.add("-vvv");
         GsonBuilder builder = new GsonBuilder();
         builder.serializeNulls();
         gson = builder.create();
@@ -241,9 +240,31 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getActiveAccount(PluginCall call) throws JSONException {
+    public void getActiveAccount(PluginCall call) {
         try {
             JSObject ret = OkResponse(KeyValueStorage.Companion.getActiveAccount());
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void setSettings(PluginCall call){
+        try{
+            Integer cacheSize = Integer.parseInt(call.getString("cacheSize"));
+            KeyValueStorage.Companion.setSettings(new Settings(cacheSize));
+            call.resolve(OkStringResponse(""));
+        }
+        catch(Exception e){
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void getSettings(PluginCall call){
+        try {
+            JSObject ret = OkResponse(KeyValueStorage.Companion.getSettings());
             call.resolve(ret);
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
@@ -446,6 +467,37 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                             intent.putExtra("id", value);
                             App.getContext().startService(intent);
                         }
+                        break;
+                    case "SLPLAYSEARCH":
+                        if(mBound){
+                            binder.playSearch(value, SearchType.SONG);
+                        }
+                        else{
+                            Intent intent = new Intent(App.getContext(), MusicService.class);
+                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH());
+                            intent.putExtra("query", value);
+                            App.getContext().startService(intent);
+                        }
+                    case "SLPLAYSEARCHARTIST":
+                        if(mBound){
+                            binder.playSearch(value, SearchType.ARTIST);
+                        }
+                        else{
+                            Intent intent = new Intent(App.getContext(), MusicService.class);
+                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH_ARTIST());
+                            intent.putExtra("query", value);
+                            App.getContext().startService(intent);
+                        }
+                    case "SLPLAYSEARCHALBUM":
+                        if(mBound){
+                            binder.playSearch(value, SearchType.ALBUM);
+                        }
+                        else{
+                            Intent intent = new Intent(App.getContext(), MusicService.class);
+                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH_ALBUM());
+                            intent.putExtra("query", value);
+                            App.getContext().startService(intent);
+                        }
                 }
             } else if (action.startsWith("MS")) {
                 Log.i("SonicLair", "Notifying action" + action);
@@ -459,6 +511,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 notifyListeners("EX",new JSObject("{\"error\":\"" + value + "} \"}"));
             }
         } catch (Exception e) {
+            Log.e("SonicLair",e.getMessage());
             // Frankly my dear, I couldn't care less.
         }
     }
