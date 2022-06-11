@@ -3,6 +3,8 @@
    <img src="./logo.svg">
 </div>
 
+[![Build Android](https://github.com/thelinkin3000/SonicLair/actions/workflows/android-build.yaml/badge.svg)](https://github.com/thelinkin3000/SonicLair/actions/workflows/android-build.yaml)
+
 ## An album-centered subsonic client for PWA, Android, Android TV and Desktop
 
 SonicLair is a minimal, mobile-ready, album-centered music client for subsonic compatible music servers built on top of [Capacitor] and [Tauri]
@@ -14,9 +16,14 @@ SonicLair is a minimal, mobile-ready, album-centered music client for subsonic c
 - Album-centered music playing: if you start playing a song, the album becomes your playlist.
 - Start a radio based on any song on your library.
 - Search throughout your entire music library.
-- Android Auto support. (If downloaded vía Play Store. This is a limitation imposed by Google.)
+- Android Auto support. (You can use it enabling Developer Mode and Unknown Sources in Android Auto, [here] is a tutorial to do so, thanks to the folks at [Ultrasonic])
 - Android TV support.
-- [Android TV] Connect your TV to your server using your phone and a QR Code. (All the communications are made within the LAN, no third-party servers involved).
+- [Android TV] Connect your TV to your server using your phone and a QR Code. (All the communications are made within the LAN, no third-party servers involved)
+
+## Installation and Usage
+
+- To use the PWA version of the app, you can go to [Soniclair], thanks to the fine folks at [Vercel]. Remember that using this version of the app needs your server to use encryption, i.e. it needs to use an https://{domain}, because modern browsers don't support connection downgrading.
+- If you'd like to use the Android version, you can download the APK (self signed) from here, built by Github Actions from this very source code. No Google Play Store as of yet.
 
 ## Roadmap
 - Jukebox Mode (run an instance of Soniclair in an Android TV or TV Browser, or any browser hooked up to a nice screen and good speakers, and control it from another instance)
@@ -57,3 +64,7 @@ But basically, you can do whatever you want with this code.
    [VLC]: <https://www.videolan.org/>
    [Dillinger]: <https://github.com/joemccann/dillinger>
    [Norigin Spatial Navigation]: <ohttps://github.com/NoriginMedia/Norigin-Spatial-Navigation>
+   [Soniclair]: <https://soniclair.vercel.app/>
+   [here]: <https://github.com/ultrasonic/ultrasonic/wiki/Using-Ultrasonic-with-Android-Auto>
+   [Ultrasonic]: <https://github.com/ultrasonic/ultrasonic>
+   [Vercel]: <https://vercel.com>
