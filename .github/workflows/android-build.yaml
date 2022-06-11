@@ -33,7 +33,7 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
-     - name: Decode Keystore
+      - name: Decode Keystore
         id: decode_keystore
         uses: timheuer/base64-to-file@v1
         with:
