@@ -67,7 +67,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         this.playlist = [];
         this.audio = new Audio();
         this.isPlaying = false;
-        debugger;
 
         if ("mediaSession" in navigator) {
             navigator.mediaSession.setActionHandler("pause", () => {
@@ -85,8 +84,8 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         }
 
         this.audio.onplay = () => {
+            this.isPlaying = true;
             if (this.listeners["play"]) {
-                this.isPlaying = true;
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.playbackState = "playing";
                 }
@@ -94,8 +93,8 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.onpause = () => {
+            this.isPlaying = false;
             if (this.listeners["paused"]) {
-                this.isPlaying = false;
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.playbackState = "paused";
                 }
@@ -118,6 +117,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.onended = () => {
+            this.isPlaying = false;
             if (this.listeners["stopped"]) {
                 if ("mediaSession" in navigator) {
                     navigator.mediaSession.playbackState = "none";
@@ -669,7 +669,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     async pause(): Promise<IBackendResponse<string>> {
-        if (!this.isPlaying) {
+        if (this.isPlaying) {
             await this.audio.pause();
         }
         return this.OKResponse("");
