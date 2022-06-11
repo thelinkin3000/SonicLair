@@ -33,11 +33,12 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
-      - name: Decode Keystore
-        env:
-            ENCODED_STRING: ${{ secrets.KEYSTORE }}
-        run: |
-            echo $ENCODED_STRING | base64 -di > android/app/releasekey.jks
+     - name: Decode Keystore
+        id: decode_keystore
+        uses: timheuer/base64-to-file@v1
+        with:
+          fileName: 'android/app/releasekey.jks'
+          encodedString: ${{ secrets.KEYSTORE }}
 
       - name: Build app apk (already signed)
         run: cd android && gradle assembleRelease
