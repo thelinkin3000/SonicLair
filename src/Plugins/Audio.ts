@@ -107,6 +107,9 @@ export class Backend extends WebPlugin implements IBackendPlugin {
       this._next();
     };
   }
+  async getSongStatus(options: { id: string; }): Promise<IBackendResponse<boolean>> {
+    return this.OKResponse<boolean>(false);
+  }
   getSettings(): Promise<IBackendResponse<ISettings>> {
     throw new Error("Method not implemented.");
   }

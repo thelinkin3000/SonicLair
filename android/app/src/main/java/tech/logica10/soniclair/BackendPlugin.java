@@ -115,6 +115,15 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         return ret;
     }
 
+    private JSObject OkResponse(Boolean value) {
+        JSObject ret = new JSObject();
+        ret.put("status", "ok");
+        ret.put("error", null);
+        ret.put("value", value);
+        return ret;
+    }
+
+
     @PluginMethod()
     public void login(PluginCall call) {
         JSObject data = call.getData();
@@ -437,6 +446,16 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         call.resolve(OkResponse(state));
     }
 
+    @PluginMethod()
+    public void getSongStatus(PluginCall call){
+        try{
+            call.resolve(OkResponse(subsonicClient.isCached(call.getString("id"))));
+        }
+        catch(Exception e){
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
     @Override
     public void update(String action, String value) {
         try {
@@ -500,7 +519,6 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                         }
                 }
             } else if (action.startsWith("MS")) {
-                Log.i("SonicLair", "Notifying action" + action);
                 if (value != null) {
                     notifyListeners(action.replace("MS", ""), new JSObject(value));
                 } else {

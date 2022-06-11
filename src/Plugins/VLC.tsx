@@ -77,6 +77,7 @@ export interface IBackendPlugin extends Plugin {
     getCameraPermissionStatus(): Promise<IBackendResponse<String>>;
     getSettings(): Promise<IBackendResponse<ISettings>>;
     setSettings(options:ISettings): Promise<IBackendResponse<String>>;
+    getSongStatus(options: {id: string}): Promise<IBackendResponse<boolean>>;
 }
 
 const VLC = registerPlugin<IBackendPlugin>("VLC", {

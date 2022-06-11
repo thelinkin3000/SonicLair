@@ -14,9 +14,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import okio.BufferedSink
-import okio.buffer
-import okio.sink
+import okio.*
 import tech.logica10.soniclair.SubsonicModels.*
 import java.io.File
 import java.math.BigInteger
@@ -82,6 +80,10 @@ class SubsonicClient(var initialAccount: Account) {
         return ret
     }
 
+    fun isCached(id: String): Boolean {
+        return File(getLocalSongUri(id)).exists()
+    }
+
     fun getSongDownload(id: String): String {
         val uriBuilder = Uri.parse(account.url).buildUpon()
             .appendPath("rest")
@@ -113,30 +115,39 @@ class SubsonicClient(var initialAccount: Account) {
     }
 
     fun downloadSong(id: String) {
-        try{
+        try {
             val request: Request = Request.Builder().url(getSongDownload(id)).build()
             Log.i("SonicLair", "Downloading song ${id}")
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
-                Log.i("SonicLair", "Downloading song ${id} failed")
+                Globals.NotifyObservers("EX", response.message)
+                return
             }
             val dirPath = Path(App.context.filesDir.path, getSongsDirectory()).toString()
             val dir = File(dirPath)
             if (!dir.exists())
                 dir.mkdirs()
             val file = File(getLocalSongUri(id))
-            response.body!!.source().use { bufferedSource ->
-                val bufferedSink: BufferedSink = file.sink().buffer()
-                bufferedSink.writeAll(bufferedSource)
-                bufferedSink.close()
-                Log.i("SonicLair", "Downloading song ${id} complete!")
+            val body = response.body
+            val contentLength = body!!.contentLength()
+            val source = body.source()
+            val sink = file.sink().buffer()
+            val sinkBuffer: Buffer = sink.buffer
+            var totalBytesRead: Long = 0
+            val bufferSize: Long = 8 * 1024
+            var bytesRead: Long
+            while (source.read(sinkBuffer, bufferSize).also { bytesRead = it } != -1L) {
+                sink.emit()
+                totalBytesRead += bytesRead
+                val progress = (totalBytesRead * 100 / contentLength).toInt()
+                Globals.NotifyObservers("MSprogress${id}", "{\"progress\":${progress}}")
             }
-        }
-        catch(e: Exception){
-            Globals.NotifyObservers("EX", e.message);
+            sink.flush()
+        } catch (e: Exception) {
+            Globals.NotifyObservers("EX", e.message)
             // It's probable the download failed and we have a malformed file.
             // Gotta prune it.
-            if(File(getLocalSongUri(id)).exists()){
+            if (File(getLocalSongUri(id)).exists()) {
 
                 File(getLocalSongUri(id)).delete()
             }
@@ -374,7 +385,7 @@ class SubsonicClient(var initialAccount: Account) {
                         val dir = File(getSongsDirectory())
                         if (dir.exists()) {
                             val files = dir.listFiles()?.toList()
-                                ?.sortedBy {  file -> file.lastModified() }?.toMutableList()
+                                ?.sortedBy { file -> file.lastModified() }?.toMutableList()
                                 ?: mutableListOf<File>()
                             var size = files.sumOf { it.length() }
                             while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024)) {
