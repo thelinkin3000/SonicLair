@@ -25,9 +25,9 @@ jobs:
           node-version: 16.x
 
       - name: Install app dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
-      - name: Build Svelte app
+      - name: Build Frontend
         run: npm run build
 
       - name: Capacitor sync
