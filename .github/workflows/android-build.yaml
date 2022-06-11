@@ -33,10 +33,11 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
-      - name: Extract Android signing key from env
+      - name: Decode Keystore
+        env:
+            ENCODED_STRING: ${{ secrets.KEYSTORE }}
         run: |
-          echo "${{ secrets.KEYSTORE }}" > android/app/releasekey.base64
-          base64 -d android/app/releasekey.base64 > android/app/releasekey.jks
+            echo $ENCODED_STRING | base64 -di > android/app/releasekey.jks
 
       - name: Build app apk (already signed)
         run: cd android && gradle assembleRelease
