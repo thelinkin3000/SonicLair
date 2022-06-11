@@ -67,6 +67,22 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         this.playlist = [];
         this.audio = new Audio();
         this.isPlaying = false;
+        debugger;
+
+        if ("mediaSession" in navigator) {
+            navigator.mediaSession.setActionHandler("pause", () => {
+                this.pause();
+            });
+            navigator.mediaSession.setActionHandler("play", () => {
+                this.play();
+            });
+            navigator.mediaSession.setActionHandler("nexttrack", () => {
+                this._next();
+            });
+            navigator.mediaSession.setActionHandler("previoustrack", () => {
+                this.prev();
+            });
+        }
 
         this.audio.onplay = () => {
             if (this.listeners["play"]) {
@@ -87,14 +103,15 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.ontimeupdate = (ev: any) => {
+            debugger;
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.setPositionState({
+                    duration: ev.path[0].duration,
+                    playbackRate: 1,
+                    position: ev.path[0].currentTime,
+                });
+            }
             if (this.listeners["progress"]) {
-                if ("mediaSession" in navigator) {
-                    navigator.mediaSession.setPositionState({
-                        duration: ev.path[0].duration,
-                        playbackRate: 1,
-                        position: ev.path[0].currentTime * ev.path[0].duration,
-                    });
-                }
                 this.notifyListeners("progress", {
                     time: ev.path[0].currentTime / ev.path[0].duration,
                 });
@@ -679,18 +696,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 artist: this.currentTrack.artist,
                 album: this.currentTrack.album,
                 artwork: [{ src: albumArt, sizes: "any" }],
-            });
-            navigator.mediaSession.setActionHandler("pause", () => {
-                this.pause();
-            });
-            navigator.mediaSession.setActionHandler("play", () => {
-                this.play();
-            });
-            navigator.mediaSession.setActionHandler("nexttrack", () => {
-                this._next();
-            });
-            navigator.mediaSession.setActionHandler("previoustrack", () => {
-                this.prev();
             });
         }
         await this.notifyListeners("currentTrack", {

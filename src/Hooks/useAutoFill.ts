@@ -1,4 +1,4 @@
-import { floor } from "lodash";
+import { floor, size } from "lodash";
 import {
     useState,
     useRef,
@@ -26,6 +26,7 @@ export interface IAutoFill {
 }
 
 export default function useAutoFill<T>(data: T[]) {
+    const [called, setCalled] = useState<boolean>(false);
     const listRef = useRef<HTMLDivElement | null>(null);
     const [width, setWidth] = useState<number>(0);
     const [height, setHeight] = useState<number>(0);
@@ -43,7 +44,7 @@ export default function useAutoFill<T>(data: T[]) {
     const autoFillRef = useCallback(
         (r: HTMLDivElement | undefined | null, force?: boolean) => {
             console.log("called");
-            if (!r || !force) return;
+            if (!r || (called && !force)) return;
             listRef.current = r;
             setWidth(r.clientWidth);
             setHeight(r.clientHeight);
@@ -75,7 +76,7 @@ export default function useAutoFill<T>(data: T[]) {
                 width: width,
             });
         },
-        [data.length]
+        [called, data]
     );
     const size = useWindowSize();
     useEffect(() => {

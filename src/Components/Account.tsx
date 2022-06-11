@@ -47,18 +47,21 @@ export default function Account() {
         }
     }, []);
     useEffect(() => {
-        const f = async () => {
-            try {
-                const cacheSize = (await VLC.getSettings()).value?.cacheSize;
-                setValue("cacheSize", cacheSize!);
-            } catch (e: any) {
-                setValue("cacheSize", 0);
-                Toast.show({
-                    text: "There was an error retrieving settings from the Phone.",
-                });
-            }
-        };
-        f();
+        if (Capacitor.getPlatform() === "android") {
+            const f = async () => {
+                try {
+                    const cacheSize = (await VLC.getSettings()).value
+                        ?.cacheSize;
+                    setValue("cacheSize", cacheSize!);
+                } catch (e: any) {
+                    setValue("cacheSize", 0);
+                    Toast.show({
+                        text: "There was an error retrieving settings from the Phone.",
+                    });
+                }
+            };
+            f();
+        }
     }, [setValue]);
     const onSubmit = handleSubmit(hash);
     const { ref: cacheSizeRef, focused: cacheSizeFocused } = useFocusable({
