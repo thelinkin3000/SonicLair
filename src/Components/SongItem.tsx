@@ -6,11 +6,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import classNames from "classnames";
 import "./SongItem.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faArrowDown,
-    faArrowsDownToLine,
-    faVolumeHigh,
-} from "@fortawesome/free-solid-svg-icons";
+import { faArrowDown, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 import { MenuContext } from "../AppContext";
 import VLC from "../Plugins/VLC";
 import { Toast } from "@capacitor/toast";
@@ -123,15 +119,22 @@ export default function SongItem({
                     )}
                 </div>
                 {downloadProgress > 0 && downloadProgress < 100 && (
-                    <div className="progress" style={{height:"2px", margin:0, padding:0}}>
-                        <div className="progress-bar progress-bar-soniclair" role="progressbar" style={{width:`${downloadProgress}%`, margin:0, padding:0}}></div>
+                    <div
+                        className="progress"
+                        style={{ height: "2px", margin: 0, padding: 0 }}
+                    >
+                        <div
+                            className="progress-bar progress-bar-soniclair"
+                            role="progressbar"
+                            style={{
+                                width: `${downloadProgress}%`,
+                                margin: 0,
+                                padding: 0,
+                            }}
+                        ></div>
                     </div>
                 )}
             </div>
         </div>
     );
-}
-
-function IAppContext(IAppContext: any): { context: any } {
-    throw new Error("Function not implemented.");
 }

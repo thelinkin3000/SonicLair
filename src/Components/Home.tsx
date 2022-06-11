@@ -1,5 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
-import { AppContext } from '../AppContext';
+import { useEffect, useState } from 'react';
 import { IAlbumArtistResponse, IAlbumSongResponse } from '../Models/API/Responses/IArtistResponse';
 import AlbumCard from './AlbumCard';
 import RandomSongCard from './RandomSongCard';

@@ -1,5 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { AppContext } from '../AppContext';
+import { useEffect, useRef, useState } from 'react';
 import { IAlbumArtistResponse, IAlbumSongResponse } from '../Models/API/Responses/IArtistResponse';
 import AlbumCard from './AlbumCard';
 import RandomSongCard from './RandomSongCard';
@@ -7,7 +6,6 @@ import VLC from '../Plugins/VLC';
 import { Toast } from '@capacitor/toast';
 import classNames from 'classnames';
 import AndroidTVPlugin from '../Plugins/AndroidTV';
-import { useForm } from 'react-hook-form';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 
 export default function HomeTV() {
@@ -48,7 +46,7 @@ export default function HomeTV() {
       setFetched(true);
     };
     fetch();
-  }, [fetched]);
+  }, [fetched, focusSelf]);
 
   return (
     <FocusContext.Provider value={focusKey}>

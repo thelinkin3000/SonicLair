@@ -4,7 +4,6 @@ import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { assignInWith } from "lodash";
 import { useCallback, useContext, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { AppContext } from "../AppContext";

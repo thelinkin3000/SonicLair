@@ -7,7 +7,6 @@ import "./AccountItem.scss";
 import { useNavigate } from "react-router-dom";
 import { Toast } from "@capacitor/toast";
 import VLC from "../Plugins/VLC";
-import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 
 export interface AccountItemProps {
@@ -16,25 +15,20 @@ export interface AccountItemProps {
 }
 
 export default function AccountItem({ account, del }: AccountItemProps) {
-    const { context, setContext } = useContext(AppContext);
+    const { setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const login = useCallback(async () => {
-        console.log("LOGIN")
         const ret = await VLC.login({ username: account.username!, password: account.password, url: account.url });
-        console.log("RET", ret);
         if (ret.status === "ok") {
-            console.log("SETTING CONTEXT");
             setContext(ret.value!);
-            console.log("CONTEXT SET")
             navigate("/home");
-            console.log("NAVIGATED");
         }
         else {
             await Toast.show({
                 text: ret.error
             });
         }
-    }, []);
+    }, [account.password, account.url, account.username, navigate, setContext]);
 
     const deleteAccount = useCallback(async () => {
         const ret = await VLC.deleteAccount({ url: account.url });
@@ -44,7 +38,7 @@ export default function AccountItem({ account, del }: AccountItemProps) {
         else {
             Toast.show({ text: ret.error });
         }
-    }, [context, setContext]);
+    }, [account.url, del]);
 
     return (
         <div className={classNames("account-item", "d-flex", "flex-row", "align-items-center", "justify-content-start")}>

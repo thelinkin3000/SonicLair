@@ -1,30 +1,21 @@
 import { faForwardStep, faPause, faPlay, faVolumeHigh, faVolumeLow } from "@fortawesome/free-solid-svg-icons";
-import { ChangeEvent, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from "../AppContext";
-import { CurrentTrackContext, CurrentTrackContextDefValue } from "../AudioContext"
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { CurrentTrackContextDefValue } from "../AudioContext"
 import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import _, { } from 'lodash';
 import { useLocation, useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
-import { Backend } from "../Plugins/Audio";
 import { Capacitor, PluginListenerHandle } from "@capacitor/core";
 import AndroidTVPlugin from "../Plugins/AndroidTV";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 
-interface IListener {
-    event: string;
-    func: (ev: any) => void;
-}
-
-export default function AudioControl({ }) {
+export default function AudioControl() {
     const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
     const [playing, setPlaying] = useState<boolean>(false);
     const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
-    const audioInstance = useRef<Backend>(new Backend());
     const [androidTV, setAndroidTV] = useState<boolean>(false);
     const location = useLocation();
     const navigate = useNavigate();
@@ -35,12 +26,12 @@ export default function AudioControl({ }) {
         const vol = parseFloat(e.target.value);
         setVolume(vol);
         await VLC.setVolume({ volume: vol });
-    }, [audioInstance]);
+    }, []);
 
     const changePlayTime = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
         const time = parseFloat(e.target.value);
         VLC.seek({ time: time });
-    }, [audioInstance, currentTrack]);
+    }, []);
     useEffect(() => {
         const fetch = async () => {
             try {
@@ -96,7 +87,7 @@ export default function AudioControl({ }) {
 
     const goToAlbum = useCallback(() => {
         navigate(`/album`, { state: { id: currentTrack.parent } });
-    }, [currentTrack]);
+    }, [currentTrack.parent, navigate]);
 
     const hide = useCallback(() => {
         if (currentTrack.id === "" || location.pathname.match(/playing/)) {
@@ -137,7 +128,7 @@ export default function AudioControl({ }) {
             <div className="d-flex flex-row align-items-center justify-content-between w-100">
                 {/* <div className="flex-shrink-1 hide-overflow" > */}
                 <div onClick={goToAlbum} className={`current-track-header flex-row align-items-center justify-content-start ${currentTrack.id === "" ? "d-none" : "d-flex"}`}>
-                    <img className={"current-track-img"} src={coverArt}></img>
+                    <img alt="" className={"current-track-img"} src={coverArt}></img>
                     <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-start fade-right" >
                         <span className="text-white no-wrap" style={{ overflow: "hidden", whiteSpace: "nowrap", fontWeight: 800 }}>{currentTrack.title}</span>
                         <span className="text-white no-wrap mb-0" style={{ overflow: "hidden", whiteSpace: "nowrap" }}>by {currentTrack.artist}</span>

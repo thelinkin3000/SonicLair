@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
-import { AppContext, StateContext } from "../AppContext";
+import { StateContext } from "../AppContext";
 import { IAlbumArtistResponse } from "../Models/API/Responses/IArtistResponse";
 import AlbumCard from "./AlbumCard";
 import "./Artists.scss";
@@ -18,10 +18,9 @@ export default function Albums() {
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const { stateContext } = useContext(StateContext);
-    const setRef = useRef<number>(0);
-
+    
     const gridRef = (ref: Grid) => {
-        if (ref && (stateContext.selectedAlbum[0] != 0 || stateContext.selectedAlbum[1] != 0)) {
+        if (ref && (stateContext.selectedAlbum[0] !== 0 || stateContext.selectedAlbum[1] !== 0)) {
             ref.scrollToItem({ columnIndex: stateContext.selectedAlbum[1], rowIndex: stateContext.selectedAlbum[0], align: "center" });
         }
     }

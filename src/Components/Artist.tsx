@@ -77,7 +77,7 @@ export default function Artist() {
             fetch();
         }
 
-    }, [artistFetched, artistInfoFetched, artist, context]);
+    }, [artistFetched, artistInfoFetched, artist, context, state.id]);
 
     const onLoadImage = useCallback((ev: any) => {
         if (ev.target.height >= ev.target.width || width > ev.target.width) {
@@ -92,7 +92,7 @@ export default function Artist() {
                 width: "auto"
             });
         }
-    }, [height, width]);
+    }, [width]);
 
     useEffect(() => {
         if (!img.current)
@@ -143,7 +143,7 @@ export default function Artist() {
         <div className="artist-container d-flex flex-column">
             {coverArt !== "" && (
                 <>
-                    <img className="artist-img" src={coverArt} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
+                    <img alt="" className="artist-img" src={coverArt} onLoad={onLoadImage} style={{ ...imgDimentions }} ref={img} />
                     <div className="artist-image-container">
                     </div>
                 </>

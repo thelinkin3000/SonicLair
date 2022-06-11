@@ -2,7 +2,7 @@ import { IArtist } from "../Models/API/Responses/IArtist";
 import "./ArtistCard.scss";
 import "../Styles/colors.scss";
 import { useNavigate } from "react-router-dom";
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext, StateContext } from "../AppContext";
 import Loading from "./Loading";
 import GetSpotifyArtist from "../Api/GetSpotifyArtist";
@@ -58,19 +58,19 @@ export default function ArtistCard({ item, forceWidth, parentRef, columnIndex, r
             parentRef?.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
             ref.current.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
         }
-    }, [focused]);
+    }, [focused, parentRef, ref]);
 
     const nav = useCallback(() => {
         if(columnIndex !== undefined && rowIndex !== undefined){
             setStateContext({...stateContext, selectedArtist:[rowIndex, columnIndex]});
         }
         navigate(`/artist`, { state: { id: item.id } });
-    },[columnIndex, rowIndex, item]);
+    },[columnIndex, rowIndex, navigate, item.id, setStateContext, stateContext]);
     return (
         <div ref={ref} style={{ width: forceWidth ? "170px" : "" }} className={classNames("d-flex", "flex-column", "align-items-center", "justify-content-between", "artist-item","not-selectable" , focused ? "artist-item-focused" : "")}
             onClick={nav}>
             <div className="d-flex align-items-center justify-content-center artist-image-container">
-                {coverArt !== "" ? <img style={style} src={coverArt} onLoad={onload} className="artist-image"></img> : <Loading />}
+                {coverArt !== "" ? <img alt="" style={style} src={coverArt} onLoad={onload} className="artist-image"></img> : <Loading />}
             </div>
             <div className="w-100 d-flex flex-column align-items-start justify-content-end text-white no-overflow">
                 <span>

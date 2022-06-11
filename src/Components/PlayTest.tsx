@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { AppContext } from "../AppContext";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../logo.svg";
 import { motion, useAnimation } from "framer-motion";
@@ -88,7 +88,6 @@ export default function PlayTest() {
     const {
         ref: qrRef,
         focused: qrFocused,
-        focusSelf: focusQr,
     } = useFocusable({
         onEnterPress: () => {
             setShowQr(!showQr);
