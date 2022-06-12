@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
         /* If FLAG_ACTIVITY_MULTIPLE_TASK has not been used, this activity
         is reused to create a new document.
          */
-        if (intent.getAction().equals("android.media.action.MEDIA_PLAY_FROM_SEARCH")) {
+        if (intent.getAction() != null && intent.getAction().equals("android.media.action.MEDIA_PLAY_FROM_SEARCH")) {
             String mediaFocus =
                     intent.getStringExtra(MediaStore.EXTRA_MEDIA_FOCUS);
             String query = intent.getStringExtra(SearchManager.QUERY);
@@ -56,10 +56,10 @@ public class MainActivity extends BridgeActivity {
 
             if (query == null) {
                 Globals.NotifyObservers("SLPLAY", "");
+                return;
             }
             // Determine the search mode and use the corresponding extras
             if (mediaFocus == null) {
-
                 Globals.NotifyObservers("SLPLAYSEARCH", query);
             } else if (mediaFocus.compareTo("vnd.android.cursor.item/*") == 0) {
                 if (!query.isEmpty()) {
