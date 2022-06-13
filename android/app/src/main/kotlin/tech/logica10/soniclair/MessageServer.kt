@@ -15,13 +15,11 @@ class WebSocketMessage(
     val type: String
 )
 
-class MessageServer : WebSocketServer {
+class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)) {
     private val clients: MutableMap<String, WebSocket> = ConcurrentHashMap()
     private val gson: Gson = Gson()
 
-    constructor(port: Int) : super(InetSocketAddress(port))
-
-    private fun constructMessage(text: String): String {
+    private fun constructMessage(text: String = "soniclair"): String {
         val message = WebSocketMessage(text, "message")
         return gson.toJson(message)
     }
@@ -29,7 +27,7 @@ class MessageServer : WebSocketServer {
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
         val uniqueID: String = UUID.randomUUID().toString()
         clients[uniqueID] = conn
-        conn.send(constructMessage("soniclair"))
+        conn.send(constructMessage())
     }
 
     override fun onClose(conn: WebSocket, code: Int, reason: String?, remote: Boolean) {

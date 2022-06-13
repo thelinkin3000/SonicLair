@@ -49,7 +49,7 @@ class App : Application() {
                     }
                     val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
                     for (addr in addrs) {
-                        val a: String = addr.hostAddress.replace("/", "")
+                        val a: String = addr.hostAddress?.replace("/", "") ?: return
                         if (!addr.isLoopbackAddress
                             && (a.subSequence(0, 7) == "192.168"
                                     || a.subSequence(0, 2) == "10"

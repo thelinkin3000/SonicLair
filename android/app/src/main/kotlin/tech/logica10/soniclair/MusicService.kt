@@ -87,8 +87,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var cancelAction: NotificationCompat.Action? = null
     private var isForeground: Boolean = false
     private val binder = LocalBinder()
-    private val notif_id = 1
-    val connectivityManager: ConnectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
+    private val notifId = 1
+    private val connectivityManager: ConnectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
 
 
     private var mMediaPlayer: MediaPlayer? = null
@@ -109,7 +109,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         Log.i("ServiceCreation", "Created")
         notificationManager.createNotificationChannel(channel)
         try {
-            mLibVLC = LibVLC(MainActivity.context, args)
+            mLibVLC = LibVLC(App.context, args)
             mMediaPlayer = MediaPlayer(mLibVLC)
         } catch (e: Exception) {
             Log.i("Soniclair", e.message!!)
@@ -217,18 +217,18 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         if (!isForeground) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
-                    notif_id, notif,
+                    notifId, notif,
                     FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
                 )
             } else {
-                startForeground(notif_id, notif)
+                startForeground(notifId, notif)
             }
             isForeground = true
         }
-        notificationManager.notify(notif_id, notif)
+        notificationManager.notify(notifId, notif)
     }
 
-    fun updateMediaSession(playbackState: PlaybackStateCompat) {
+    private fun updateMediaSession(playbackState: PlaybackStateCompat) {
         mediaSession.setPlaybackState(playbackState)
         mediaSession.isActive = true
     }
@@ -314,6 +314,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action != null) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -402,7 +403,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     override fun update(action: String?, value: String?) {
         if (action == "SLCANCEL") {
-            notificationManager.cancel(notif_id)
+            notificationManager.cancel(notifId)
             stopSelf()
         }
     }
@@ -479,6 +480,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private fun play() {
         wasPlaying = false
         if (mMediaPlayer!!.media != null) {
@@ -531,10 +533,10 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     private fun loadMedia() {
-        var uri: String? = null
+        var uri: String?
         val file = File(subsonicClient.getLocalSongUri(currentTrack!!.id))
         if (file.exists()) {
-            var channel: FileChannel? = null
+            val channel: FileChannel?
             var lock: FileLock? = null
             try {
                 channel = RandomAccessFile(file, "rw").channel
@@ -569,44 +571,49 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     override fun onEvent(event: MediaPlayer.Event) {
-        if (event.type == MediaPlayer.Event.TimeChanged) {
-            val position = mMediaPlayer!!.position
-            notifyListeners("progress", JSObject("{\"time\": ${position}}"))
-        } else if (event.type == MediaPlayer.Event.EndReached) {
-            notifyListeners("stopped", null)
-            try {
-                next()
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            } catch (e: ExecutionException) {
-                e.printStackTrace()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
+        when (event.type) {
+            MediaPlayer.Event.TimeChanged -> {
+                val position = mMediaPlayer!!.position
+                notifyListeners("progress", JSObject("{\"time\": ${position}}"))
             }
-            updateNotification(null, true)
-        } else if (event.type == MediaPlayer.Event.Paused || event.type == MediaPlayer.Event.Stopped) {
-            notifyListeners("paused", null)
-            val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
-                PlaybackStateCompat.STATE_PAUSED,
-                mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
-                0f
-            )
-            updateMediaSession(b.build())
-            updateNotification(null, true)
-        } else if (event.type == MediaPlayer.Event.Playing) {
-            notifyListeners("play", null)
-            notifyListeners(
-                "currentTrack",
-                JSObject("{\"currentTrack\": ${gson.toJson(currentTrack!!)}}")
-            )
-            val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
-                PlaybackStateCompat.STATE_PLAYING,
-                mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
-                1f
-            )
-            updateMediaSession(b.build())
-            updateNotification(null, false)
-            requestAudioFocus()
+            MediaPlayer.Event.EndReached -> {
+                notifyListeners("stopped", null)
+                try {
+                    next()
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                } catch (e: ExecutionException) {
+                    e.printStackTrace()
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+                updateNotification(null, true)
+            }
+            MediaPlayer.Event.Paused, MediaPlayer.Event.Stopped -> {
+                notifyListeners("paused", null)
+                val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                    PlaybackStateCompat.STATE_PAUSED,
+                    mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
+                    0f
+                )
+                updateMediaSession(b.build())
+                updateNotification(null, true)
+            }
+            MediaPlayer.Event.Playing -> {
+                notifyListeners("play", null)
+                notifyListeners(
+                    "currentTrack",
+                    JSObject("{\"currentTrack\": ${gson.toJson(currentTrack!!)}}")
+                )
+                val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                    PlaybackStateCompat.STATE_PLAYING,
+                    mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
+                    1f
+                )
+                updateMediaSession(b.build())
+                updateNotification(null, false)
+                requestAudioFocus()
+            }
         }
     }
 

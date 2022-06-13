@@ -63,7 +63,7 @@ class SubsonicClient(var initialAccount: Account) {
             builder.setTitle(item.title)
             builder.setSubtitle(String.format("by %s", item.artist))
             val albumArtUri = Uri.parse(getAlbumArt(item.coverArt))
-            val futureBitmap = Glide.with(MainActivity.context)
+            val futureBitmap = Glide.with(App.context)
                 .asBitmap()
                 .load(albumArtUri)
                 .submit()
@@ -84,7 +84,7 @@ class SubsonicClient(var initialAccount: Account) {
         return File(getLocalSongUri(id)).exists()
     }
 
-    fun getSongDownload(id: String): String {
+    private fun getSongDownload(id: String): String {
         val uriBuilder = Uri.parse(account.url).buildUpon()
             .appendPath("rest")
             .appendPath("download")
@@ -96,15 +96,15 @@ class SubsonicClient(var initialAccount: Account) {
         return uriBuilder.build().toString()
     }
 
-    fun getSongsDirectory(): String {
+    private fun getSongsDirectory(): String {
         val uri = Uri.parse(account.url)
         return "${uri.authority}/songs/"
     }
 
-    fun getCoverArtsDirectory(): String {
-        val uri = Uri.parse(account.url)
-        return "${uri.authority}/albumArts/"
-    }
+//    fun getCoverArtsDirectory(): String {
+//        val uri = Uri.parse(account.url)
+//        return "${uri.authority}/albumArts/"
+//    }
 
 //    fun getLocalCoverArtUri(id: String): String {
 //        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString()
@@ -114,7 +114,7 @@ class SubsonicClient(var initialAccount: Account) {
         return Path(App.context.filesDir.path, getSongsDirectory(), id).toString()
     }
 
-    fun downloadSong(id: String) {
+    private fun downloadSong(id: String) {
         try {
             val request: Request = Request.Builder().url(getSongDownload(id)).build()
             Log.i("SonicLair", "Downloading song $id")
@@ -196,7 +196,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun search(query: String): SearchResult {
         val params = getBasicParams().asMap()
-        params.set("query", query)
+        params["query"] = query
         return makeSubsonicRequest<SearchResponse>(
             listOf("rest", "search3"),
             params
@@ -212,7 +212,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getArtist(id: String): InnerArtistSubsonicResponse {
         val params = getBasicParams().asMap()
-        params.set("id", id)
+        params["id"] = id
         return makeSubsonicRequest<ArtistSubsonicResponse>(
             listOf("rest", "getArtist"),
             params
@@ -225,9 +225,9 @@ class SubsonicClient(var initialAccount: Account) {
         val ret = mutableListOf<Album>()
         while (more) {
             val params = getBasicParams().asMap()
-            params.set("type", "alphabeticalByName")
-            params.set("size", "500")
-            params.set("offset", (page * 500).toString())
+            params["type"] = "alphabeticalByName"
+            params["size"] = "500"
+            params["offset"] = (page * 500).toString()
             ret.addAll(
                 makeSubsonicRequest<AlbumsResponse>(
                     listOf("rest", "getAlbumList2"),
@@ -244,7 +244,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getAlbum(id: String): AlbumWithSongs {
         val params = getBasicParams().asMap()
-        params.set("id", id)
+        params["id"] = id
         return makeSubsonicRequest<AlbumResponse>(
             listOf("rest", "getAlbum"),
             params
@@ -253,7 +253,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getArtistInfo(id: String): ArtistInfo {
         val params = getBasicParams().asMap()
-        params.set("id", id)
+        params["id"] = id
         return makeSubsonicRequest<ArtistInfoResponse>(
             listOf("rest", "getArtistInfo2"),
             params
@@ -262,8 +262,8 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getTopAlbums(type: String = "frequent", size: Int = 10): List<Album> {
         val params = getBasicParams().asMap()
-        params.set("type", type)
-        params.set("size", size.toString())
+        params["type"] = type
+        params["size"] = size.toString()
 
         return makeSubsonicRequest<AlbumsResponse>(
             listOf("rest", "getAlbumList2"),
@@ -285,7 +285,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getRandomSongs(): List<Song> {
         val params = getBasicParams().asMap()
-        params.set("size", "10")
+        params["size"] = "10"
         return makeSubsonicRequest<RandomSongsResponse>(
             listOf("rest", "getRandomSongs"),
             params
@@ -309,7 +309,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getSimilarSongs(id: String): List<Song> {
         val params = getBasicParams().asMap()
-        params.set("id", id)
+        params["id"] = id
         return makeSubsonicRequest<SimilarSongsResponse>(
             listOf("rest", "getSimilarSongs2"),
             params
@@ -318,7 +318,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getSong(id: String): Song {
         val params = getBasicParams().asMap()
-        params.set("id", id)
+        params["id"] = id
         return makeSubsonicRequest<SongResponse>(
             listOf("rest", "getSong"),
             params
@@ -366,11 +366,10 @@ class SubsonicClient(var initialAccount: Account) {
         KeyValueStorage.setActiveAccount(account)
         val accounts = KeyValueStorage.getAccounts()
         val exists = accounts.filter { it.url == url }.size == 1
-        val list: List<Account>
-        if (exists) {
-            list = KeyValueStorage.getAccounts().filter { it.url != url }.toMutableList()
+        val list: MutableList<Account> = if (exists) {
+            KeyValueStorage.getAccounts().filter { it.url != url }.toMutableList()
         } else {
-            list = KeyValueStorage.getAccounts().toMutableList()
+            KeyValueStorage.getAccounts().toMutableList()
         }
         list.add(account)
         KeyValueStorage.setAccounts(list)

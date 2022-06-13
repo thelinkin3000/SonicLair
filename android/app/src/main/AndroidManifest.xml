@@ -45,7 +45,8 @@
 
         <service
             android:name=".MediaBrowser"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.MEDIA_CONTENT_CONTROL">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
@@ -55,8 +56,9 @@
             android:name=".MusicService"
             android:enabled="true"
             android:foregroundServiceType="mediaPlayback"
-            android:exported="true">
-            <intent-filter>
+            android:exported="true"
+            android:permission="android.permission.MEDIA_CONTENT_CONTROL">
+        <intent-filter>
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>

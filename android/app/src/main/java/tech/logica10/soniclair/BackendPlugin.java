@@ -26,11 +26,8 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import kotlinx.coroutines.CoroutineScope;
-import kotlinx.coroutines.Dispatchers;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -69,7 +66,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @Override
     public void load() {
         // Set up
-        if(subsonicClient == null){
+        if (subsonicClient == null) {
             subsonicClient = new SubsonicClient(KeyValueStorage.Companion.getActiveAccount());
         }
         GsonBuilder builder = new GsonBuilder();
@@ -78,7 +75,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         // Bind to LocalService
         Intent intent = new Intent(App.getContext(), MusicService.class);
         App.getContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
-        if(!registered){
+        if (!registered) {
             registered = true;
             Globals.RegisterObserver(this);
         }
@@ -135,7 +132,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         String password = data.getString("password");
         String url = data.getString("url");
         try {
-            Account account = subsonicClient.login(username, password, url);
+            Account account = subsonicClient.login(Objects.requireNonNull(username), Objects.requireNonNull(password), Objects.requireNonNull(url));
             KeyValueStorage.Companion.setActiveAccount(account);
             call.resolve(OkResponse(account));
         } catch (Exception e) {
@@ -145,7 +142,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void getCameraPermissionStatus(PluginCall call) {
-        if (ContextCompat.checkSelfPermission(MainActivity.context,
+        if (ContextCompat.checkSelfPermission(App.getContext(),
                 "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED) {
             call.resolve(OkStringResponse(""));
         } else {
@@ -155,18 +152,16 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void getCameraPermission(PluginCall call) {
-        if (ContextCompat.checkSelfPermission(MainActivity.context,
-                "android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED) {
-            call.resolve(OkStringResponse(""));
-        } else {
+        if (ContextCompat.checkSelfPermission(App.getContext(),
+                "android.permission.CAMERA") != PackageManager.PERMISSION_GRANTED) {
             MainActivity.requestPermissionLauncher.launch("android.permission.CAMERA");
-            call.resolve(OkStringResponse(""));
         }
+        call.resolve(OkStringResponse(""));
     }
 
 
     @PluginMethod()
-    public void getTopAlbums(PluginCall call) throws JSONException {
+    public void getTopAlbums(PluginCall call) {
         try {
             String type = call.getString("type");
             if (type == null) {
@@ -183,7 +178,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getAlbums(PluginCall call) throws JSONException {
+    public void getAlbums(PluginCall call) {
         try {
             call.resolve(OkArrayResponse(subsonicClient.getAlbums()));
         } catch (Exception e) {
@@ -192,7 +187,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getAlbum(PluginCall call) throws JSONException {
+    public void getAlbum(PluginCall call) {
         try {
             String id = call.getString("id");
             if (id == null) {
@@ -206,7 +201,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getArtists(PluginCall call) throws JSONException {
+    public void getArtists(PluginCall call) {
         try {
             call.resolve(OkResponse(subsonicClient.getArtists()));
         } catch (Exception e) {
@@ -215,7 +210,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getArtist(PluginCall call) throws JSONException {
+    public void getArtist(PluginCall call) {
         try {
             String id = call.getString("id");
             if (id == null) {
@@ -229,7 +224,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getArtistInfo(PluginCall call) throws JSONException {
+    public void getArtistInfo(PluginCall call) {
         try {
             String id = call.getString("id");
             if (id == null) {
@@ -244,7 +239,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
 
     @PluginMethod()
-    public void getRandomSongs(PluginCall call) throws JSONException {
+    public void getRandomSongs(PluginCall call) {
         try {
             call.resolve(OkArrayResponse(subsonicClient.getRandomSongs()));
         } catch (Exception e) {
@@ -263,19 +258,18 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void setSettings(PluginCall call){
-        try{
-            Integer cacheSize = Integer.parseInt(call.getString("cacheSize"));
+    public void setSettings(PluginCall call) {
+        try {
+            int cacheSize = Integer.parseInt(Objects.requireNonNull(call.getString("cacheSize")));
             KeyValueStorage.Companion.setSettings(new Settings(cacheSize));
             call.resolve(OkStringResponse(""));
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
     }
 
     @PluginMethod()
-    public void getSettings(PluginCall call){
+    public void getSettings(PluginCall call) {
         try {
             JSObject ret = OkResponse(KeyValueStorage.Companion.getSettings());
             call.resolve(ret);
@@ -297,7 +291,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getAlbumArt(PluginCall call) {
         try {
-            call.resolve(OkStringResponse(subsonicClient.getAlbumArt(call.getString("id"))));
+            call.resolve(OkStringResponse(subsonicClient.getAlbumArt(Objects.requireNonNull(call.getString("id")))));
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -306,7 +300,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void play(PluginCall call) {
         Intent intent = new Intent(App.getContext(), MusicService.class);
-        intent.setAction(Constants.Companion.getSERVICE_PLAY_PAUSE());
+        intent.setAction(Constants.SERVICE_PLAY_PAUSE);
         App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
     }
@@ -314,74 +308,92 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void pause(PluginCall call) {
         Intent intent = new Intent(App.getContext(), MusicService.class);
-        intent.setAction(Constants.Companion.getSERVICE_PLAY_PAUSE());
+        intent.setAction(Constants.SERVICE_PLAY_PAUSE);
         App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
     }
 
     @PluginMethod()
     public void seek(PluginCall call) {
-        JSObject ret = new JSObject();
-        if (mBound) {
-            float value = call.getFloat("time");
-            binder.seek(value);
+        try {
+            if (mBound) {
+                float value = Objects.requireNonNull(call.getFloat("time"));
+                binder.seek(value);
+            }
+            call.resolve(OkStringResponse(""));
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
         }
-        call.resolve(OkStringResponse(""));
+
     }
 
     @PluginMethod()
     public void setVolume(PluginCall call) {
-        JSObject ret = new JSObject();
-        if (mBound) {
-            int value = call.getInt("volume", 100);
-            binder.setVolume(value);
+        try {
+            if (mBound) {
+                int value = Objects.requireNonNull(call.getInt("volume", 100));
+                binder.setVolume(value);
+            }
+            call.resolve(OkStringResponse(""));
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
         }
-        call.resolve(OkStringResponse(""));
     }
 
     @PluginMethod()
-    public void playRadio(PluginCall call) throws ExecutionException, InterruptedException, JSONException {
-        String id = call.getString("song");
-        if (!mBound) {
-            Intent intent = new Intent(App.getContext(), MusicService.class);
-            intent.setAction(Constants.Companion.getSERVICE_PLAY_RADIO());
-            intent.putExtra("id", id);
-            App.getContext().startService(intent);
+    public void playRadio(PluginCall call) {
+        try {
+            String id = Objects.requireNonNull(call.getString("song"));
+            if (!mBound) {
+                Intent intent = new Intent(App.getContext(), MusicService.class);
+                intent.setAction(Constants.SERVICE_PLAY_RADIO);
+                intent.putExtra("id", id);
+                App.getContext().startService(intent);
 
-        } else {
-            binder.playRadio(id);
+            } else {
+                binder.playRadio(id);
+            }
+            call.resolve(OkStringResponse(""));
+        } catch (NullPointerException e) {
+            call.resolve(ErrorResponse("One of the parameters was null"));
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
         }
 
-        call.resolve(OkStringResponse(""));
     }
 
     @PluginMethod()
-    public void playAlbum(PluginCall call) throws ExecutionException, InterruptedException, JSONException {
-        String id = call.getString("album");
-        Integer track = call.getInt("track");
-        if (!mBound) {
-            Intent intent = new Intent(App.getContext(), MusicService.class);
-            intent.setAction(Constants.Companion.getSERVICE_PLAY_ALBUM());
-            intent.putExtra("id", id);
-            intent.putExtra("track", track);
-            App.getContext().startService(intent);
-        } else {
-            binder.playAlbum(id, track);
+    public void playAlbum(PluginCall call) {
+        try {
+            String id = Objects.requireNonNull(call.getString("album"));
+            Integer track = Objects.requireNonNull(call.getInt("track"));
+            if (!mBound) {
+                Intent intent = new Intent(App.getContext(), MusicService.class);
+                intent.setAction(Constants.SERVICE_PLAY_ALBUM);
+                intent.putExtra("id", id);
+                intent.putExtra("track", track);
+                App.getContext().startService(intent);
+            } else {
+                binder.playAlbum(id, track);
+            }
+            call.resolve(OkStringResponse(""));
+
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
         }
-        call.resolve(OkStringResponse(""));
     }
 
     @PluginMethod()
-    public void next(PluginCall call) throws JSONException, ExecutionException, InterruptedException {
+    public void next(PluginCall call) {
         Intent intent = new Intent(App.getContext(), MusicService.class);
-        intent.setAction(Constants.Companion.getSERVICE_NEXT());
+        intent.setAction(Constants.SERVICE_NEXT);
         App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
 
     }
 
     @PluginMethod()
-    public void getSpotifyToken(PluginCall call) throws IOException, JSONException {
+    public void getSpotifyToken(PluginCall call) throws IOException {
         if (Objects.equals(spotifyToken, "")) {
             String client_id = "3cb3ecad8ce14e1dba560e3b5ceb908b";
             String client_secret = "86810d6f234142a9bf7be9d2a924bbba";
@@ -411,7 +423,13 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
             Response response = client.newCall(request).execute();
             if (response.isSuccessful()) {
-                spotifyToken = new JSObject(response.body().string()).getString("access_token");
+                try {
+                    spotifyToken = new JSObject(Objects.requireNonNull(response.body()).string()).getString("access_token");
+                } catch (Exception e) {
+                    call.resolve(ErrorResponse(e.getMessage()));
+                }
+            } else {
+                call.resolve(ErrorResponse(response.message()));
             }
 
         }
@@ -420,8 +438,8 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void search(PluginCall call) {
-        String query = call.getString("query");
         try {
+            String query = Objects.requireNonNull(call.getString("query"));
             SearchResult result = subsonicClient.search(query);
             JSObject ret = OkResponse(result);
             call.resolve(ret);
@@ -433,9 +451,9 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void prev(PluginCall call) throws JSONException, ExecutionException, InterruptedException {
+    public void prev(PluginCall call) {
         Intent intent = new Intent(App.getContext(), MusicService.class);
-        intent.setAction(Constants.Companion.getSERVICE_PREV());
+        intent.setAction(Constants.SERVICE_PREV);
         App.getContext().startService(intent);
         call.resolve(OkStringResponse(""));
     }
@@ -451,11 +469,10 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
-    public void getSongStatus(PluginCall call){
-        try{
-            call.resolve(OkResponse(subsonicClient.isCached(call.getString("id"))));
-        }
-        catch(Exception e){
+    public void getSongStatus(PluginCall call) {
+        try {
+            call.resolve(OkResponse(subsonicClient.isCached(Objects.requireNonNull(call.getString("id")))));
+        } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
     }
@@ -486,38 +503,35 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                             binder.playRadio(value);
                         } else {
                             Intent intent = new Intent(App.getContext(), MusicService.class);
-                            intent.setAction(Constants.Companion.getSERVICE_PLAY_RADIO());
+                            intent.setAction(Constants.SERVICE_PLAY_RADIO);
                             intent.putExtra("id", value);
                             App.getContext().startService(intent);
                         }
                         break;
                     case "SLPLAYSEARCH":
-                        if(mBound){
+                        if (mBound) {
                             binder.playSearch(value, SearchType.SONG);
-                        }
-                        else{
+                        } else {
                             Intent intent = new Intent(App.getContext(), MusicService.class);
-                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH());
+                            intent.setAction(Constants.SERVICE_PLAY_SEARCH);
                             intent.putExtra("query", value);
                             App.getContext().startService(intent);
                         }
                     case "SLPLAYSEARCHARTIST":
-                        if(mBound){
+                        if (mBound) {
                             binder.playSearch(value, SearchType.ARTIST);
-                        }
-                        else{
+                        } else {
                             Intent intent = new Intent(App.getContext(), MusicService.class);
-                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH_ARTIST());
+                            intent.setAction(Constants.SERVICE_PLAY_SEARCH_ARTIST);
                             intent.putExtra("query", value);
                             App.getContext().startService(intent);
                         }
                     case "SLPLAYSEARCHALBUM":
-                        if(mBound){
+                        if (mBound) {
                             binder.playSearch(value, SearchType.ALBUM);
-                        }
-                        else{
+                        } else {
                             Intent intent = new Intent(App.getContext(), MusicService.class);
-                            intent.setAction(Constants.Companion.getSERVICE_PLAY_SEARCH_ALBUM());
+                            intent.setAction(Constants.SERVICE_PLAY_SEARCH_ALBUM);
                             intent.putExtra("query", value);
                             App.getContext().startService(intent);
                         }
@@ -528,12 +542,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 } else {
                     notifyListeners(action.replace("MS", ""), null);
                 }
-            }
-            else if(action.equals("EX")){
-                notifyListeners("EX",new JSObject("{\"error\":\"" + value + "} \"}"));
+            } else if (action.equals("EX")) {
+                notifyListeners("EX", new JSObject("{\"error\":\"" + value + "} \"}"));
             }
         } catch (Exception e) {
-            Log.e("SonicLair",e.getMessage());
+            Log.e("SonicLair", e.getMessage());
             // Frankly my dear, I couldn't care less.
         }
     }

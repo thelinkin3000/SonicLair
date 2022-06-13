@@ -8,7 +8,6 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.google.gson.Gson
 import tech.logica10.soniclair.App.Companion.pairString
 
 @CapacitorPlugin(name = "AndroidTV")
@@ -20,17 +19,17 @@ class AndroidTVPlugin : Plugin(), IBroadcastObserver {
         }
     }
 
-    @PluginMethod()
+    @PluginMethod
     fun getIp(call: PluginCall) {
         val ret = JSObject()
         ret.put("value", pairString ?: "")
         call.resolve(ret)
     }
 
-    @PluginMethod()
+    @PluginMethod
     fun get(call: PluginCall) {
         val uiModeManager: UiModeManager =
-            MainActivity.context.getSystemService(UI_MODE_SERVICE) as UiModeManager
+            App.context.getSystemService(UI_MODE_SERVICE) as UiModeManager
         val ret = JSObject()
         if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
             ret.put("value", true)

@@ -1,18 +1,11 @@
 package tech.logica10.soniclair;
 
-import android.media.browse.MediaBrowser;
-import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.MediaSessionCompat.Callback;
 import android.support.v4.media.session.PlaybackStateCompat;
-
-import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class Globals{
     // Static variable reference of single_instance
@@ -21,16 +14,14 @@ public class Globals{
 
     // Declaring a variable of type String
     private final List<IBroadcastObserver> observers;
-    private ArrayList<MediaBrowserCompat.MediaItem> mediaItems;
-    private MediaSessionCompat mediaSession;
+    private final MediaSessionCompat mediaSession;
 
     // Constructor
     // Here we will be creating private constructor
     // restricted to this class itself
     private Globals()
     {
-        mediaItems = new ArrayList<MediaBrowserCompat.MediaItem>();
-        observers = new ArrayList<IBroadcastObserver>();
+        observers = new ArrayList<>();
         // Create a media session. NotificationCompat.MediaStyle
         // PlayerService is your own Service or Activity responsible for media playback.
         mediaSession = new MediaSessionCompat(App.getContext(), "Soniclair");
@@ -64,18 +55,6 @@ public class Globals{
         for (IBroadcastObserver observer : getInstance().observers) {
             observer.update(action, value);
         }
-    }
-
-    public static ArrayList<MediaBrowserCompat.MediaItem> GetMediaItems(){
-        return getInstance().mediaItems;
-    }
-
-    public static void SetMediaItems(ArrayList<MediaBrowserCompat.MediaItem> mediaItemArray) {
-        getInstance().mediaItems = mediaItemArray;
-    }
-
-    public static void SetMediaSession(MediaSessionCompat mediaSession){
-        getInstance().mediaSession = mediaSession;
     }
 
     public static MediaSessionCompat GetMediaSession(){
