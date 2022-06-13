@@ -491,6 +491,10 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 MediaMetadata.METADATA_KEY_ALBUM,
                 currentTrack!!.album
             )
+            metadataBuilder.putLong(
+                MediaMetadata.METADATA_KEY_DURATION,
+                (currentTrack!!.duration * 1000).toLong()
+            )
             val albumArtUri = Uri.parse(
                 subsonicClient.getAlbumArt(
                     currentTrack!!.albumId
@@ -574,6 +578,12 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         when (event.type) {
             MediaPlayer.Event.TimeChanged -> {
                 val position = mMediaPlayer!!.position
+                val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                    PlaybackStateCompat.STATE_PLAYING,
+                    (position * currentTrack!!.duration * 1000).toLong(),
+                    0f
+                )
+                updateMediaSession(b.build())
                 notifyListeners("progress", JSObject("{\"time\": ${position}}"))
             }
             MediaPlayer.Event.EndReached -> {
@@ -587,13 +597,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
                 }
+                val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
+                    PlaybackStateCompat.STATE_PAUSED,
+                    (currentTrack!!.duration * 1000).toLong(),
+                    0f
+                )
+                updateMediaSession(b.build())
                 updateNotification(null, true)
             }
             MediaPlayer.Event.Paused, MediaPlayer.Event.Stopped -> {
                 notifyListeners("paused", null)
                 val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
                     PlaybackStateCompat.STATE_PAUSED,
-                    mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
+                    (mMediaPlayer!!.position * currentTrack!!.duration * 1000).toLong(),
                     0f
                 )
                 updateMediaSession(b.build())
@@ -607,7 +623,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 )
                 val b: PlaybackStateCompat.Builder = getPlaybackStateBuilder().setState(
                     PlaybackStateCompat.STATE_PLAYING,
-                    mMediaPlayer!!.position.toLong() * currentTrack!!.duration,
+                    (mMediaPlayer!!.position * currentTrack!!.duration * 1000).toLong(),
                     1f
                 )
                 updateMediaSession(b.build())
