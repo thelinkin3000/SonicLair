@@ -48,9 +48,7 @@ jobs:
         run: cd android && gradle assembleRelease
 
       - name: Rename apk
-        with:
-          name: SonicLair ${{ github.ref }}
-        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/${{ name }}.apk
+        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/${{ github.ref }}.apk
 
       - name: Upload release bundle
         uses: actions/upload-artifact@v2
