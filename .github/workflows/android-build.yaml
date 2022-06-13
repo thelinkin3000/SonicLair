@@ -53,8 +53,7 @@ jobs:
       - name: Upload release bundle
         uses: actions/upload-artifact@v2
         with:
-          name: SonicLair ${{ github.ref }}
-          path: android/app/build/outputs/apk/release/${{ name }}.apk
+          path: android/app/build/outputs/apk/release/SonicLair ${{ github.ref }}.apk
           retention-days: 60
 
       - name: Create Release
@@ -74,8 +73,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: SonicLair ${{ github.ref }}
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: android/app/build/outputs/apk/release/${{ name }}.apk
-          asset_name: ${{ name }}.apk
+          asset_path: android/app/build/outputs/apk/release/SonicLair ${{ github.ref }}.apk
+          asset_name: SonicLair ${{ github.ref }}.apk
           asset_content_type: application/vnd.android.package-archive
