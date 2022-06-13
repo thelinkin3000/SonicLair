@@ -1,9 +1,6 @@
-package tech.logica10.soniclair
+@file:Suppress("unused")
 
-import android.media.MediaDescription
-import android.media.browse.MediaBrowser
-import android.net.Uri
-import com.bumptech.glide.Glide
+package tech.logica10.soniclair
 
 class SubsonicModels {
     open class SubsonicResponse {

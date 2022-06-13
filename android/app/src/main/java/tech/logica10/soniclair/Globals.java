@@ -56,6 +56,10 @@ public class Globals{
         getInstance().observers.add(observer);
     }
 
+    public static void UnregisterObserver(IBroadcastObserver observer){
+        getInstance().observers.remove(observer);
+    }
+
     public static void NotifyObservers(String action, String value) {
         for (IBroadcastObserver observer : getInstance().observers) {
             observer.update(action, value);

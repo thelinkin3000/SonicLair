@@ -42,6 +42,7 @@ import okhttp3.Response;
 public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     private static SubsonicClient subsonicClient;
+    private static boolean registered = false;
     private Gson gson;
     private String spotifyToken = "";
     private MusicService.LocalBinder binder = null;
@@ -77,7 +78,10 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         // Bind to LocalService
         Intent intent = new Intent(App.getContext(), MusicService.class);
         App.getContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
-        Globals.RegisterObserver(this);
+        if(!registered){
+            registered = true;
+            Globals.RegisterObserver(this);
+        }
     }
 
     private JSObject ErrorResponse(String error) {

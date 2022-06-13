@@ -1,7 +1,6 @@
 package tech.logica10.soniclair
 
 import android.content.Context
-import android.media.browse.MediaBrowser
 import com.google.gson.Gson
 import tech.logica10.soniclair.SubsonicModels.*
 
@@ -58,7 +57,7 @@ class KeyValueStorage {
                     Gson().fromJson(activeAccount, Array<Account>::class.java).toList()
                 accounts
             } catch (exception: Exception) {
-                emptyList<Account>()
+                emptyList()
             }
         }
 

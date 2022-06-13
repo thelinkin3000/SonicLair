@@ -13,10 +13,11 @@ import tech.logica10.soniclair.App.Companion.pairString
 
 @CapacitorPlugin(name = "AndroidTV")
 class AndroidTVPlugin : Plugin(), IBroadcastObserver {
-    private val gson: Gson = Gson()
-
     override fun load(){
-        Globals.RegisterObserver(this);
+        if(!registered){
+            registered =true
+            Globals.RegisterObserver(this)
+        }
     }
 
     @PluginMethod()
@@ -49,5 +50,7 @@ class AndroidTVPlugin : Plugin(), IBroadcastObserver {
         }
     }
 
-
+    companion object{
+        var registered: Boolean = false
+    }
 }

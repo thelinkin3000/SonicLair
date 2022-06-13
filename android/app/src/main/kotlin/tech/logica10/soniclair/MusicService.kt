@@ -6,8 +6,6 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.graphics.Bitmap
 import android.media.*
 import android.media.AudioManager.OnAudioFocusChangeListener
-import android.media.session.MediaSession
-import android.media.session.PlaybackState
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -23,7 +21,6 @@ import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
 import com.google.gson.Gson
@@ -90,79 +87,21 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var cancelAction: NotificationCompat.Action? = null
     private var isForeground: Boolean = false
     private val binder = LocalBinder()
-    private val NOTIF_ID = 1
-    val connectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
+    private val notif_id = 1
+    val connectivityManager: ConnectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
 
 
     private var mMediaPlayer: MediaPlayer? = null
 
     inner class DeviceCallback : AudioDeviceCallback() {
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
-            this@MusicService._pause()
+            this@MusicService.pause()
         }
     }
 
     init {
         Globals.RegisterObserver(this)
         mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
-    }
-
-    private fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
-        if (albumArtBitmap != null) {
-            notificationBuilder.setLargeIcon(albumArtBitmap)
-        }
-        val intent = Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, intent, flags))
-        notificationBuilder.setContentTitle(currentTrack!!.title)
-        notificationBuilder.setContentText(currentTrack!!.album)
-        notificationBuilder.setChannelId("soniclair")
-        notificationBuilder.clearActions()
-        notificationBuilder.addAction(prevAction)
-        notificationBuilder.addAction(if (play) playAction else pauseAction)
-        notificationBuilder.addAction(nextAction)
-        notificationBuilder.addAction(cancelAction)
-        notificationBuilder.setOngoing(true)
-
-        val notif = notificationBuilder.build()
-        if (!isForeground) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIF_ID, notif,
-                    FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                )
-            } else {
-                startForeground(NOTIF_ID, notif)
-            }
-            isForeground = true
-        }
-        notificationManager.notify(NOTIF_ID, notif)
-    }
-
-    fun updateMediaSession(playbackState: PlaybackStateCompat) {
-        mediaSession.setPlaybackState(playbackState)
-        mediaSession.isActive = true
-    }
-
-    fun updateMediaMetadata(albumArtBitmap: Bitmap?) {
-        metadataBuilder.putBitmap(
-            MediaMetadata.METADATA_KEY_ALBUM_ART,
-            albumArtBitmap
-        )
-        metadataBuilder.putString(
-            MediaMetadata.METADATA_KEY_ALBUM_ARTIST,
-            currentTrack!!.artist
-        )
-        metadataBuilder.putString(
-            MediaMetadata.METADATA_KEY_ARTIST,
-            currentTrack!!.artist
-        )
-        metadataBuilder.putString(
-            MediaMetadata.METADATA_KEY_TITLE,
-            currentTrack!!.title
-        )
-        mediaSession.setMetadata(metadataBuilder.build())
     }
 
     override fun onCreate() {
@@ -251,6 +190,71 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         notificationBuilder.setStyle(mediaStyle)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Globals.UnregisterObserver(this)
+    }
+
+    private fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
+        if (albumArtBitmap != null) {
+            notificationBuilder.setLargeIcon(albumArtBitmap)
+        }
+        val intent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, intent, flags))
+        notificationBuilder.setContentTitle(currentTrack!!.title)
+        notificationBuilder.setContentText(currentTrack!!.album)
+        notificationBuilder.setChannelId("soniclair")
+        notificationBuilder.clearActions()
+        notificationBuilder.addAction(prevAction)
+        notificationBuilder.addAction(if (play) playAction else pauseAction)
+        notificationBuilder.addAction(nextAction)
+        notificationBuilder.addAction(cancelAction)
+        notificationBuilder.setOngoing(true)
+
+        val notif = notificationBuilder.build()
+        if (!isForeground) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    notif_id, notif,
+                    FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                startForeground(notif_id, notif)
+            }
+            isForeground = true
+        }
+        notificationManager.notify(notif_id, notif)
+    }
+
+    fun updateMediaSession(playbackState: PlaybackStateCompat) {
+        mediaSession.setPlaybackState(playbackState)
+        mediaSession.isActive = true
+    }
+
+    fun updateMediaMetadata(albumArtBitmap: Bitmap?) {
+        metadataBuilder.putBitmap(
+            MediaMetadata.METADATA_KEY_ALBUM_ART,
+            albumArtBitmap
+        )
+        metadataBuilder.putString(
+            MediaMetadata.METADATA_KEY_ALBUM_ARTIST,
+            currentTrack!!.artist
+        )
+        metadataBuilder.putString(
+            MediaMetadata.METADATA_KEY_ARTIST,
+            currentTrack!!.artist
+        )
+        metadataBuilder.putString(
+            MediaMetadata.METADATA_KEY_TITLE,
+            currentTrack!!.title
+        )
+        mediaSession.setMetadata(metadataBuilder.build())
+    }
+
+
+
     private fun getPlaybackStateBuilder(): PlaybackStateCompat.Builder {
         return PlaybackStateCompat.Builder()
             .setActions(
@@ -288,22 +292,22 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         return binder
     }
 
-    private fun _playSearch(query: String, type: SearchType = SearchType.SONG) {
-        Log.i("PlaySearch","Searching with query ${query}")
+    private fun playSearch(query: String, type: SearchType = SearchType.SONG) {
+        Log.i("PlaySearch","Searching with query $query")
         when (type) {
             SearchType.SONG -> {
                 val search = subsonicClient.search(query)
                 if (search.song != null && search.song.isNotEmpty()) {
-                    _playRadio(search.song[0].id)
+                    playRadio(search.song[0].id)
                 }
             }
             SearchType.ARTIST, SearchType.ALBUM -> {
                 val search = subsonicClient.search(query)
                 if (search.album != null && search.album.isNotEmpty()) {
-                    _playAlbum(search.album[0].id, 0)
+                    playAlbum(search.album[0].id, 0)
                 }
                 else if(search.song != null && search.song.isNotEmpty()){
-                    _playRadio(search.song[0].id)
+                    playRadio(search.song[0].id)
                 }
             }
 
@@ -314,38 +318,38 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         if (intent?.action != null) {
             CoroutineScope(Dispatchers.IO).launch {
                 when (intent.action) {
-                    Constants.SERVICE_PLAY_PAUSE -> if (mMediaPlayer!!.isPlaying) _pause() else _play()
+                    Constants.SERVICE_PLAY_PAUSE -> if (mMediaPlayer!!.isPlaying) pause() else play()
                     Constants.SERVICE_NEXT -> next()
                     Constants.SERVICE_PREV -> prev()
                     Constants.SERVICE_PLAY_ALBUM -> {
                         val id = intent.extras?.getString("id")
                         val track = intent.extras?.getInt("track")
                         if (id != null && track != null) {
-                            _playAlbum(id, track)
+                            playAlbum(id, track)
                         }
                     }
                     Constants.SERVICE_PLAY_RADIO -> {
                         val id = intent.extras?.getString("id")
                         if (id != null) {
-                            _playRadio(id)
+                            playRadio(id)
                         }
                     }
                     Constants.SERVICE_PLAY_SEARCH -> {
                         val id = intent.extras?.getString("query")
                         if (id != null) {
-                            _playSearch(id, SearchType.SONG)
+                            playSearch(id, SearchType.SONG)
                         }
                     }
                     Constants.SERVICE_PLAY_SEARCH_ALBUM -> {
                         val id = intent.extras?.getString("query")
                         if (id != null) {
-                            _playSearch(id, SearchType.ALBUM)
+                            playSearch(id, SearchType.ALBUM)
                         }
                     }
                     Constants.SERVICE_PLAY_SEARCH_ARTIST -> {
                         val id = intent.extras?.getString("query")
                         if (id != null) {
-                            _playSearch(id, SearchType.ARTIST)
+                            playSearch(id, SearchType.ARTIST)
                         }
                     }
                     MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH -> {
@@ -365,28 +369,28 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                         when {
                             mediaFocus == null -> {
                                 // 'Unstructured' search mode (backward compatible)
-                                _playSearch(query)
+                                playSearch(query)
                             }
                             mediaFocus.compareTo("vnd.android.cursor.item/*") == 0 -> {
                                 if (query.isNotEmpty()) {
                                     // 'Unstructured' search mode
-                                    _playSearch(query)
+                                    playSearch(query)
                                 } else {
                                     // 'Any' search mode
-                                    _play()
+                                    play()
                                 }
                             }
                             mediaFocus.compareTo(MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE) == 0 -> {
                                 // 'Artist' search mode
-                                _playSearch(artist!!, SearchType.ARTIST)
+                                playSearch(artist!!, SearchType.ARTIST)
                             }
                             mediaFocus.compareTo(MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE) == 0 -> {
                                 // 'Album' search mode
-                                _playSearch("${album} ${artist}")
+                                playSearch("$album $artist")
                             }
                             mediaFocus.compareTo("vnd.android.cursor.item/audio") == 0 -> {
                                 // 'Song' search mode
-                                _playSearch("${album} ${artist} ${title}")
+                                playSearch("$album $artist $title")
                             }
                         }
                     }
@@ -398,7 +402,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     override fun update(action: String?, value: String?) {
         if (action == "SLCANCEL") {
-            notificationManager.cancel(NOTIF_ID)
+            notificationManager.cancel(notif_id)
             stopSelf()
         }
     }
@@ -420,16 +424,17 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 if (mMediaPlayer!!.isPlaying) {
                     mMediaPlayer!!.pause()
                 }
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                // We don't do anything here, let's wait for the user to start playing music
-            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-                // We don't do anything here, let's wait for the user to start playing music.
             }
+//            else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+//                // We don't do anything here, let's wait for the user to start playing music
+//            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
+//                // We don't do anything here, let's wait for the user to start playing music.
+//            }
         }
     }
 
     @Throws(Exception::class)
-    private fun _playRadio(id: String) {
+    private fun playRadio(id: String) {
         playlist.clear()
         try {
             playlist.addAll(subsonicClient.getSimilarSongs(id))
@@ -440,15 +445,15 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             ) {
                 subsonicClient.downloadPlaylist(playlist)
             }
-            _loadMedia()
-            _play()
+            loadMedia()
+            play()
         } catch (e: Exception) {
             Globals.NotifyObservers("EX", e.message)
             // Nobody listening still
         }
     }
 
-    private fun _playAlbum(id: String, track: Int) {
+    private fun playAlbum(id: String, track: Int) {
         playlist.clear()
         try {
             playlist.addAll(subsonicClient.getAlbum(id).song)
@@ -459,8 +464,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             ) {
                 subsonicClient.downloadPlaylist(playlist)
             }
-            _loadMedia()
-            _play()
+            loadMedia()
+            play()
         } catch (e: Exception) {
             Globals.NotifyObservers("EX", e.message)
             // Nobody listening still
@@ -468,13 +473,13 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     }
 
-    private fun _pause() {
+    private fun pause() {
         if (mMediaPlayer!!.isPlaying) {
             mMediaPlayer!!.pause()
         }
     }
 
-    private fun _play() {
+    private fun play() {
         wasPlaying = false
         if (mMediaPlayer!!.media != null) {
             mMediaPlayer!!.play()
@@ -511,8 +516,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private fun next() {
         if (playlist.indexOf(currentTrack) < playlist.size - 1) {
             currentTrack = playlist[playlist.indexOf(currentTrack) + 1]
-            _loadMedia()
-            _play()
+            loadMedia()
+            play()
         }
     }
 
@@ -520,12 +525,12 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private fun prev() {
         if (playlist.indexOf(currentTrack) > 0) {
             currentTrack = playlist[playlist.indexOf(currentTrack) - 1]
-            _loadMedia()
-            _play()
+            loadMedia()
+            play()
         }
     }
 
-    private fun _loadMedia() {
+    private fun loadMedia() {
         var uri: String? = null
         val file = File(subsonicClient.getLocalSongUri(currentTrack!!.id))
         if (file.exists()) {
@@ -625,18 +630,18 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
 
         fun play() {
-            _play()
+            this@MusicService.play()
         }
 
         fun pause() {
-            _pause()
+            this@MusicService.pause()
         }
 
         fun playpause() {
             if (mMediaPlayer!!.isPlaying) {
-                _pause()
+                this@MusicService.pause()
             } else {
-                _play()
+                this@MusicService.play()
             }
         }
 
@@ -650,19 +655,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
         fun playRadio(id: String) {
             CoroutineScope(Dispatchers.IO).launch {
-                _playRadio(id)
+                this@MusicService.playRadio(id)
             }
         }
 
         fun playAlbum(id: String, track: Int) {
             CoroutineScope(Dispatchers.IO).launch {
-                _playAlbum(id, track)
+                this@MusicService.playAlbum(id, track)
             }
         }
 
         fun playSearch(query: String, type: SearchType) {
             CoroutineScope(Dispatchers.IO).launch {
-                _playSearch(query, type)
+                this@MusicService.playSearch(query, type)
             }
         }
     }

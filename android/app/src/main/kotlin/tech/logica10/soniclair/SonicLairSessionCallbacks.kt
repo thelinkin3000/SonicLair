@@ -1,7 +1,5 @@
 package tech.logica10.soniclair
 
-import android.media.session.MediaSession
-import tech.logica10.soniclair.Globals
 import android.content.Intent
 import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
@@ -48,5 +46,13 @@ class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
 
     override fun onPlayFromMediaId(mediaId: String, extras: Bundle) {
         Globals.NotifyObservers("SLPLAYID", mediaId)
+    }
+
+    override fun onPlayFromSearch(query: String?, extras: Bundle?) {
+        if (query != null && query.isNotEmpty()) {
+            Globals.NotifyObservers("SLPLAYSEARCH", query)
+            return
+        }
+        Globals.NotifyObservers("SLPLAY", "")
     }
 }

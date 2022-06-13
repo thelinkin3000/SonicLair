@@ -106,9 +106,9 @@ class SubsonicClient(var initialAccount: Account) {
         return "${uri.authority}/albumArts/"
     }
 
-    fun getLocalCoverArtUri(id: String): String {
-        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString()
-    }
+//    fun getLocalCoverArtUri(id: String): String {
+//        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString()
+//    }
 
     fun getLocalSongUri(id: String): String {
         return Path(App.context.filesDir.path, getSongsDirectory(), id).toString()
@@ -117,7 +117,7 @@ class SubsonicClient(var initialAccount: Account) {
     fun downloadSong(id: String) {
         try {
             val request: Request = Request.Builder().url(getSongDownload(id)).build()
-            Log.i("SonicLair", "Downloading song ${id}")
+            Log.i("SonicLair", "Downloading song $id")
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
                 Globals.NotifyObservers("EX", response.message)
@@ -205,7 +205,7 @@ class SubsonicClient(var initialAccount: Account) {
 
 
     fun getArtists(): ArtistsSubsonicResponse =
-        makeSubsonicRequest<ArtistsSubsonicResponse>(
+        makeSubsonicRequest(
             listOf("rest", "getArtists"),
             getBasicParams().asMap()
         )
@@ -262,7 +262,7 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getTopAlbums(type: String = "frequent", size: Int = 10): List<Album> {
         val params = getBasicParams().asMap()
-        params.set("type", type.toString())
+        params.set("type", type)
         params.set("size", size.toString())
 
         return makeSubsonicRequest<AlbumsResponse>(

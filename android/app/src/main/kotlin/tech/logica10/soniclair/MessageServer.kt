@@ -16,16 +16,14 @@ class WebSocketMessage(
 )
 
 class MessageServer : WebSocketServer {
-    private val TAG: String = "WEBSOCKETSERVER"
     private val clients: MutableMap<String, WebSocket> = ConcurrentHashMap()
     private val gson: Gson = Gson()
 
     constructor(port: Int) : super(InetSocketAddress(port))
 
     private fun constructMessage(text: String): String {
-        var message = WebSocketMessage(text,"message")
-        val ret = gson.toJson(message)
-        return ret;
+        val message = WebSocketMessage(text, "message")
+        return gson.toJson(message)
     }
 
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
@@ -40,13 +38,13 @@ class MessageServer : WebSocketServer {
 
     override fun onMessage(conn: WebSocket, message: String) {
         try {
-            val m: JSObject = JSObject(message);
-            if(m.has("type") && m.getString("type") == "login"){
+            val m = JSObject(message)
+            if (m.has("type") && m.getString("type") == "login") {
                 Globals.NotifyObservers("WSLOGIN", m.getJSObject("data").toString())
             }
 
         } catch (e: Exception) {
-            return;
+            return
         }
     }
 
@@ -56,9 +54,9 @@ class MessageServer : WebSocketServer {
 
     override fun onError(conn: WebSocket?, ex: Exception) {
         ex.printStackTrace()
-        if (conn != null) {
-            // some errors like port binding failed may not be assignable to a specific websocket
-        }
+//        if (conn != null) {
+//            // some errors like port binding failed may not be assignable to a specific websocket
+//        }
     }
 
     override fun onStart() {
