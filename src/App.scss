@@ -266,6 +266,10 @@ input[type=range]:focus::-webkit-slider-runnable-track {
   transition: 0.5s !important;
 }
 
-.progress-bar-soniclair {
+.progress{
   background-color: $color-background-app !important;
+}
+
+.progress-bar-soniclair {
+  background-color: $items-color-hover !important;
 }

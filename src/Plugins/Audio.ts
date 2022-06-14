@@ -22,6 +22,7 @@ import {
     IInnerAlbumResponse,
     IRandomSongsResponse,
     ISimilarSongsResponse,
+    ISongResponse,
 } from "../Models/API/Responses/IArtistResponse";
 import { IArtistsResponse } from "../Models/API/Responses/IArtistsResponse";
 import { ISubsonicResponse } from "../Models/API/Responses/SubsonicResponse";
@@ -102,7 +103,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.ontimeupdate = (ev: any) => {
-            debugger;
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.setPositionState({
                     duration: ev.path[0].duration,
@@ -455,6 +455,31 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         };
     }
 
+    async getSong(options: {
+        id: string;
+    }): Promise<IBackendResponse<IAlbumSongResponse>> {
+        const ret = await axios.get<{
+            "subsonic-response": ISongResponse;
+        }>(`${this.context.activeAccount.url}/rest/getSong`, {
+            params: { ...this.GetBasicParams(), size: 10, id: options.id },
+        });
+        debugger;
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(
+                    ret.data["subsonic-response"].song
+                );
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
+
     async getSimilarSongs(options: {
         id: string;
     }): Promise<IBackendResponse<IAlbumSongResponse[]>> {
@@ -499,7 +524,8 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         if (album.status !== "ok") {
             return this.ErrorResponse(album.error);
         }
-        this.playlist = album.value!;
+        const song = await this.getSong({id: options.song});
+        this.playlist = [song.value!, ...album.value!];
         this.currentTrack = this.playlist[0];
         this._playCurrent();
         return this.OKResponse("");
