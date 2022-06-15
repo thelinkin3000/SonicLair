@@ -1,7 +1,6 @@
 import { IArtist } from "./IArtist";
-import { IAlbumArtistResponse, IAlbumResponse, IAlbumSongResponse, IInnerArtistResponse } from "./IArtistResponse";
+import { IAlbumArtistResponse, IAlbumSongResponse } from "./IArtistResponse";
 import { ISubsonicResponse } from "./SubsonicResponse";
-
 
 export interface IArtistInfoResponse extends ISubsonicResponse {
     artistInfo2: IArtistInfo;
@@ -14,12 +13,11 @@ export interface IArtistInfo {
     mediumImageUrl: string;
 }
 
-
 export interface ISearchResponse extends ISubsonicResponse {
     searchResult3: ISearchResult;
 }
 
-export interface ISearchResult{
+export interface ISearchResult {
     album?: IAlbumArtistResponse[];
     artist?: IArtist[];
     song?: IAlbumSongResponse[];

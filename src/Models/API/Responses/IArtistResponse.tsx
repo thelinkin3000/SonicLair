@@ -2,7 +2,6 @@ import { ISubsonicResponse } from "./SubsonicResponse";
 
 export interface IArtistResponse extends ISubsonicResponse {
     artist: IInnerArtistResponse
-
 }
 
 export interface IInnerArtistResponse {

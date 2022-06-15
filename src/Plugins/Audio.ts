@@ -7,6 +7,7 @@ import md5 from "js-md5";
 import qs from "qs";
 import { IBasicParams } from "../Models/API/Requests/BasicParams";
 import { IAlbumsResponse } from "../Models/API/Responses/IAlbumsResponse";
+import { IArtist } from "../Models/API/Responses/IArtist";
 import {
     IArtistInfo,
     IArtistInfoResponse,
@@ -25,6 +26,10 @@ import {
     ISongResponse,
 } from "../Models/API/Responses/IArtistResponse";
 import { IArtistsResponse } from "../Models/API/Responses/IArtistsResponse";
+import {
+    ISpotifyArtistItem,
+    ISpotifyArtistsSearch,
+} from "../Models/API/Responses/ISpotifyResponse";
 import { ISubsonicResponse } from "../Models/API/Responses/SubsonicResponse";
 import { IAccount, IAppContext } from "../Models/AppContext";
 import {
@@ -126,6 +131,19 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
             this._next();
         };
+    }
+    async downloadAlbum(options: {
+        id: string;
+    }): Promise<IBackendResponse<string>> {
+        return this.ErrorResponse("Not supported on PWA");
+    }
+    async getOfflineMode(): Promise<IBackendResponse<boolean>> {
+        return this.OKResponse<boolean>(false);
+    }
+    async setOfflineMode(options: {
+        value: boolean;
+    }): Promise<IBackendResponse<boolean>> {
+        return this.OKResponse<boolean>(false);
     }
     async getSongStatus(options: {
         id: string;
@@ -466,9 +484,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         debugger;
         if (ret?.status === 200) {
             if (ret?.data["subsonic-response"]?.status === "ok") {
-                return this.OKResponse(
-                    ret.data["subsonic-response"].song
-                );
+                return this.OKResponse(ret.data["subsonic-response"].song);
             } else {
                 return this.ErrorResponse(
                     ret?.data["subsonic-response"]?.error?.message!
@@ -478,7 +494,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             return this.ErrorResponse(ret?.statusText);
         }
     }
-
 
     async getSimilarSongs(options: {
         id: string;
@@ -524,21 +539,26 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         if (album.status !== "ok") {
             return this.ErrorResponse(album.error);
         }
-        const song = await this.getSong({id: options.song});
+        const song = await this.getSong({ id: options.song });
         this.playlist = [song.value!, ...album.value!];
         this.currentTrack = this.playlist[0];
         this._playCurrent();
         return this.OKResponse("");
     }
 
-    async getArtists(): Promise<IBackendResponse<IArtistsResponse>> {
+    async getArtists(): Promise<IBackendResponse<IArtist[]>> {
         const ret = await axios.get<{ "subsonic-response": IArtistsResponse }>(
             `${this.context!.activeAccount.url}/rest/getArtists`,
             { params: this.GetBasicParams() }
         );
         if (ret?.status === 200) {
             if (ret?.data["subsonic-response"]?.status === "ok") {
-                return this.OKResponse(ret.data["subsonic-response"]);
+                const r = ret.data["subsonic-response"].artists!.index!.reduce<
+                    IArtist[]
+                >((previous, s) => {
+                    return [...previous, ...s.artist];
+                }, []);
+                return this.OKResponse(r);
             } else {
                 return this.ErrorResponse(
                     ret?.data["subsonic-response"]?.error?.message!
@@ -684,6 +704,60 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         } else {
             return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
+    async GetSpotifyArtist(
+        token: string,
+        query: string
+    ): Promise<ISpotifyArtistItem[]> {
+        const params = {
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            params: {
+                q: query,
+                type: "artist",
+            },
+        };
+
+        try {
+            const response = await axios.get<ISpotifyArtistsSearch>(
+                "https://api.spotify.com/v1/search",
+                params
+            );
+            return response.data.artists.items;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async getArtistArt(options: {
+        id: string;
+    }): Promise<IBackendResponse<string>> {
+        const artist = await this.getArtist({ id: options.id });
+        if (artist.status !== "ok") {
+            return this.OKResponse("");
+        }
+        const items = await this.GetSpotifyArtist(
+            await this.getSpotifyToken(),
+            artist!.value!.name
+        );
+        if (items.length > 0 && items[0].name === artist!.value!.name) {
+            if (items[0].images.length > 1) {
+                return this.OKResponse(items[0].images[1].url);
+            } else {
+                return this.OKResponse(items[0].images[0].url);
+            }
+        } else {
+            const ret = await this.getArtistInfo({ id: options.id });
+            if (ret.status === "ok") {
+                return this.OKResponse(ret.value!.largeImageUrl);
+            } else {
+                return this.ErrorResponse(ret.error);
+            }
         }
     }
 

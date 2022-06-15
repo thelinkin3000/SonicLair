@@ -2,7 +2,7 @@ package tech.logica10.soniclair
 
 import android.content.Context
 import com.google.gson.Gson
-import tech.logica10.soniclair.SubsonicModels.*
+import tech.logica10.soniclair.models.*
 
 class KeyValueStorage {
     companion object {
@@ -91,6 +91,21 @@ class KeyValueStorage {
             with(sharedPref.edit()) {
                 val value = Gson().toJson(accounts)
                 putString("cachedSongs", value)
+                apply()
+            }
+        }
+
+        fun getOfflineMode(): Boolean {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            return sharedPref.getBoolean("offlineMode", false)
+        }
+
+        fun setOfflineMode(value: Boolean) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putBoolean("offlineMode", value)
                 apply()
             }
         }

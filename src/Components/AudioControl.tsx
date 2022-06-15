@@ -1,18 +1,27 @@
-import { faForwardStep, faPause, faPlay, faVolumeHigh, faVolumeLow } from "@fortawesome/free-solid-svg-icons";
+import {
+    faForwardStep,
+    faPause,
+    faPlay,
+    faVolumeHigh,
+    faVolumeLow,
+} from "@fortawesome/free-solid-svg-icons";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { CurrentTrackContextDefValue } from "../AudioContext"
+import { CurrentTrackContextDefValue } from "../AudioContext";
 import { SecondsToHHSS } from "../Helpers";
 import "./AudioControl.scss";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLocation, useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import VLC from "../Plugins/VLC";
 import { Capacitor, PluginListenerHandle } from "@capacitor/core";
 import AndroidTVPlugin from "../Plugins/AndroidTV";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
+import { Toast } from "@capacitor/toast";
 
 export default function AudioControl() {
-    const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(CurrentTrackContextDefValue);
+    const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(
+        CurrentTrackContextDefValue
+    );
     const [playing, setPlaying] = useState<boolean>(false);
     const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
@@ -22,27 +31,32 @@ export default function AudioControl() {
     const [volume, setVolume] = useState<number>(1);
     const listeners = useRef<PluginListenerHandle[]>([]);
 
-    const changeVolume = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-        const vol = parseFloat(e.target.value);
-        setVolume(vol);
-        await VLC.setVolume({ volume: vol });
-    }, []);
+    const changeVolume = useCallback(
+        async (e: ChangeEvent<HTMLInputElement>) => {
+            const vol = parseFloat(e.target.value);
+            setVolume(vol);
+            await VLC.setVolume({ volume: vol });
+        },
+        []
+    );
 
-    const changePlayTime = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
-        const time = parseFloat(e.target.value);
-        VLC.seek({ time: time });
-    }, []);
+    const changePlayTime = useCallback(
+        (e: ChangeEvent<HTMLInputElement>): void => {
+            const time = parseFloat(e.target.value);
+            VLC.seek({ time: time });
+        },
+        []
+    );
     useEffect(() => {
         const fetch = async () => {
             try {
                 if (Capacitor.isPluginAvailable("AndroidTV")) {
                     setAndroidTV((await AndroidTVPlugin.get()).value);
                 }
-            }
-            catch (e: any) {
+            } catch (e: any) {
                 console.error("ERROR ANDROID TV", e);
             }
-        }
+        };
         fetch();
     }, []);
 
@@ -51,22 +65,27 @@ export default function AudioControl() {
             return;
         }
         const fetch = async () => {
-            setCoverArt((await VLC.getAlbumArt({ id: currentTrack.coverArt })).value!);
-        }
+            setCoverArt(
+                (await VLC.getAlbumArt({ id: currentTrack.albumId })).value!
+            );
+        };
         fetch();
     }, [currentTrack, coverArt]);
 
     useEffect(() => {
         const get = async () => {
             const current = await VLC.getCurrentState();
-            if(current.status === "ok"){
+            if (current.status === "ok") {
                 setCurrentTrack(current.value?.currentTrack!);
                 setPlaying(current.value?.playing!);
                 setPlaytime(current.value?.playtime!);
             }
+            VLC.addListener("EX", (info) => {
+                Toast.show({ text: info.error });
+            });
         };
-        setTimeout(() => get(),500);
-    },[]);
+        setTimeout(() => get(), 500);
+    }, []);
 
     const playNext = useCallback(() => {
         VLC.next();
@@ -79,8 +98,7 @@ export default function AudioControl() {
     const togglePlaying = () => {
         if (playing) {
             VLC.pause();
-        }
-        else {
+        } else {
             VLC.play();
         }
     };
@@ -91,7 +109,7 @@ export default function AudioControl() {
 
     const hide = useCallback(() => {
         if (currentTrack.id === "" || location.pathname.match(/playing/)) {
-            return "d-none"
+            return "d-none";
         }
         return "d-flex";
     }, [currentTrack, location.pathname]);
@@ -101,70 +119,156 @@ export default function AudioControl() {
                 await listener.remove();
             });
             listeners.current = [
-            await VLC.addListener('play', (info: any) => {
-              setPlaying(true);
-            }),
-            await VLC.addListener('paused', (info: any) => {
-              setPlaying(false);
-            }),
-            await VLC.addListener('stopped', (info: any) => {
-              setPlaying(false);
-            }),
-            await VLC.addListener('currentTrack', (info: any) => {
-              setCurrentTrack(info.currentTrack);
-            }),
-            await VLC.addListener('progress', (info: any) => {
-              setPlaytime(info.time);
-            })]
-        }
+                await VLC.addListener("play", (info: any) => {
+                    setPlaying(true);
+                }),
+                await VLC.addListener("paused", (info: any) => {
+                    setPlaying(false);
+                }),
+                await VLC.addListener("stopped", (info: any) => {
+                    setPlaying(false);
+                }),
+                await VLC.addListener("currentTrack", (info: any) => {
+                    setCurrentTrack(info.currentTrack);
+                }),
+                await VLC.addListener("progress", (info: any) => {
+                    setPlaytime(info.time);
+                }),
+            ];
+        };
         aw();
 
         return () => {
             //setCurrentTrack(CurrentTrackContextDefValue);
-        }
+        };
     }, [setPlaying, setCurrentTrack, setPlaytime]);
     return (
-        <div className={classnames("flex-column justify-content-between w-100", "mt-3", hide())}>
+        <div
+            className={classnames(
+                "flex-column justify-content-between w-100",
+                "mt-3",
+                hide()
+            )}
+        >
             <div className="d-flex flex-row align-items-center justify-content-between w-100">
                 {/* <div className="flex-shrink-1 hide-overflow" > */}
-                <div onClick={goToAlbum} className={`current-track-header flex-row align-items-center justify-content-start ${currentTrack.id === "" ? "d-none" : "d-flex"}`}>
-                    <img alt="" className={"current-track-img"} src={coverArt}></img>
-                    <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-start fade-right" >
-                        <span className="text-white no-wrap" style={{ overflow: "hidden", whiteSpace: "nowrap", fontWeight: 800 }}>{currentTrack.title}</span>
-                        <span className="text-white no-wrap mb-0" style={{ overflow: "hidden", whiteSpace: "nowrap" }}>by {currentTrack.artist}</span>
+                <div
+                    onClick={goToAlbum}
+                    className={`current-track-header flex-row align-items-center justify-content-start ${
+                        currentTrack.id === "" ? "d-none" : "d-flex"
+                    }`}
+                >
+                    <img
+                        alt=""
+                        className={"current-track-img"}
+                        src={coverArt}
+                    ></img>
+                    <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-start fade-right">
+                        <span
+                            className="text-white no-wrap"
+                            style={{
+                                overflow: "hidden",
+                                whiteSpace: "nowrap",
+                                fontWeight: 800,
+                            }}
+                        >
+                            {currentTrack.title}
+                        </span>
+                        <span
+                            className="text-white no-wrap mb-0"
+                            style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+                        >
+                            by {currentTrack.artist}
+                        </span>
                     </div>
                 </div>
                 {/* </div> */}
                 <div className="d-flex  flex-grow-1 flex-column align-items-end justify-content-end">
                     <div className="d-flex flex-row align-items-center justify-content-center p-0">
-                        <button type="button" className="btn btn-link text-white" onClick={playPrev}>
-                            <FontAwesomeIcon flip="horizontal" icon={faForwardStep}></FontAwesomeIcon>
+                        <button
+                            type="button"
+                            className="btn btn-link text-white"
+                            onClick={playPrev}
+                        >
+                            <FontAwesomeIcon
+                                flip="horizontal"
+                                icon={faForwardStep}
+                            ></FontAwesomeIcon>
                         </button>
-                        <button type="button" className="btn btn-link text-white" onClick={togglePlaying}>
-                            {playing ?
-                                <FontAwesomeIcon icon={faPause}></FontAwesomeIcon> :
-                                <FontAwesomeIcon icon={faPlay}></FontAwesomeIcon>
-                            }
+                        <button
+                            type="button"
+                            className="btn btn-link text-white"
+                            onClick={togglePlaying}
+                        >
+                            {playing ? (
+                                <FontAwesomeIcon
+                                    icon={faPause}
+                                ></FontAwesomeIcon>
+                            ) : (
+                                <FontAwesomeIcon
+                                    icon={faPlay}
+                                ></FontAwesomeIcon>
+                            )}
                         </button>
-                        <button type="button" className="btn btn-link text-white" onClick={playNext}>
-                            <FontAwesomeIcon icon={faForwardStep}></FontAwesomeIcon>
+                        <button
+                            type="button"
+                            className="btn btn-link text-white"
+                            onClick={playNext}
+                        >
+                            <FontAwesomeIcon
+                                icon={faForwardStep}
+                            ></FontAwesomeIcon>
                         </button>
                     </div>
-                    <div className={classnames("hide-mobile-flex", "flex-row", "align-items-center", "justify-content-center", androidTV ? "d-none" : "")}>
-                        <FontAwesomeIcon icon={faVolumeLow} className="text-white" />
-                        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => changeVolume(e)} className="mx-2"></input>
-                        <FontAwesomeIcon icon={faVolumeHigh} className="text-white" />
+                    <div
+                        className={classnames(
+                            "hide-mobile-flex",
+                            "flex-row",
+                            "align-items-center",
+                            "justify-content-center",
+                            androidTV ? "d-none" : ""
+                        )}
+                    >
+                        <FontAwesomeIcon
+                            icon={faVolumeLow}
+                            className="text-white"
+                        />
+                        <input
+                            type="range"
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={volume}
+                            onChange={(e) => changeVolume(e)}
+                            className="mx-2"
+                        ></input>
+                        <FontAwesomeIcon
+                            icon={faVolumeHigh}
+                            className="text-white"
+                        />
                     </div>
                 </div>
             </div>
             <div className="w-100 d-flex flex-row justify-content-between text-white">
-                <span>{SecondsToHHSS((playtime ?? 0) * (currentTrack?.duration ?? 0))}</span>
+                <span>
+                    {SecondsToHHSS(
+                        (playtime ?? 0) * (currentTrack?.duration ?? 0)
+                    )}
+                </span>
                 <span>{SecondsToHHSS(currentTrack.duration)}</span>
             </div>
             <div className="w-100 mb-3">
-                <input disabled={androidTV} type="range" className="w-100" min={0} max={1} step={0.01} value={playtime} onChange={(e) => changePlayTime(e)}></input>
+                <input
+                    disabled={androidTV}
+                    type="range"
+                    className="w-100"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={playtime}
+                    onChange={(e) => changePlayTime(e)}
+                ></input>
             </div>
         </div>
-    )
+    );
 }
-

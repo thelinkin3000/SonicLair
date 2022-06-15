@@ -44,7 +44,7 @@
             android:resource="@drawable/ic_stat_soniclair" />
 
         <service
-            android:name=".MediaBrowser"
+            android:name=".services.MediaBrowserService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -53,7 +53,7 @@
         </service>
 
         <service
-            android:name=".MusicService"
+            android:name=".services.MusicService"
             android:enabled="true"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true"

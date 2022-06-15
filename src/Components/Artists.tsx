@@ -37,14 +37,8 @@ export default function Artists() {
         const fetch = async () => {
             const ar = await VLC.getArtists();
             if (ar.status === "ok") {
-                const ret = ar.value!.artists!.index!.reduce<IArtist[]>(
-                    (previous, s) => {
-                        return [...previous, ...s.artist];
-                    },
-                    []
-                );
-                setArtists(ret);
-                setFilteredArtists(ret);
+                setArtists(ar.value!);
+                setFilteredArtists(ar.value!);
                 setFetched(true);
             }
         };

@@ -33,6 +33,7 @@ class App : Application() {
         val uiModeManager: UiModeManager =
             this.applicationContext.getSystemService(UI_MODE_SERVICE) as UiModeManager
         if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
+            isTv = true
             try {
                 val interfaces: List<NetworkInterface> =
                     Collections.list(NetworkInterface.getNetworkInterfaces())
@@ -76,5 +77,6 @@ class App : Application() {
             get() = application!!.applicationContext
         var pairString: String? = null
         var server: MessageServer? = null
+        var isTv: Boolean = false
     }
 }

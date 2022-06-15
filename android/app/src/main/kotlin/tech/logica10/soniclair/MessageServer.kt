@@ -5,15 +5,11 @@ import com.google.gson.Gson
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
+import tech.logica10.soniclair.models.WebSocketMessage
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-
-class WebSocketMessage(
-    val data: String,
-    val type: String
-)
 
 class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)) {
     private val clients: MutableMap<String, WebSocket> = ConcurrentHashMap()

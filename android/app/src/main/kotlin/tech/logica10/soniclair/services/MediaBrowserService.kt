@@ -1,4 +1,4 @@
-package tech.logica10.soniclair
+package tech.logica10.soniclair.services
 
 import android.app.PendingIntent
 import android.app.SearchManager
@@ -13,10 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import tech.logica10.soniclair.*
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
 
 
-class MediaBrowser : MediaBrowserServiceCompat() {
+class MediaBrowserService : MediaBrowserServiceCompat() {
     private val mediaSession: MediaSessionCompat? = Globals.GetMediaSession()
     private val stateBuilder: PlaybackStateCompat.Builder = PlaybackStateCompat.Builder()
     private val subsonicClient: SubsonicClient = SubsonicClient(getActiveAccount())

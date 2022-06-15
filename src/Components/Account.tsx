@@ -4,7 +4,7 @@ import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppContext } from "../AppContext";
 import VLC, { ISettings } from "../Plugins/VLC";
@@ -12,6 +12,7 @@ import "./Account.scss";
 
 export default function Account() {
     const { context, setContext } = useContext(AppContext);
+    const [offlineMode, setOfflineMode] = useState<boolean>(false);
     const logout = useCallback(() => {
         const newContext = {
             username: null,
@@ -53,6 +54,8 @@ export default function Account() {
                     const cacheSize = (await VLC.getSettings()).value
                         ?.cacheSize;
                     setValue("cacheSize", cacheSize!);
+                    const offlineMode = (await VLC.getOfflineMode()).value;
+                    setOfflineMode(offlineMode!);
                 } catch (e: any) {
                     setValue("cacheSize", 0);
                     Toast.show({
@@ -72,6 +75,11 @@ export default function Account() {
     useEffect(() => {
         console.log(errors);
     }, [errors]);
+    const handleChange = useCallback(async (target: any) => {
+        const newOfflineMode = (await VLC.setOfflineMode({value: !offlineMode})).value;
+        setOfflineMode(newOfflineMode!);
+        Toast.show({text: `Offline mode ${newOfflineMode ? "enabled" : "disabled"}`})
+    }, [offlineMode]);
     return (
         <>
             <div className="d-flex flex-column align-items-center justify-content-start">
@@ -135,6 +143,21 @@ export default function Account() {
                                     {errors.cacheSize.message}
                                 </div>
                             )}
+                            <div className="section-header text-white">
+                                Offline Mode
+                            </div>
+                            <div className="form-check form-switch">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={offlineMode}
+                                    onChange={handleChange}
+                                    id="flexSwitchCheckDefault"
+                                />
+                            </div>
+                            <div className="subtitle text-white">
+                                Offline Mode (Will use the downloaded songs as library)
+                            </div>
                             <div className="d-flex flex-row align-items-center justify-content-end w-100 mt-3">
                                 <button
                                     ref={saveSettingsRef}

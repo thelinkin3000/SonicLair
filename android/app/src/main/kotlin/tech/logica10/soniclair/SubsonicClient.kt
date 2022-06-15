@@ -1,38 +1,56 @@
+@file:Suppress("BlockingMethodInNonBlockingContext")
+
 package tech.logica10.soniclair
 
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
+import android.util.Base64
 import android.util.Log
+import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okio.*
-import tech.logica10.soniclair.SubsonicModels.*
+import okhttp3.*
+import okhttp3.Credentials.basic
+import okio.Buffer
+import okio.buffer
+import okio.sink
+import tech.logica10.soniclair.models.*
+import tech.logica10.soniclair.room.database.SoniclairDatabase
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 
 
-class Account(val username: String?, val password: String, val url: String, var type: String)
-class Settings(val cacheSize: Int)
-
 class SubsonicClient(var initialAccount: Account) {
     companion object {
         var account: Account = Account(null, "", "", "")
+        var spotifyToken: String = ""
     }
+
+    val db: SoniclairDatabase
 
     init {
         account = initialAccount
+        val authority =
+            if (initialAccount.url != "") Uri.parse(initialAccount.url).authority else ""
+        db = Room.databaseBuilder(
+            App.context,
+            SoniclairDatabase::class.java, "soniclair${authority}"
+        ).build()
     }
 
     val client: OkHttpClient = OkHttpClient.Builder()
@@ -101,17 +119,110 @@ class SubsonicClient(var initialAccount: Account) {
         return "${uri.authority}/songs/"
     }
 
-//    fun getCoverArtsDirectory(): String {
-//        val uri = Uri.parse(account.url)
-//        return "${uri.authority}/albumArts/"
-//    }
+    private fun getArtistArtsDirectory(): String {
+        val uri = Uri.parse(account.url)
+        return Path(App.context.filesDir.path, "${uri.authority}/artistArts/").toString()
+    }
 
-//    fun getLocalCoverArtUri(id: String): String {
-//        return Path(App.context.filesDir.path, getCoverArtsDirectory(), "${id}.png").toString()
-//    }
+    private fun getLocalArtistArtUri(id: String): String {
+        return Path(getArtistArtsDirectory(), "${id}.png").toString()
+    }
+
+    private fun getCoverArtsDirectory(): String {
+        val uri = Uri.parse(account.url)
+        return Path(App.context.filesDir.path, "${uri.authority}/albumArts/").toString()
+    }
+
+    private fun getLocalCoverArtUri(id: String): String {
+        return Path(getCoverArtsDirectory(), "${id}.png").toString()
+    }
 
     fun getLocalSongUri(id: String): String {
         return Path(App.context.filesDir.path, getSongsDirectory(), id).toString()
+    }
+
+    private fun registerSong(song: Song, force: Boolean = false) {
+        val s: Song? = db.songDao().get(song.id)
+        if (s == null) {
+            Log.i("LocalCacheDB", "Registering song ${song.id}")
+            try {
+                db.songDao().insert(song)
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
+        }
+        if (s != null && force) {
+            try {
+
+                db.songDao().delete(s)
+                db.songDao().insert(song)
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
+        }
+        if (db.albumDao().get(song.albumId) == null) {
+            registerAlbum(getAlbum(song.albumId))
+        }
+    }
+
+    private fun registerAlbum(album: Album) {
+        val a: Album? = db.albumDao().get(album.id)
+        if (a == null) {
+            album.created =
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            try {
+                db.albumDao().insert(album)
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
+            Log.i("LocalCacheDB", "Registering album ${album.id}")
+        }
+        if (db.artistDao().get(album.artistId) == null) {
+            registerArtist(getArtist(album.artistId))
+        }
+    }
+
+    private fun registerArtist(artist: Artist) {
+        val a: Artist? = db.artistDao().get(artist.id)
+        if (a == null) {
+            try {
+                db.artistDao().insert(artist)
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
+            Log.i("LocalCacheDB", "Registering artist ${artist.id}")
+        }
+    }
+
+    fun getLocalArtists(): List<Artist> {
+        return db.artistDao().getAll()
+    }
+
+    fun getLocalArtist(id: String): Artist? {
+        return db.artistDao().get(id)
+    }
+
+    fun getLocalArtistWithAlbums(id: String): Artist? {
+        val artist = getLocalArtist(id) ?: return null
+        artist.album = db.albumDao().getByArtist(id).sortedBy { s -> s.year }
+        artist.albumCount = artist.album.size
+        return artist
+    }
+
+    fun getLocalAlbums(take: Int, sortedByDate: Boolean = false): List<Album> {
+        return db.albumDao().getAll().take(take)
+            .sortedBy { s -> if (sortedByDate) s.created else s.name }
+    }
+
+    private fun getLocalAlbum(id: String): Album? {
+        return db.albumDao().get(id)
+    }
+
+    fun getLocalAlbumWithSongs(id: String): AlbumWithSongs? {
+        val album: Album = getLocalAlbum(id) ?: return null
+        val ret = AlbumWithSongs(album)
+        ret.song = db.songDao().getByAlbum(id).sortedBy { s -> s.track }
+        return ret
     }
 
     private fun downloadSong(id: String) {
@@ -148,7 +259,6 @@ class SubsonicClient(var initialAccount: Account) {
             // It's probable the download failed and we have a malformed file.
             // Gotta prune it.
             if (File(getLocalSongUri(id)).exists()) {
-
                 File(getLocalSongUri(id)).delete()
             }
         }
@@ -204,13 +314,26 @@ class SubsonicClient(var initialAccount: Account) {
     }
 
 
-    fun getArtists(): ArtistsSubsonicResponse =
-        makeSubsonicRequest(
+    fun getArtists(): List<Artist> {
+
+        val artistsResponse = makeSubsonicRequest<ArtistsSubsonicResponse>(
             listOf("rest", "getArtists"),
             getBasicParams().asMap()
         )
+        val ret: MutableList<Artist> = mutableListOf()
+        artistsResponse.artists.index.forEach { artistIndex ->
+            ret.addAll(artistIndex.artist.map { artistItem ->
+                Artist(
+                    artistItem.id,
+                    artistItem.name,
+                    artistItem.albumCount
+                )
+            })
+        }
+        return ret
+    }
 
-    fun getArtist(id: String): InnerArtistSubsonicResponse {
+    fun getArtist(id: String): Artist {
         val params = getBasicParams().asMap()
         params["id"] = id
         return makeSubsonicRequest<ArtistSubsonicResponse>(
@@ -280,7 +403,129 @@ class SubsonicClient(var initialAccount: Account) {
             uriBuilder.appendQueryParameter(key, map[key])
         }
         uriBuilder.appendQueryParameter("id", id)
+        CoroutineScope(IO).launch {
+            try {
+                if (!File(getLocalCoverArtUri(id)).exists()) {
+                    Log.i("Image saver", "Fetching image $id")
+                    saveImage(
+                        Glide.with(App.context)
+                            .asBitmap()
+                            .load(uriBuilder.toString()) // sample image
+                            .submit()
+                            .get(),
+                        getCoverArtsDirectory(),
+                        getLocalCoverArtUri(id)
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("Image saver", e.message!!)
+                Globals.NotifyObservers("EX", e.message)
+            }
+
+        }
         return uriBuilder.toString()
+    }
+
+    fun getSpotifyToken(): String {
+        if (spotifyToken == "") {
+            val client_id = "3cb3ecad8ce14e1dba560e3b5ceb908b"
+            val client_secret = "86810d6f234142a9bf7be9d2a924bbba"
+            val uriBuilder = Uri.Builder()
+                .scheme("https")
+                .authority("accounts.spotify.com")
+                .appendPath("api")
+                .appendPath("token")
+            val body: RequestBody = FormBody.Builder()
+                .add("grant_type", "client_credentials")
+                .build()
+            val request: Request = Request.Builder()
+                .url(uriBuilder.build().toString())
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader(
+                    "Authorization",
+                    basic(client_id, client_secret)
+                )
+                .post(body)
+                .build()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                spotifyToken = JSObject(
+                    response.body?.string() ?: "{\"access_token\": \"\"}"
+                ).getString("access_token").toString()
+
+            } else {
+                throw Exception(response.message)
+            }
+        }
+        return spotifyToken
+    }
+
+    private fun getSpotifyArtistArt(name: String): String? {
+        val uriBuilder = Uri.parse("https://api.spotify.com/v1/search").buildUpon()
+        uriBuilder.appendQueryParameter("q", name)
+        uriBuilder.appendQueryParameter("type", "artist")
+
+        val requestBuilder: Request.Builder = Request.Builder()
+            .url(uriBuilder.build().toString())
+            .get()
+            .addHeader("Accept", "application/json")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Authorization", "Bearer ${getSpotifyToken()}")
+        //4. Synchronous call to the REST API
+        val response: Response = client.newCall(requestBuilder.build()).execute()
+        if (!response.isSuccessful) {
+            throw Exception(response.message)
+        }
+        val body = response.body?.string()
+        val realResponse =
+            JSObject(body).getJSObject("data")?.getJSObject("artists")?.getJSONArray("items")
+                ?: return null
+        val first = realResponse.getJSONObject(0) ?: return null
+        if (first.getString("name") == name) {
+            return first.getJSONArray("images").getJSONObject(0)?.getString("url")
+        }
+        return null
+    }
+
+    fun getArtistArt(id: String): String {
+        val artist = getArtist(id)
+        var art: String? = getSpotifyArtistArt(artist.name)
+        if (art == null) {
+            // Falling back to the artistInfo provided by navidrome
+            val artistInfo = getArtistInfo(id)
+            art = artistInfo.largeImageUrl
+        }
+        CoroutineScope(IO).launch {
+            if (!File(getLocalArtistArtUri(id)).exists()) {
+                saveImage(
+                    Glide.with(App.context)
+                        .asBitmap()
+                        .load(art) // sample image
+                        .submit()
+                        .get(),
+                    getCoverArtsDirectory(),
+                    getLocalCoverArtUri(id)
+                )
+            }
+        }
+        return art
+    }
+
+    fun getLocalAlbumArt(id: String): String {
+        val file = File(getLocalCoverArtUri(id))
+        if (!file.exists()) {
+            throw Exception("There isn't a cached version of this cover art.")
+        }
+        return "data:image/png;base64,${Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)}"
+    }
+
+    fun getLocalArtistArt(id: String): String {
+        val file = File(getLocalArtistArtUri(id))
+        if (!file.exists()) {
+            throw Exception("There isn't a cached version of this artist art.")
+        }
+        return "data:image/png;base64,${Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)}"
     }
 
     fun getRandomSongs(): List<Song> {
@@ -376,10 +621,10 @@ class SubsonicClient(var initialAccount: Account) {
         return account
     }
 
-    fun downloadPlaylist(playlist: List<Song>) {
+    fun downloadPlaylist(playlist: List<Song>, force: Boolean = false) {
         playlist.forEach {
             CoroutineScope(IO).launch {
-                if (!File(getLocalSongUri(it.id)).exists()) {
+                if (!File(getLocalSongUri(it.id)).exists() || force) {
                     if (KeyValueStorage.getSettings().cacheSize > 0) {
                         val dir = File(getSongsDirectory())
                         if (dir.exists()) {
@@ -394,9 +639,30 @@ class SubsonicClient(var initialAccount: Account) {
                             }
                         }
                     }
+                    registerSong(it, force)
                     downloadSong(it.id)
                 }
+            }
+        }
+    }
 
+    private fun saveImage(image: Bitmap, directory: String, path: String) {
+        val storageDir = File(directory)
+        var success = true
+        if (!storageDir.exists()) {
+            success = storageDir.mkdirs()
+        }
+        if (success) {
+            val imageFile = File(path)
+            try {
+                val fOut: OutputStream = FileOutputStream(imageFile)
+                image.compress(Bitmap.CompressFormat.PNG, 100, fOut)
+                fOut.flush()
+                fOut.close()
+                Log.i("Image save", "image successfully saved")
+            } catch (e: Exception) {
+                Log.e("Image saver", e.message!!)
+                Globals.NotifyObservers("EX", e.message)
             }
         }
     }

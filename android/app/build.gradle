@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+
+
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -39,16 +42,18 @@ android {
 
     lintOptions {
         warningsAsErrors true
-        disable 'UnusedResources', 'IconXmlAndPng', 'IconLauncherShape','IconDipSize', 'IconDuplicatesConfig', 'IconLocation', 'IconDensities', 'IconDuplicates'
+        disable 'UnusedResources', 'IconXmlAndPng', 'IconLauncherShape', 'IconDipSize', 'IconDuplicatesConfig', 'IconLocation', 'IconDensities', 'IconDuplicates'
     }
 
 }
+
 
 repositories {
     flatDir {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
     mavenCentral()
+    google()
 }
 
 dependencies {
@@ -61,7 +66,7 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
     implementation 'org.videolan.android:libvlc-all:3.4.9'
     implementation 'com.github.bumptech.glide:glide:4.13.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.13.0'
+    kapt 'com.github.bumptech.glide:compiler:4.13.0'
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation "androidx.core:core-ktx:$androidCoreKxtVersion"
     implementation "androidx.activity:activity-ktx:1.4.0"
@@ -71,6 +76,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2")
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
 
+    implementation "androidx.room:room-ktx:$roomVersion"
+    kapt "androidx.room:room-compiler:$roomVersion"
+    // optional - RxJava2 support for Room
+    implementation "androidx.room:room-rxjava2:$roomVersion"
+    // optional - RxJava3 support for Room
+    implementation "androidx.room:room-rxjava3:$roomVersion"
+    // optional - Guava support for Room, including Optional and ListenableFuture
+    implementation "androidx.room:room-guava:$roomVersion"
+    // optional - Test helpers
+    testImplementation "androidx.room:room-testing:$roomVersion"
+    
 
 }
 

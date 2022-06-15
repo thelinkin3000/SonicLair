@@ -1,6 +1,8 @@
-package tech.logica10.soniclair
+package tech.logica10.soniclair.services
 
-import android.app.*
+import android.app.PendingIntent
+import android.app.SearchManager
+import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.graphics.Bitmap
@@ -11,7 +13,6 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
-import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
@@ -32,8 +33,10 @@ import org.json.JSONException
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
+import tech.logica10.soniclair.*
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
-import tech.logica10.soniclair.SubsonicModels.Song
+import tech.logica10.soniclair.models.SearchType
+import tech.logica10.soniclair.models.Song
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -41,12 +44,6 @@ import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
 import java.util.concurrent.ExecutionException
-
-enum class SearchType {
-    ARTIST,
-    ALBUM,
-    SONG
-}
 
 class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var wasPlaying: Boolean = false
@@ -66,11 +63,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         androidx.media.app.NotificationCompat.MediaStyle()
             .setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(1, 2)
-    private val notificationBuilder: NotificationCompat.Builder =
-        NotificationCompat.Builder(App.context, "soniclair")
-            .setSmallIcon(R.drawable.ic_stat_soniclair)
-            .setStyle(mediaStyle)
-            .setChannelId("soniclair")
+
     private val metadataBuilder: MediaMetadataCompat.Builder = MediaMetadataCompat.Builder()
     private val notificationManager: NotificationManagerCompat =
         NotificationManagerCompat.from(App.context)
@@ -88,7 +81,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private var isForeground: Boolean = false
     private val binder = LocalBinder()
     private val notifId = 1
-    private val connectivityManager: ConnectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
+    private val connectivityManager: ConnectivityManager =
+        App.context.getSystemService(ConnectivityManager::class.java)
 
 
     private var mMediaPlayer: MediaPlayer? = null
@@ -102,6 +96,14 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     init {
         Globals.RegisterObserver(this)
         mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
+    }
+
+    fun getNotificationBuilder(): NotificationCompat.Builder {
+        return NotificationCompat.Builder(App.context, "soniclair")
+            .setSmallIcon(R.drawable.ic_stat_soniclair)
+            .setStyle(mediaStyle)
+            .setChannelId("soniclair")
+            .setStyle(mediaStyle)
     }
 
     override fun onCreate() {
@@ -187,7 +189,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             )
         cancelAction = actionBuilder.build()
 
-        notificationBuilder.setStyle(mediaStyle)
+
     }
 
     override fun onDestroy() {
@@ -196,6 +198,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     private fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
+        val notificationBuilder = getNotificationBuilder()
         if (albumArtBitmap != null) {
             notificationBuilder.setLargeIcon(albumArtBitmap)
         }
@@ -254,7 +257,6 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
 
-
     private fun getPlaybackStateBuilder(): PlaybackStateCompat.Builder {
         return PlaybackStateCompat.Builder()
             .setActions(
@@ -293,7 +295,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     private fun playSearch(query: String, type: SearchType = SearchType.SONG) {
-        Log.i("PlaySearch","Searching with query $query")
+        Log.i("PlaySearch", "Searching with query $query")
         when (type) {
             SearchType.SONG -> {
                 val search = subsonicClient.search(query)
@@ -305,8 +307,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 val search = subsonicClient.search(query)
                 if (search.album != null && search.album.isNotEmpty()) {
                     playAlbum(search.album[0].id, 0)
-                }
-                else if(search.song != null && search.song.isNotEmpty()){
+                } else if (search.song != null && search.song.isNotEmpty()) {
                     playRadio(search.song[0].id)
                 }
             }
@@ -443,6 +444,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             currentTrack = playlist[0]
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                     ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+                && !KeyValueStorage.getOfflineMode()
+                && !App.isTv
             ) {
                 subsonicClient.downloadPlaylist(playlist)
             }
@@ -457,11 +460,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private fun playAlbum(id: String, track: Int) {
         playlist.clear()
         try {
-            playlist.addAll(subsonicClient.getAlbum(id).song)
+            playlist.addAll(
+                if (KeyValueStorage.getOfflineMode()) {
+                    subsonicClient.getLocalAlbumWithSongs(id)!!.song
+                } else {
+                    subsonicClient.getAlbum(id).song
+                }
+            )
             currentTrack = playlist[track]
 
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                     ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+                && !KeyValueStorage.getOfflineMode()
+                && !App.isTv
             ) {
                 subsonicClient.downloadPlaylist(playlist)
             }
@@ -479,6 +490,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             mMediaPlayer!!.pause()
         }
     }
+
+
 
     @Suppress("BlockingMethodInNonBlockingContext")
     private fun play() {
@@ -522,8 +535,12 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private fun next() {
         if (playlist.indexOf(currentTrack) < playlist.size - 1) {
             currentTrack = playlist[playlist.indexOf(currentTrack) + 1]
-            loadMedia()
-            play()
+            try {
+                loadMedia()
+                play()
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
         }
     }
 
@@ -531,11 +548,16 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     private fun prev() {
         if (playlist.indexOf(currentTrack) > 0) {
             currentTrack = playlist[playlist.indexOf(currentTrack) - 1]
-            loadMedia()
-            play()
+            try {
+                loadMedia()
+                play()
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+            }
         }
     }
 
+    @Throws(Exception::class)
     private fun loadMedia() {
         var uri: String?
         val file = File(subsonicClient.getLocalSongUri(currentTrack!!.id))
@@ -560,6 +582,9 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 }
             }
         } else {
+            if (KeyValueStorage.getOfflineMode()) {
+                throw Exception("The song did not download successfully. Try to download it again.")
+            }
             uri = subsonicClient.getSongUri(currentTrack)
         }
         if (uri != null) {
@@ -696,32 +721,3 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 }
 
-class MediaCallbacks : MediaSessionCompat.Callback() {
-    override fun onPlay() {
-        Globals.NotifyObservers("SLPLAY", "")
-    }
-
-    override fun onPlayFromSearch(query: String?, extras: Bundle?) {
-        if (query != null && query.isNotEmpty()) {
-            Globals.NotifyObservers("SLPLAYSEARCH", query)
-            return
-        }
-        Globals.NotifyObservers("SLPLAY", "")
-    }
-
-    override fun onPlayFromUri(uri: Uri?, extras: Bundle?) {
-        super.onPlayFromUri(uri, extras)
-    }
-
-    override fun onPause() {
-        Globals.NotifyObservers("SLPAUSE", "")
-    }
-
-    override fun onSkipToNext() {
-        Globals.NotifyObservers("SLNEXT", "")
-    }
-
-    override fun onSkipToPrevious() {
-        Globals.NotifyObservers("SLPREV", "")
-    }
-}

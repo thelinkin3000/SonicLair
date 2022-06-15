@@ -1,4 +1,5 @@
 import { registerPlugin, Plugin } from "@capacitor/core";
+import { IArtist } from "../Models/API/Responses/IArtist";
 import {
     IArtistInfo,
     ISearchResult,
@@ -9,7 +10,6 @@ import {
     IInnerAlbumResponse,
     IInnerArtistResponse,
 } from "../Models/API/Responses/IArtistResponse";
-import { IArtistsResponse } from "../Models/API/Responses/IArtistsResponse";
 import { IAccount } from "../Models/AppContext";
 
 export interface IBackendResponse<T> {
@@ -38,7 +38,7 @@ export interface IBackendPlugin extends Plugin {
         track: number;
     }): Promise<IBackendResponse<string>>;
     playRadio(options: { song: string }): Promise<IBackendResponse<string>>;
-    getArtists(): Promise<IBackendResponse<IArtistsResponse>>;
+    getArtists(): Promise<IBackendResponse<IArtist[]>>;
     getArtist(options: {
         id: string;
     }): Promise<IBackendResponse<IInnerArtistResponse>>;
@@ -47,6 +47,7 @@ export interface IBackendPlugin extends Plugin {
         id: string;
     }): Promise<IBackendResponse<IInnerAlbumResponse>>;
     getAlbumArt(options: { id: string }): Promise<IBackendResponse<string>>;
+    getArtistArt(options: { id: string }): Promise<IBackendResponse<string>>;
     getArtistInfo(options: {
         id: string;
     }): Promise<IBackendResponse<IArtistInfo>>;
@@ -76,8 +77,13 @@ export interface IBackendPlugin extends Plugin {
     getCameraPermission(): Promise<IBackendResponse<String>>;
     getCameraPermissionStatus(): Promise<IBackendResponse<String>>;
     getSettings(): Promise<IBackendResponse<ISettings>>;
-    setSettings(options:ISettings): Promise<IBackendResponse<String>>;
-    getSongStatus(options: {id: string}): Promise<IBackendResponse<boolean>>;
+    setSettings(options: ISettings): Promise<IBackendResponse<String>>;
+    getSongStatus(options: { id: string }): Promise<IBackendResponse<boolean>>;
+    getOfflineMode(): Promise<IBackendResponse<boolean>>;
+    setOfflineMode(options: {
+        value: boolean;
+    }): Promise<IBackendResponse<boolean>>;
+    downloadAlbum(options: { id: string }): Promise<IBackendResponse<string>>;
 }
 
 const VLC = registerPlugin<IBackendPlugin>("VLC", {

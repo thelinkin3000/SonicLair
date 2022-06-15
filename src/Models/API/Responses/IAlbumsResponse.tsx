@@ -1,7 +1,5 @@
 import { ISubsonicResponse } from "./SubsonicResponse";
-import { IArtistIndex } from "./Index";
-import { IAlbumArtistResponse, IAlbumResponse } from "./IArtistResponse";
-
+import { IAlbumArtistResponse } from "./IArtistResponse";
 
 export interface IAlbumsResponse extends ISubsonicResponse {
     albumList2: {

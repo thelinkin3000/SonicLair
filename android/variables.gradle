@@ -12,4 +12,6 @@ ext {
     androidxEspressoCoreVersion = '3.4.0'
     cordovaAndroidVersion = '10.1.1'
     androidCoreKxtVersion = '1.8.0'
+    roomVersion = '2.4.2'
+    kspVersion = '1.5.31'
 }

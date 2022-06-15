@@ -6,6 +6,8 @@ import {
 } from "@noriginmedia/norigin-spatial-navigation";
 import classnames from "classnames";
 import { useCallback, useEffect } from "react";
+import VLC from "../Plugins/VLC";
+import { Toast } from "@capacitor/toast";
 
 export default function TVSidebar() {
     const { ref, focusKey, focusSelf, hasFocusedChild } = useFocusable({
@@ -14,6 +16,12 @@ export default function TVSidebar() {
     useEffect(() => {
         setTimeout(() => focusSelf(), 500);
     }, [focusSelf]);
+
+    useEffect(() => {
+        VLC.addListener("EX", (info) => {
+            Toast.show({ text: info.error });
+        });
+    }, []);
 
     return (
         <FocusContext.Provider value={focusKey}>

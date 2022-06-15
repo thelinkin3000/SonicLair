@@ -1,13 +1,9 @@
-import { IArtist } from "./IArtist";
 import { ISubsonicResponse } from "./SubsonicResponse";
 import { IArtistIndex } from "./Index";
 
-
 export interface IArtistsResponse extends ISubsonicResponse {
-    artists:{
+    artists: {
         ignoredArticles: string;
         index: IArtistIndex[];
     };
 }
-
-

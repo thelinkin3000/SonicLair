@@ -1,6 +1,6 @@
 package tech.logica10.soniclair;
 
-import static tech.logica10.soniclair.SubsonicModels.SearchResult;
+import tech.logica10.soniclair.models.*;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -25,6 +25,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +36,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import tech.logica10.soniclair.services.MusicService;
 
 @CapacitorPlugin(name = "VLC")
 public class BackendPlugin extends Plugin implements IBroadcastObserver {
@@ -162,16 +165,24 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void getTopAlbums(PluginCall call) {
+        String type = call.getString("type");
+        if (type == null) {
+            type = "frequent";
+        }
+        Integer size = call.getInt("size");
+        if (size == null) {
+            size = 10;
+        }
         try {
-            String type = call.getString("type");
-            if (type == null) {
-                type = "frequent";
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                if (type.equals("newest")) {
+                    call.resolve(OkArrayResponse(subsonicClient.getLocalAlbums(10, true)));
+                } else {
+                    call.resolve(OkArrayResponse(new ArrayList<Album>()));
+                }
+            } else {
+                call.resolve(OkArrayResponse(subsonicClient.getTopAlbums(type, size)));
             }
-            Integer size = call.getInt("size");
-            if (size == null) {
-                size = 10;
-            }
-            call.resolve(OkArrayResponse(subsonicClient.getTopAlbums(type, size)));
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -180,7 +191,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getAlbums(PluginCall call) {
         try {
-            call.resolve(OkArrayResponse(subsonicClient.getAlbums()));
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                call.resolve(OkArrayResponse(subsonicClient.getLocalAlbums(1000000, false)));
+            } else {
+                call.resolve(OkArrayResponse(subsonicClient.getAlbums()));
+            }
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -194,7 +209,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                 call.resolve(ErrorResponse("Missing required parameter id"));
                 return;
             }
-            call.resolve(OkResponse(subsonicClient.getAlbum(id)));
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                call.resolve(OkResponse(subsonicClient.getLocalAlbumWithSongs(id)));
+            } else {
+                call.resolve(OkResponse(subsonicClient.getAlbum(id)));
+            }
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -203,7 +222,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getArtists(PluginCall call) {
         try {
-            call.resolve(OkResponse(subsonicClient.getArtists()));
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                call.resolve(OkArrayResponse(subsonicClient.getLocalArtists()));
+            } else {
+                call.resolve(OkArrayResponse(subsonicClient.getArtists()));
+            }
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -211,13 +234,17 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void getArtist(PluginCall call) {
+        String id = call.getString("id");
+        if (id == null) {
+            call.resolve(ErrorResponse("Missing required parameter id"));
+            return;
+        }
         try {
-            String id = call.getString("id");
-            if (id == null) {
-                call.resolve(ErrorResponse("Missing required parameter id"));
-                return;
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                call.resolve(OkResponse(subsonicClient.getLocalArtistWithAlbums(id)));
+            } else {
+                call.resolve(OkResponse(subsonicClient.getArtist(id)));
             }
-            call.resolve(OkResponse(subsonicClient.getArtist(id)));
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -241,7 +268,34 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getRandomSongs(PluginCall call) {
         try {
-            call.resolve(OkArrayResponse(subsonicClient.getRandomSongs()));
+            if (KeyValueStorage.Companion.getOfflineMode()) {
+                call.resolve(OkArrayResponse(new ArrayList<Song>() {
+                }));
+            } else {
+                call.resolve(OkArrayResponse(subsonicClient.getRandomSongs()));
+            }
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void getOfflineMode(PluginCall call){
+        try {
+            JSObject ret = OkResponse(KeyValueStorage.Companion.getOfflineMode());
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void setOfflineMode(PluginCall call){
+        try {
+            boolean mode = Boolean.TRUE.equals(call.getBoolean("value"));
+            KeyValueStorage.Companion.setOfflineMode(mode);
+            JSObject ret = OkResponse(mode);
+            call.resolve(ret);
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -291,7 +345,28 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     @PluginMethod()
     public void getAlbumArt(PluginCall call) {
         try {
-            call.resolve(OkStringResponse(subsonicClient.getAlbumArt(Objects.requireNonNull(call.getString("id")))));
+            String id = Objects.requireNonNull(call.getString("id"));
+            if(KeyValueStorage.Companion.getOfflineMode()){
+                call.resolve(OkStringResponse(subsonicClient.getLocalAlbumArt(id)));
+            }
+            else{
+                call.resolve(OkStringResponse(subsonicClient.getAlbumArt(id)));
+            }
+        } catch (Exception e) {
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
+    public void getArtistArt(PluginCall call) {
+        try {
+            String id = Objects.requireNonNull(call.getString("id"));
+            if(KeyValueStorage.Companion.getOfflineMode()){
+                call.resolve(OkStringResponse(subsonicClient.getLocalArtistArt(id)));
+            }
+            else{
+                call.resolve(OkStringResponse(subsonicClient.getArtistArt(id)));
+            }
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -342,6 +417,11 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     @PluginMethod()
     public void playRadio(PluginCall call) {
+        if(KeyValueStorage.Companion.getOfflineMode())
+        {
+            call.resolve(ErrorResponse("Not supported in offline mode"));
+            return;
+        }
         try {
             String id = Objects.requireNonNull(call.getString("song"));
             if (!mBound) {
@@ -384,6 +464,27 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
     }
 
     @PluginMethod()
+    public void downloadAlbum(PluginCall call){
+        if(KeyValueStorage.Companion.getOfflineMode()){
+            call.resolve(ErrorResponse("Can't download albums in offline mode"));
+            return;
+        }
+        if(App.Companion.isTv()){
+            call.resolve(ErrorResponse("Can't download albums in Android TV"));
+            return;
+        }
+        try{
+            String id = Objects.requireNonNull(call.getString("id"));
+            AlbumWithSongs album = subsonicClient.getAlbum(id);
+            subsonicClient.downloadPlaylist(album.getSong(),true);
+            call.resolve(OkStringResponse(""));
+        }
+        catch(Exception e){
+            call.resolve(ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PluginMethod()
     public void next(PluginCall call) {
         Intent intent = new Intent(App.getContext(), MusicService.class);
         intent.setAction(Constants.SERVICE_NEXT);
@@ -391,6 +492,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         call.resolve(OkStringResponse(""));
 
     }
+
 
     @PluginMethod()
     public void getSpotifyToken(PluginCall call) throws IOException {
@@ -419,7 +521,6 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                     .readTimeout(5000, TimeUnit.MILLISECONDS)
                     .writeTimeout(5000, TimeUnit.MILLISECONDS)
                     .build();
-
 
             Response response = client.newCall(request).execute();
             if (response.isSuccessful()) {
