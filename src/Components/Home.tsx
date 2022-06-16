@@ -54,7 +54,7 @@ export default function Home() {
 
     return (
         <div className="d-flex flex-column h-100 scrollable overflow-scroll scrollable-hidden">
-            {albums.length > 0 && (
+            {albums && albums.length && albums.length > 0 && (
                 <>
                     <div
                         className="col-12 text-start"
@@ -79,7 +79,7 @@ export default function Home() {
                     </div>
                 </>
             )}
-            {songs.length > 0 && (
+            {songs && songs.length && songs.length > 0 && (
                 <>
                     <div className="col-12 text-start">
                         <span className="section-header text-white">
@@ -101,7 +101,7 @@ export default function Home() {
                     </div>
                 </>
             )}
-            {recentAlbums.length > 0 && (
+            {recentAlbums && recentAlbums.length && recentAlbums.length > 0 && (
                 <>
                     <div
                         className="col-12 text-start"
@@ -126,7 +126,7 @@ export default function Home() {
                     </div>
                 </>
             )}
-            {newAlbums.length > 0 && (
+            {newAlbums && newAlbums.length && newAlbums.length > 0 && (
                 <>
                     <div
                         className="col-12 text-start"
