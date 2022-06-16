@@ -26,7 +26,6 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +41,7 @@ import tech.logica10.soniclair.services.MusicService;
 public class BackendPlugin extends Plugin implements IBroadcastObserver {
 
     private static SubsonicClient subsonicClient;
-    private static boolean registered = false;
+    private boolean registered = false;
     private Gson gson;
     private String spotifyToken = "";
     private MusicService.LocalBinder binder = null;
@@ -56,12 +55,15 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
+            Log.i("ServiceBinder","Binding service");
             binder = (MusicService.LocalBinder) service;
             mBound = true;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
+            Log.i("ServiceBinder","Unbinding service");
+
             mBound = false;
         }
     };
@@ -245,20 +247,6 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
             } else {
                 call.resolve(OkResponse(subsonicClient.getArtist(id)));
             }
-        } catch (Exception e) {
-            call.resolve(ErrorResponse(e.getMessage()));
-        }
-    }
-
-    @PluginMethod()
-    public void getArtistInfo(PluginCall call) {
-        try {
-            String id = call.getString("id");
-            if (id == null) {
-                call.resolve(ErrorResponse("Missing required parameter id"));
-                return;
-            }
-            call.resolve(OkResponse(subsonicClient.getArtistInfo(id)));
         } catch (Exception e) {
             call.resolve(ErrorResponse(e.getMessage()));
         }
@@ -476,7 +464,7 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
         try{
             String id = Objects.requireNonNull(call.getString("id"));
             AlbumWithSongs album = subsonicClient.getAlbum(id);
-            subsonicClient.downloadPlaylist(album.getSong(),true);
+            subsonicClient.downloadPlaylist(album.getSong(), true);
             call.resolve(OkStringResponse(""));
         }
         catch(Exception e){
@@ -635,6 +623,12 @@ public class BackendPlugin extends Plugin implements IBroadcastObserver {
                             intent.setAction(Constants.SERVICE_PLAY_SEARCH_ALBUM);
                             intent.putExtra("query", value);
                             App.getContext().startService(intent);
+                        }
+                    case "SLCANCEL":
+                        if(mBound){
+                            App.getContext().unbindService(connection);
+                            mBound = false;
+                            binder = null;
                         }
                 }
             } else if (action.startsWith("MS")) {

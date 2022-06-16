@@ -1,7 +1,6 @@
 import { registerPlugin, Plugin } from "@capacitor/core";
 import { IArtist } from "../Models/API/Responses/IArtist";
 import {
-    IArtistInfo,
     ISearchResult,
 } from "../Models/API/Responses/IArtistInfoResponse";
 import {
@@ -48,9 +47,6 @@ export interface IBackendPlugin extends Plugin {
     }): Promise<IBackendResponse<IInnerAlbumResponse>>;
     getAlbumArt(options: { id: string }): Promise<IBackendResponse<string>>;
     getArtistArt(options: { id: string }): Promise<IBackendResponse<string>>;
-    getArtistInfo(options: {
-        id: string;
-    }): Promise<IBackendResponse<IArtistInfo>>;
     search(options: {
         query: string;
     }): Promise<IBackendResponse<ISearchResult>>;

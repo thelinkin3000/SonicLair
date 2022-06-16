@@ -20,7 +20,6 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -89,6 +88,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     private var mMediaPlayer: MediaPlayer? = null
 
+    private var mAudioFocusRequest: AudioFocusRequest? = null
+
     inner class DeviceCallback : AudioDeviceCallback() {
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
             this@MusicService.pause()
@@ -108,16 +109,33 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             .setStyle(mediaStyle)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i("MusicService", "destroying service")
+        Globals.UnregisterObserver(this)
+        if (mMediaPlayer?.isPlaying == true)
+            mMediaPlayer?.stop()
+        mMediaPlayer?.release()
+        mLibVLC?.release()
+        mMediaPlayer = null
+        mLibVLC = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mAudioFocusRequest != null) {
+            mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest!!)
+
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            // Says to use this in Android documentation for versions prior to Oreo
+            @Suppress("DEPRECATION")
+            mAudioManager.abandonAudioFocus(audioFocusChangeListener)
+        }
+        notificationManager.cancel(notifId)
+    }
+
     override fun onCreate() {
         super.onCreate()
-        Log.i("ServiceCreation", "Created")
+        Log.i("MusicService", "Created")
         notificationManager.createNotificationChannel(channel)
-        try {
-            mLibVLC = LibVLC(App.context, args)
-            mMediaPlayer = MediaPlayer(mLibVLC)
-        } catch (e: Exception) {
-            Log.i("Soniclair", e.message!!)
-        }
+        mLibVLC = LibVLC(App.context, args)
+        mMediaPlayer = MediaPlayer(mLibVLC)
 
 
         mMediaPlayer!!.setEventListener(this)
@@ -190,14 +208,10 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 pendingCancelIntent
             )
         cancelAction = actionBuilder.build()
-
+        mAudioFocusRequest = requestAudioFocus()
 
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Globals.UnregisterObserver(this)
-    }
 
     private fun updateNotification(albumArtBitmap: Bitmap?, play: Boolean = false) {
         val notificationBuilder = getNotificationBuilder()
@@ -276,21 +290,24 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 // We just gained focus, or got it back.
                 // If we were playing something, and there's still something to play
                 // we resume playing that.
-                if (mMediaPlayer!!.media != null && mMediaPlayer!!.position < mMediaPlayer!!.media!!
-                        .duration && wasPlaying
+                if (mMediaPlayer != null &&
+                    mMediaPlayer!!.media != null &&
+                    mMediaPlayer!!.position < mMediaPlayer!!.media!!.duration
+                    && wasPlaying
                 ) {
                     wasPlaying = false
                     mMediaPlayer!!.play()
                 }
             AudioManager.AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 // We lost focus, let's pause playing
-                if (mMediaPlayer!!.isPlaying) {
+                if (mMediaPlayer != null && mMediaPlayer!!.isPlaying) {
                     wasPlaying = true
                     mMediaPlayer!!.pause()
                 }
             }
         }
     }
+
 
     override fun onBind(intent: Intent?): IBinder {
         return binder
@@ -406,13 +423,15 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     override fun update(action: String?, value: String?) {
         if (action == "SLCANCEL") {
-            notificationManager.cancel(notifId)
+            Log.i("MusicService", "Stopping signal received. Stopping.")
+            stopForeground(true)
             stopSelf()
+            notificationManager.cancel(notifId)
         }
     }
 
-    private fun requestAudioFocus() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+    private fun requestAudioFocus(): AudioFocusRequest? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(false)
@@ -431,10 +450,12 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                     }
                 }
             }
+            return mAudioFocusRequest
         } else {
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             // Request audio focus for playback
-            val result: Int = audioManager.requestAudioFocus(
+            // Says to use this in Android documentation for versions prior to Oreo
+            @Suppress("DEPRECATION") val result: Int = audioManager.requestAudioFocus(
                 audioFocusChangeListener,
                 // Use the music stream.
                 AudioManager.STREAM_MUSIC,
@@ -447,6 +468,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                     mMediaPlayer!!.pause()
                 }
             }
+            return null
         }
 
     }
@@ -463,7 +485,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 && !KeyValueStorage.getOfflineMode()
                 && !App.isTv
             ) {
-                subsonicClient.downloadPlaylist(playlist)
+                subsonicClient.downloadPlaylist(playlist, false)
             }
             loadMedia()
             play()
@@ -490,7 +512,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 && !KeyValueStorage.getOfflineMode()
                 && !App.isTv
             ) {
-                subsonicClient.downloadPlaylist(playlist)
+                subsonicClient.downloadPlaylist(playlist, false)
             }
             loadMedia()
             play()
@@ -607,6 +629,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             if (mMediaPlayer!!.isPlaying) mMediaPlayer!!.pause()
             mMediaPlayer!!.media = media
             media.release()
+            subsonicClient.scrobble(currentTrack!!.id)
         }
     }
 
@@ -668,8 +691,6 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 )
                 updateMediaSession(b.build())
                 updateNotification(null, false)
-                requestAudioFocus()
-
             }
         }
     }

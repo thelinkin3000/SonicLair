@@ -5,7 +5,6 @@ package tech.logica10.soniclair
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.util.Base64
@@ -29,17 +28,20 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.Path
+import kotlin.collections.HashMap
 
 
 class SubsonicClient(var initialAccount: Account) {
     companion object {
         var account: Account = Account(null, "", "", "")
         var spotifyToken: String = ""
+        var downloadQueue: MutableList<Song> = mutableListOf()
+        var downloadQueueForce: HashMap<String, Boolean> = HashMap()
+        var downloading: Boolean = false
     }
 
     val db: SoniclairDatabase
@@ -60,8 +62,7 @@ class SubsonicClient(var initialAccount: Account) {
         .build()
 
 
-
-    fun getBasicParams(): BasicParams {
+    private fun getBasicParams(): BasicParams {
         val salt = "abcd1234"
         val saltedPassword = "${account.password}${salt}"
         val md = MessageDigest.getInstance("MD5")
@@ -124,7 +125,12 @@ class SubsonicClient(var initialAccount: Account) {
 
     private fun getArtistArtsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return Helpers.constructPath(listOf(App.context.filesDir.path, "${uri.authority}/artistArts/"))
+        return Helpers.constructPath(
+            listOf(
+                App.context.filesDir.path,
+                "${uri.authority}/artistArts/"
+            )
+        )
     }
 
     private fun getLocalArtistArtUri(id: String): String {
@@ -133,7 +139,12 @@ class SubsonicClient(var initialAccount: Account) {
 
     private fun getCoverArtsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return Helpers.constructPath(listOf(App.context.filesDir.path, "${uri.authority}/albumArts/"))
+        return Helpers.constructPath(
+            listOf(
+                App.context.filesDir.path,
+                "${uri.authority}/albumArts/"
+            )
+        )
     }
 
     private fun getLocalCoverArtUri(id: String): String {
@@ -144,20 +155,58 @@ class SubsonicClient(var initialAccount: Account) {
         return Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory(), id))
     }
 
-    private fun registerSong(song: Song, force: Boolean = false) {
+    private fun unregisterSong(id: String) {
+        val s: Song? = db.songDao().get(id)
+        if (s != null) {
+            val albumId = s.albumId
+            try {
+                db.songDao().delete(s)
+            } catch (e: Exception) {
+                Globals.NotifyObservers("EX", e.message)
+                return
+            }
+            checkAndUnregisterAlbum(albumId)
+        }
+    }
+
+    private fun checkAndUnregisterAlbum(id: String) {
+        val a: Album? = db.albumDao().get(id)
+        if (a != null) {
+            val s: List<Song> = db.songDao().getByAlbum(id)
+            if (s.isEmpty()) {
+                val artistId = a.artistId
+                try {
+                    db.albumDao().delete(a)
+                } catch (e: Exception) {
+                    Globals.NotifyObservers("EX", e.message)
+                    return
+                }
+                checkAndUnregisterArtist(artistId)
+            }
+        }
+
+    }
+
+    private fun checkAndUnregisterArtist(id: String) {
+        val a: Artist? = db.artistDao().get(id)
+        if (a != null) {
+            val albums: List<Album> = db.albumDao().getByArtist(id)
+            if (albums.isEmpty()) {
+                try {
+                    db.artistDao().delete(a)
+                } catch (e: Exception) {
+                    Globals.NotifyObservers("EX", e.message)
+                    return
+                }
+            }
+        }
+    }
+
+    private fun registerSong(song: Song) {
         val s: Song? = db.songDao().get(song.id)
         if (s == null) {
             Log.i("LocalCacheDB", "Registering song ${song.id}")
             try {
-                db.songDao().insert(song)
-            } catch (e: Exception) {
-                Globals.NotifyObservers("EX", e.message)
-            }
-        }
-        if (s != null && force) {
-            try {
-
-                db.songDao().delete(s)
                 db.songDao().insert(song)
             } catch (e: Exception) {
                 Globals.NotifyObservers("EX", e.message)
@@ -238,7 +287,8 @@ class SubsonicClient(var initialAccount: Account) {
                 Globals.NotifyObservers("EX", response.message)
                 return
             }
-            val dirPath = Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory()))
+            val dirPath =
+                Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory()))
             val dir = File(dirPath)
             if (!dir.exists())
                 dir.mkdirs()
@@ -251,13 +301,20 @@ class SubsonicClient(var initialAccount: Account) {
             var totalBytesRead: Long = 0
             val bufferSize: Long = 8 * 1024
             var bytesRead: Long
+            var time = LocalDateTime.now()
             while (source.read(sinkBuffer, bufferSize).also { bytesRead = it } != -1L) {
                 sink.emit()
                 totalBytesRead += bytesRead
                 val progress = (totalBytesRead * 100 / contentLength).toInt()
-                Globals.NotifyObservers("MSprogress${id}", "{\"progress\":${progress}}")
+                if (Duration.between(time, LocalDateTime.now()).toMillis() > 200) {
+                    time = LocalDateTime.now()
+                    Globals.NotifyObservers("MSprogress${id}", "{\"progress\":${progress}}")
+                }
+
             }
+            Globals.NotifyObservers("MSprogress${id}", "{\"progress\":100}")
             sink.flush()
+            sink.close()
         } catch (e: Exception) {
             Globals.NotifyObservers("EX", e.message)
             // It's probable the download failed and we have a malformed file.
@@ -271,8 +328,9 @@ class SubsonicClient(var initialAccount: Account) {
 
     inline fun <reified T : Any> makeSubsonicRequest(
         path: List<String>,
-        parameters: HashMap<String, String>?
-    ): T {
+        parameters: HashMap<String, String>?,
+        emptyResponse: Boolean = false
+    ): T? {
         val uriBuilder = Uri.parse(account.url).buildUpon()
         for (p in path) {
             uriBuilder.appendPath(p)
@@ -302,6 +360,9 @@ class SubsonicClient(var initialAccount: Account) {
                     ?.getString("message")
             )
         }
+        if (emptyResponse) {
+            return null
+        }
         return Gson().fromJson(
             realResponse,
             T::class.java
@@ -314,7 +375,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<SearchResponse>(
             listOf("rest", "search3"),
             params
-        ).searchResult3
+        )!!.searchResult3
     }
 
 
@@ -325,7 +386,7 @@ class SubsonicClient(var initialAccount: Account) {
             getBasicParams().asMap()
         )
         val ret: MutableList<Artist> = mutableListOf()
-        artistsResponse.artists.index.forEach { artistIndex ->
+        artistsResponse!!.artists.index.forEach { artistIndex ->
             ret.addAll(artistIndex.artist.map { artistItem ->
                 Artist(
                     artistItem.id,
@@ -343,7 +404,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<ArtistSubsonicResponse>(
             listOf("rest", "getArtist"),
             params
-        ).artist
+        )!!.artist
     }
 
     fun getAlbums(): List<Album> {
@@ -359,7 +420,7 @@ class SubsonicClient(var initialAccount: Account) {
                 makeSubsonicRequest<AlbumsResponse>(
                     listOf("rest", "getAlbumList2"),
                     params
-                ).albumList2.album
+                )!!.albumList2.album
             )
             if (ret.size % 500 != 0) {
                 more = false
@@ -375,7 +436,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<AlbumResponse>(
             listOf("rest", "getAlbum"),
             params
-        ).album
+        )!!.album
     }
 
     fun getArtistInfo(id: String): ArtistInfo {
@@ -384,7 +445,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<ArtistInfoResponse>(
             listOf("rest", "getArtistInfo2"),
             params
-        ).artistInfo2
+        )!!.artistInfo2
     }
 
     fun getTopAlbums(type: String = "frequent", size: Int = 10): List<Album> {
@@ -395,7 +456,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<AlbumsResponse>(
             listOf("rest", "getAlbumList2"),
             params
-        ).albumList2.album
+        )!!.albumList2.album
     }
 
     fun getAlbumArt(id: String): String {
@@ -432,8 +493,8 @@ class SubsonicClient(var initialAccount: Account) {
 
     fun getSpotifyToken(): String {
         if (spotifyToken == "") {
-            val client_id = "3cb3ecad8ce14e1dba560e3b5ceb908b"
-            val client_secret = "86810d6f234142a9bf7be9d2a924bbba"
+            val clientId = "3cb3ecad8ce14e1dba560e3b5ceb908b"
+            val clientSecret = "86810d6f234142a9bf7be9d2a924bbba"
             val uriBuilder = Uri.Builder()
                 .scheme("https")
                 .authority("accounts.spotify.com")
@@ -448,7 +509,7 @@ class SubsonicClient(var initialAccount: Account) {
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .addHeader(
                     "Authorization",
-                    basic(client_id, client_secret)
+                    basic(clientId, clientSecret)
                 )
                 .post(body)
                 .build()
@@ -463,6 +524,17 @@ class SubsonicClient(var initialAccount: Account) {
             }
         }
         return spotifyToken
+    }
+
+    fun scrobble(id: String) {
+        val params = getBasicParams().asMap()
+        params["id"] = id
+        makeSubsonicRequest<SubsonicResponse>(
+            listOf(
+                "rest",
+                "scrobble"
+            ), params, true
+        )
     }
 
     private fun getSpotifyArtistArt(name: String): String? {
@@ -538,7 +610,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<RandomSongsResponse>(
             listOf("rest", "getRandomSongs"),
             params
-        ).randomSongs.song
+        )!!.randomSongs.song
     }
 
     fun getSongUri(song: Song?): String? {
@@ -562,7 +634,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<SimilarSongsResponse>(
             listOf("rest", "getSimilarSongs2"),
             params
-        ).similarSongs2.song
+        )!!.similarSongs2.song
     }
 
     fun getSong(id: String): Song {
@@ -571,7 +643,7 @@ class SubsonicClient(var initialAccount: Account) {
         return makeSubsonicRequest<SongResponse>(
             listOf("rest", "getSong"),
             params
-        ).song
+        )!!.song
     }
 
     fun login(username: String, password: String, url: String): Account {
@@ -625,28 +697,52 @@ class SubsonicClient(var initialAccount: Account) {
         return account
     }
 
-    fun downloadPlaylist(playlist: List<Song>, force: Boolean = false) {
+    fun downloadPlaylist(playlist: List<Song>, force: Boolean) {
+        downloadQueue.addAll(playlist)
         playlist.forEach {
+            downloadQueueForce[it.id] = force
+        }
+        if (!downloading) {
+            download()
+        }
+    }
+
+    private fun download() {
+        if (downloadQueue.size > 0) {
+            downloading = true
             CoroutineScope(IO).launch {
-                if (!File(getLocalSongUri(it.id)).exists() || force) {
-                    if (KeyValueStorage.getSettings().cacheSize > 0) {
-                        val dir = File(Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory())))
-                        if (dir.exists()) {
-                            val files = dir.listFiles()?.toList()
-                                ?.sortedBy { file -> file.lastModified() }?.toMutableList()
-                                ?: mutableListOf<File>()
-                            var size = files.sumOf { it.length() }
-                            while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024)) {
-                                files[0].delete()
-                                files.remove(files[0])
-                                size = files.sumOf { it.length() }
-                            }
+                if (KeyValueStorage.getSettings().cacheSize > 0) {
+                    val dir = File(
+                        Helpers.constructPath(
+                            listOf(
+                                App.context.filesDir.path,
+                                getSongsDirectory()
+                            )
+                        )
+                    )
+                    if (dir.exists()) {
+                        val files = dir.listFiles()?.toList()
+                            ?.sortedBy { file -> file.lastModified() }?.toMutableList()
+                            ?: mutableListOf<File>()
+                        var size = files.sumOf { it.length() }
+                        while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024 * 1024)) {
+                            files[0].delete()
+                            files.remove(files[0])
+                            unregisterSong(files[0].name)
+                            size = files.sumOf { it.length() }
                         }
                     }
-                    registerSong(it, force)
-                    downloadSong(it.id)
                 }
+                if (!File(getLocalSongUri(downloadQueue[0].id)).exists() || downloadQueueForce[downloadQueue[0].id] == true) {
+                    registerSong(downloadQueue[0])
+                    downloadSong(downloadQueue[0].id)
+                }
+                downloadQueueForce.remove(downloadQueue[0].id)
+                downloadQueue.removeAt(0)
+                download()
             }
+        } else {
+            downloading = false
         }
     }
 
