@@ -3,6 +3,7 @@ package tech.logica10.soniclair.services
 import android.app.PendingIntent
 import android.app.SearchManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.graphics.Bitmap
@@ -19,6 +20,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -410,29 +412,43 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     private fun requestAudioFocus() {
-        val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-            .setAudioAttributes(mPlaybackAttributes)
-            .setAcceptsDelayedFocusGain(false)
-            .setWillPauseWhenDucked(false)
-            .setOnAudioFocusChangeListener(audioFocusChangeListener)
-            .build()
-        val mFocusLock = Any()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(mPlaybackAttributes)
+                .setAcceptsDelayedFocusGain(false)
+                .setWillPauseWhenDucked(false)
+                .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                .build()
+            val mFocusLock = Any()
 
-        // requesting audio focus
-        val res = mAudioManager.requestAudioFocus(mFocusRequest)
-        synchronized(mFocusLock) {
-            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+            // requesting audio focus
+            val res = mAudioManager.requestAudioFocus(mFocusRequest)
+            synchronized(mFocusLock) {
+                if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+                    // What are you gonna do about it?
+                    if (mMediaPlayer!!.isPlaying) {
+                        mMediaPlayer!!.pause()
+                    }
+                }
+            }
+        } else {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            // Request audio focus for playback
+            val result: Int = audioManager.requestAudioFocus(
+                audioFocusChangeListener,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN
+            )
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
                 // What are you gonna do about it?
                 if (mMediaPlayer!!.isPlaying) {
                     mMediaPlayer!!.pause()
                 }
             }
-//            else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-//                // We don't do anything here, let's wait for the user to start playing music
-//            } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
-//                // We don't do anything here, let's wait for the user to start playing music.
-//            }
         }
+
     }
 
     @Throws(Exception::class)
@@ -490,7 +506,6 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             mMediaPlayer!!.pause()
         }
     }
-
 
 
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -654,6 +669,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 updateMediaSession(b.build())
                 updateNotification(null, false)
                 requestAudioFocus()
+
             }
         }
     }

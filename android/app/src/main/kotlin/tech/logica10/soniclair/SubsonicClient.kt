@@ -5,6 +5,7 @@ package tech.logica10.soniclair
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.util.Base64
@@ -57,6 +58,8 @@ class SubsonicClient(var initialAccount: Account) {
         .readTimeout(5000, TimeUnit.MILLISECONDS)
         .writeTimeout(5000, TimeUnit.MILLISECONDS)
         .build()
+
+
 
     fun getBasicParams(): BasicParams {
         val salt = "abcd1234"
@@ -121,24 +124,24 @@ class SubsonicClient(var initialAccount: Account) {
 
     private fun getArtistArtsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return Path(App.context.filesDir.path, "${uri.authority}/artistArts/").toString()
+        return Helpers.constructPath(listOf(App.context.filesDir.path, "${uri.authority}/artistArts/"))
     }
 
     private fun getLocalArtistArtUri(id: String): String {
-        return Path(getArtistArtsDirectory(), "${id}.png").toString()
+        return Helpers.constructPath(listOf(getArtistArtsDirectory(), "${id}.png"))
     }
 
     private fun getCoverArtsDirectory(): String {
         val uri = Uri.parse(account.url)
-        return Path(App.context.filesDir.path, "${uri.authority}/albumArts/").toString()
+        return Helpers.constructPath(listOf(App.context.filesDir.path, "${uri.authority}/albumArts/"))
     }
 
     private fun getLocalCoverArtUri(id: String): String {
-        return Path(getCoverArtsDirectory(), "${id}.png").toString()
+        return Helpers.constructPath(listOf(getCoverArtsDirectory(), "${id}.png"))
     }
 
     fun getLocalSongUri(id: String): String {
-        return Path(App.context.filesDir.path, getSongsDirectory(), id).toString()
+        return Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory(), id))
     }
 
     private fun registerSong(song: Song, force: Boolean = false) {
@@ -170,6 +173,7 @@ class SubsonicClient(var initialAccount: Account) {
         if (a == null) {
             album.created =
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+
             try {
                 db.albumDao().insert(album)
             } catch (e: Exception) {
@@ -234,7 +238,7 @@ class SubsonicClient(var initialAccount: Account) {
                 Globals.NotifyObservers("EX", response.message)
                 return
             }
-            val dirPath = Path(App.context.filesDir.path, getSongsDirectory()).toString()
+            val dirPath = Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory()))
             val dir = File(dirPath)
             if (!dir.exists())
                 dir.mkdirs()
