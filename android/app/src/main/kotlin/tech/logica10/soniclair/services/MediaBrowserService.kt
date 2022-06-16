@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.util.Log
 import androidx.media.MediaBrowserServiceCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,23 +62,23 @@ class MediaBrowserService : MediaBrowserServiceCompat() {
             result.sendResult(listOf())
             return
         }
+
         // We try to return cached media items if we have any
         val songs = KeyValueStorage.getCachedSongs()
-        // We do have them!
+
+        // Fetch new songs for the next time
+        CoroutineScope(Dispatchers.IO).launch {
+            load(subsonicClient)
+        }
+        // We do have some songs!
         if (songs.isNotEmpty()) {
             runBlocking(Dispatchers.IO) {
                 result.sendResult(subsonicClient.getAsMediaItems(songs))
             }
-
-            CoroutineScope(Dispatchers.IO).launch {
-                load(subsonicClient, result, false)
-            }
-            return
         }
-
-        // We have nothing for the user at this time, so let's fetch and make him wait.
-        runBlocking(Dispatchers.IO) {
-            load(subsonicClient, result, true)
+        else{
+            // We have nothing for the user at this time, returning an empty list so as to not block the UI.
+            result.sendResult(listOf())
         }
     }
 
@@ -90,29 +91,21 @@ class MediaBrowserService : MediaBrowserServiceCompat() {
         intent.putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/*")
         intent.putExtra(SearchManager.QUERY, query)
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pendingIntent = PendingIntent.getBroadcast(App.context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent =
+            PendingIntent.getBroadcast(App.context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         pendingIntent.send()
     }
 
     fun load(
-        subsonicClient: SubsonicClient,
-        result: Result<List<MediaBrowserCompat.MediaItem>>,
-        sendResult: Boolean
+        subsonicClient: SubsonicClient
     ) {
         try {
             // Repopulate the media items cache
             val songs = subsonicClient.getRandomSongs()
-            val mediaItems = subsonicClient.getAsMediaItems(songs)
             KeyValueStorage.setCachedSongs(songs)
-            if (sendResult) {
-                // If we're getting them for the front-end, set them and send them
-                result.sendResult(mediaItems)
-            }
         } catch (e: Exception) {
             // Something _awful_ happened. The user doesn't need to know about it
-            if (sendResult) {
-                result.sendResult(listOf())
-            }
+            Log.e("MediaBrowser", e.message!!)
         }
     }
 }

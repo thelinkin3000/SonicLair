@@ -84,7 +84,14 @@ class SubsonicClient(var initialAccount: Account) {
         for (item in songs) {
             builder.setTitle(item.title)
             builder.setSubtitle(String.format("by %s", item.artist))
-            val albumArtUri = Uri.parse(getAlbumArt(item.coverArt))
+            val uri: String =
+            if(File(getLocalCoverArtUri(item.albumId)).exists()){
+                getLocalCoverArtUri(item.albumId)
+            }
+            else{
+                getAlbumArt(item.albumId)
+            }
+            val albumArtUri = Uri.parse(uri)
             val futureBitmap = Glide.with(App.context)
                 .asBitmap()
                 .load(albumArtUri)
@@ -439,7 +446,7 @@ class SubsonicClient(var initialAccount: Account) {
         )!!.album
     }
 
-    fun getArtistInfo(id: String): ArtistInfo {
+    private fun getArtistInfo(id: String): ArtistInfo {
         val params = getBasicParams().asMap()
         params["id"] = id
         return makeSubsonicRequest<ArtistInfoResponse>(
