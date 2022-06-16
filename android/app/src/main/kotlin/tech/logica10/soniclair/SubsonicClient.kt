@@ -630,7 +630,7 @@ class SubsonicClient(var initialAccount: Account) {
             CoroutineScope(IO).launch {
                 if (!File(getLocalSongUri(it.id)).exists() || force) {
                     if (KeyValueStorage.getSettings().cacheSize > 0) {
-                        val dir = File(getSongsDirectory())
+                        val dir = File(Helpers.constructPath(listOf(App.context.filesDir.path, getSongsDirectory())))
                         if (dir.exists()) {
                             val files = dir.listFiles()?.toList()
                                 ?.sortedBy { file -> file.lastModified() }?.toMutableList()

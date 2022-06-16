@@ -5,7 +5,7 @@ class Helpers {
         fun constructPath(paths: List<String>) :String{
             val builder = StringBuilder();
             paths.forEach{
-                builder.append(it.trim('/'))
+                builder.append(it.trimEnd('/'))
                 builder.append("/")
             }
             return builder.toString().trimEnd('/')
