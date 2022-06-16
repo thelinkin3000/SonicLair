@@ -1,9 +1,12 @@
 # Soniclair
-<div style="text-align:center, width:100%">
+
+<p align="middle">
    <img src="./logo.svg">
-</div>
+</p>
+
 
 [![Build Android](https://github.com/thelinkin3000/SonicLair/actions/workflows/android-build.yaml/badge.svg)](https://github.com/thelinkin3000/SonicLair/actions/workflows/android-build.yaml)
+
 
 ## An album-centered subsonic client for PWA, Android, Android TV and Desktop
 
@@ -19,6 +22,22 @@ SonicLair is a minimal, mobile-ready, album-centered music client for subsonic c
 - Android Auto support. (You can use it enabling Developer Mode and Unknown Sources in Android Auto, [here] is a tutorial to do so, thanks to the folks at [Ultrasonic])
 - Android TV support.
 - [Android TV] Connect your TV to your server using your phone and a QR Code. (All the communications are made within the LAN, no third-party servers involved)
+
+## Screenshots
+### Phone
+<p align="middle">
+<img src="./assets/phoneScreenshot1.jpg" width="20%">
+<img src="./assets/phoneScreenshot2.jpg" width="20%">
+<img src="./assets/phoneScreenshot3.jpg" width="20%">
+<img src="./assets/phoneScreenshot4.jpg" width="20%">
+</p>
+
+### TV
+<p align="middle">
+<img src="./assets/tvScreenshot1.png" width="40%">
+<img src="./assets/tvScreenshot2.png" width="40%">
+<img src="./assets/tvScreenshot3.png" width="40%">
+</p>
 
 ## Installation and Usage
 
