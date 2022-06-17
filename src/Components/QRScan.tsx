@@ -1,7 +1,7 @@
 import { BarcodeScanner } from "@capacitor-community/barcode-scanner";
 import { Toast } from "@capacitor/toast";
 import classNames from "classnames";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../AppContext";
 import VLC from "../Plugins/VLC";
 
@@ -19,6 +19,18 @@ function ValidateIPaddress(ipaddress: string): boolean {
 export default function QRScan() {
     const { context } = useContext(AppContext);
     const [show, setShow] = useState<boolean>(true);
+    const scanning = useRef<Boolean>(false);
+    useEffect(() => {
+        return () => {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            if (scanning.current) {
+                BarcodeScanner.showBackground();
+                BarcodeScanner.stopScan();
+                document.body.classList.remove("body-transparent");
+            }
+        };
+    }, []);
+
     const startScan = async () => {
         const permission = await VLC.getCameraPermissionStatus();
         if (permission.status !== "ok") {
@@ -26,6 +38,7 @@ export default function QRScan() {
             VLC.getCameraPermission();
             return;
         }
+        scanning.current = true;
         setShow(false);
         document.body.classList.add("body-transparent");
         setTimeout(() => {
@@ -33,6 +46,7 @@ export default function QRScan() {
                 text: "Didn't find any QR codes. Want to try again?",
             });
             setShow(true);
+            scanning.current = false;
             BarcodeScanner.showBackground();
             BarcodeScanner.stopScan();
             document.body.classList.remove("body-transparent");
@@ -42,6 +56,7 @@ export default function QRScan() {
         // if the result has content
         if (result.hasContent) {
             setShow(true);
+            scanning.current = false;
             BarcodeScanner.showBackground();
             BarcodeScanner.stopScan();
             document.body.classList.remove("body-transparent");

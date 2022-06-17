@@ -28,7 +28,7 @@ import com.getcapacitor.JSObject
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.videolan.libvlc.LibVLC
@@ -337,7 +337,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     @Suppress("BlockingMethodInNonBlockingContext")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action != null) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(IO).launch {
                 when (intent.action) {
                     Constants.SERVICE_PLAY_PAUSE -> if (mMediaPlayer!!.isPlaying) pause() else play()
                     Constants.SERVICE_NEXT -> next()
@@ -536,7 +536,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         if (mMediaPlayer!!.media != null) {
             mMediaPlayer!!.play()
         }
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(IO).launch {
             metadataBuilder.putString(
                 MediaMetadata.METADATA_KEY_ALBUM,
                 currentTrack!!.album
@@ -629,7 +629,10 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             if (mMediaPlayer!!.isPlaying) mMediaPlayer!!.pause()
             mMediaPlayer!!.media = media
             media.release()
-            subsonicClient.scrobble(currentTrack!!.id)
+            CoroutineScope(IO).launch {
+                subsonicClient.scrobble(currentTrack!!.id)
+
+            }
         }
     }
 
@@ -739,19 +742,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
 
         fun playRadio(id: String) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(IO).launch {
                 this@MusicService.playRadio(id)
             }
         }
 
         fun playAlbum(id: String, track: Int) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(IO).launch {
                 this@MusicService.playAlbum(id, track)
             }
         }
 
         fun playSearch(query: String, type: SearchType) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(IO).launch {
                 this@MusicService.playSearch(query, type)
             }
         }

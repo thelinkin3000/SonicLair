@@ -4,6 +4,7 @@ package tech.logica10.soniclair
 
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
@@ -32,7 +33,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
 
 
 class SubsonicClient(var initialAccount: Account) {
@@ -84,19 +84,19 @@ class SubsonicClient(var initialAccount: Account) {
         for (item in songs) {
             builder.setTitle(item.title)
             builder.setSubtitle(String.format("by %s", item.artist))
-            val uri: String =
-            if(File(getLocalCoverArtUri(item.albumId)).exists()){
-                getLocalCoverArtUri(item.albumId)
+            val albumArtBitmap: Bitmap = if (File(getLocalCoverArtUri(item.albumId)).exists()) {
+                Log.i("BitmapMediaItem", "Loading from disk")
+                BitmapFactory.decodeFile(getLocalCoverArtUri(item.albumId))
+            } else {
+                Log.i("BitmapMediaItem", "Loading from server")
+                val albumArtUri = Uri.parse(getAlbumArt(item.albumId))
+                val futureBitmap = Glide.with(App.context)
+                    .asBitmap()
+                    .load(albumArtUri)
+                    .submit()
+                futureBitmap.get()
             }
-            else{
-                getAlbumArt(item.albumId)
-            }
-            val albumArtUri = Uri.parse(uri)
-            val futureBitmap = Glide.with(App.context)
-                .asBitmap()
-                .load(albumArtUri)
-                .submit()
-            val albumArtBitmap = futureBitmap.get()
+            Log.i("BitmapMediaItem", "Loaded successfully")
             builder.setIconBitmap(albumArtBitmap)
             builder.setMediaId(item.id)
             ret.add(
@@ -595,12 +595,21 @@ class SubsonicClient(var initialAccount: Account) {
         return art
     }
 
-    fun getLocalAlbumArt(id: String): String {
+    private fun getLocalAlbumArtFile(id: String): File {
         val file = File(getLocalCoverArtUri(id))
         if (!file.exists()) {
             throw Exception("There isn't a cached version of this cover art.")
         }
-        return "data:image/png;base64,${Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)}"
+        return file
+    }
+
+    fun getLocalAlbumArt(id: String): String {
+        return "data:image/png;base64,${
+            Base64.encodeToString(
+                getLocalAlbumArtFile(id).readBytes(),
+                Base64.NO_WRAP
+            )
+        }"
     }
 
     fun getLocalArtistArt(id: String): String {
