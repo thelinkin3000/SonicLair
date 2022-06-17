@@ -51,13 +51,19 @@ jobs:
       - name: Build app apk (already signed)
         run: cd android && gradle assembleRelease
 
+      - name: Bundle release for Play Store
+        run: cd android && gradle bundleRelease
+
       - name: Rename apk
         run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk
 
-      - name: Upload release bundle
+      - name: Rename aab
+        run: mv android/app/build/outputs/bundle/release/app-release.aab android/app/build/outputs/bundle/release/SonicLair-${{steps.tag.outputs.tag}}.aab
+
+      - name: Upload release bundle as artifact
         uses: actions/upload-artifact@v2
         with:
-          path: android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk
+          path: android/app/build/outputs/bundle/release/SonicLair-${{steps.tag.outputs.tag}}.aab
           retention-days: 60
 
       - name: Create Release
