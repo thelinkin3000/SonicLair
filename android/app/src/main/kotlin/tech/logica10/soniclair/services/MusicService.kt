@@ -101,7 +101,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
     }
 
-    fun getNotificationBuilder(): NotificationCompat.Builder {
+    private fun getNotificationBuilder(): NotificationCompat.Builder {
         return NotificationCompat.Builder(App.context, "soniclair")
             .setSmallIcon(R.drawable.ic_stat_soniclair)
             .setStyle(mediaStyle)
@@ -208,7 +208,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 pendingCancelIntent
             )
         cancelAction = actionBuilder.build()
-        mAudioFocusRequest = requestAudioFocus()
+
 
     }
 
@@ -430,27 +430,26 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
     }
 
-    private fun requestAudioFocus(): AudioFocusRequest? {
+    private fun requestAudioFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            if (mAudioFocusRequest != null) {
+                mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest!!)
+            }
+            mAudioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(false)
                 .setWillPauseWhenDucked(false)
                 .setOnAudioFocusChangeListener(audioFocusChangeListener)
                 .build()
-            val mFocusLock = Any()
 
             // requesting audio focus
-            val res = mAudioManager.requestAudioFocus(mFocusRequest)
-            synchronized(mFocusLock) {
-                if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                    // What are you gonna do about it?
-                    if (mMediaPlayer!!.isPlaying) {
-                        mMediaPlayer!!.pause()
-                    }
+            val res = mAudioManager.requestAudioFocus(mAudioFocusRequest!!)
+            if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+                // What are you gonna do about it?
+                if (mMediaPlayer!!.isPlaying) {
+                    mMediaPlayer!!.pause()
                 }
             }
-            return mAudioFocusRequest
         } else {
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             // Request audio focus for playback
@@ -468,7 +467,6 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                     mMediaPlayer!!.pause()
                 }
             }
-            return null
         }
 
     }
@@ -682,6 +680,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 updateNotification(null, true)
             }
             MediaPlayer.Event.Playing -> {
+                requestAudioFocus()
                 notifyListeners("play", null)
                 notifyListeners(
                     "currentTrack",
