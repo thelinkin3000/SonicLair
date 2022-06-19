@@ -1,8 +1,6 @@
 import { registerPlugin, Plugin } from "@capacitor/core";
 import { IArtist } from "../Models/API/Responses/IArtist";
-import {
-    ISearchResult,
-} from "../Models/API/Responses/IArtistInfoResponse";
+import { ISearchResult } from "../Models/API/Responses/IArtistInfoResponse";
 import {
     IAlbumArtistResponse,
     IAlbumSongResponse,
@@ -80,6 +78,9 @@ export interface IBackendPlugin extends Plugin {
         value: boolean;
     }): Promise<IBackendResponse<boolean>>;
     downloadAlbum(options: { id: string }): Promise<IBackendResponse<string>>;
+    qrLogin(options: { ip: string }): Promise<IBackendResponse<string>>;
+    disconnectWebsocket(): Promise<IBackendResponse<string>>;
+    getWebsocketStatus(): Promise<IBackendResponse<boolean>>;
 }
 
 const VLC = registerPlugin<IBackendPlugin>("VLC", {

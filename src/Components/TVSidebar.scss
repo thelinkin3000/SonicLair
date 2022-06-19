@@ -3,37 +3,39 @@
 .sidebar-tv {
     min-width: 5vw;
     width: auto;
-    height:100%;
-    
+    height: 100%;
+
     transition: ease 0.3s;
     margin: 0 0 0 0;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0),rgba(40, 44, 52, 1));
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(40, 44, 52, 1));
+
     .sidebar-item {
         min-width: 5vw;
-    width: auto;
+        width: auto;
         height: 4rem;
         background-color: $items-color;
         margin-bottom: 0.5rem;
         transition: ease 0.3s;
-        background: linear-gradient(to right, rgba(0, 0, 0, 0),rgba(40, 44, 52, 1));
+        background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(40, 44, 52, 1));
+
         &:hover {
             background-color: $items-color-hover;
         }
-        
-        
 
         svg {
             font-size: 2.5rem;
         }
-        .item-text{
+
+        .item-text {
             transition: 2s;
             display: none;
         }
     }
-    .sidebar-item-focused{
+
+    .sidebar-item-focused {
         background-color: $items-color-hover !important;
     }
-    
+
 
     .sidebar-item-borderless {
         width: 4rem;
@@ -51,41 +53,46 @@
         }
     }
 }
+
 .sidebar-tv-focused {
     min-width: 10vw;
     width: auto;
     height: 100%;
-    
+
     transition: ease 0.3s;
     margin: 0 0 0 0;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0),rgba(40, 44, 52, 1));
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(40, 44, 52, 1));
+
     .sidebar-item {
         min-width: 10vw;
-    width: auto;
+        width: auto;
         height: 4rem;
         background-color: $items-color;
         margin-bottom: 0.5rem;
         transition: ease 0.3s;
-        background: linear-gradient(to right, rgba(0, 0, 0, 0),rgba(40, 44, 52, 1));
+        background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(40, 44, 52, 1));
+
         &:hover {
             background-color: $items-color-hover;
         }
-        
-        
+
+
 
         svg {
             font-size: 2.5rem;
         }
-        .item-text{
+
+        .item-text {
             transition: 2s;
             margin-left: 10px;
             font-size: large;
         }
     }
-    .sidebar-item-focused{
+
+    .sidebar-item-focused {
         background-color: $items-color-hover !important;
     }
-    
+
 
     .sidebar-item-borderless {
         width: 4rem;
@@ -104,13 +111,13 @@
     }
 }
 
-.modal-cover{
-    position:fixed;
-    left:0;
-    top:0;
+.modal-cover {
+    position: fixed;
+    left: 0;
+    top: 0;
     background-color: $item-background-translucid;
-    width:100vw;
-    height:100vh;
+    width: 100vw;
+    height: 100vh;
     z-index: 2000;
     transition: ease 0.1s;
 }

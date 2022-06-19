@@ -48,6 +48,11 @@ export default function TVSidebar() {
                     icon={<i className="ri-user-fill icon-large-tv"></i>}
                     text="Account"
                 />
+                <TVSidebarButton
+                    path="/tvJukebox"
+                    icon={<i className="ri-disc-fill icon-large-tv"></i>}
+                    text="Jukebox"
+                />
                 <div className="m-auto"></div>
                 <TVSidebarButton
                     path="/playing"

@@ -26,6 +26,12 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        Globals.NotifyObservers("RESUMED","");
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         /* If FLAG_ACTIVITY_MULTIPLE_TASK has not been used, this activity

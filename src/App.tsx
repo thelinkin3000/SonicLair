@@ -41,6 +41,8 @@ import {
 import HomeTV from "./Components/HomeTV";
 import QRScan from "./Components/QRScan";
 import { App as CapacitorApp } from "@capacitor/app";
+import TVJukebox from "./Components/TVJukebox";
+import { TVTopBar } from "./Components/TVTopBar";
 
 function App() {
     const [context, setContext] = useState<IAccount>(AppContextDefValue);
@@ -211,16 +213,7 @@ function App() {
                     {androidTv && (
                         <FocusContext.Provider value={focusKey}>
                             <div className="App container-tv-100 d-flex flex-column w-100">
-                                <div className="d-flex w-100 justify-content-center align-items-center my-2">
-                                    <img
-                                        alt=""
-                                        src="favicon.svg"
-                                        style={{ height: "4vh" }}
-                                    ></img>
-                                    <span className="section-header px-3 text-white">
-                                        SonicLair
-                                    </span>
-                                </div>
+                                <TVTopBar />
                                 <div className="d-flex flex-row h-100 w-100 no-overflow">
                                     {context.username === "" && (
                                         <div className="h-100 w-100 d-flex align-items-center justify-content-center">
@@ -243,6 +236,12 @@ function App() {
                                                         <Route
                                                             path="/home"
                                                             element={<HomeTV />}
+                                                        />
+                                                        <Route
+                                                            path="/tvJukebox"
+                                                            element={
+                                                                <TVJukebox />
+                                                            }
                                                         />
                                                         <Route
                                                             path="/playing"

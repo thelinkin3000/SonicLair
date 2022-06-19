@@ -39,6 +39,17 @@ import {
     ISettings,
 } from "./VLC";
 
+function ValidateIPaddress(ipaddress: string): boolean {
+    if (
+        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+            ipaddress
+        )
+    ) {
+        return true;
+    }
+    return false;
+}
+
 export class Backend extends WebPlugin implements IBackendPlugin {
     playlist: IAlbumSongResponse[];
     isPlaying: boolean;
@@ -131,6 +142,48 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
             this._next();
         };
+    }
+
+    async getWebsocketStatus(): Promise<IBackendResponse<boolean>> {
+        return this.OKResponse(false);
+    }
+
+    async disconnectWebsocket(): Promise<IBackendResponse<string>> {
+        return this.OKResponse("");
+    }
+
+    async qrLogin(options: { ip: string }): Promise<IBackendResponse<string>> {
+        if (ValidateIPaddress(options.ip)) {
+            try {
+                let socket = new WebSocket(`ws://${options.ip}:30001`);
+                socket.onopen = () => {
+                    let outgoingMessage = JSON.stringify({
+                        type: "login",
+                        data: this.context.activeAccount,
+                    });
+                    socket.send(outgoingMessage);
+                };
+                socket.onerror = () => {
+                    this.notifyListeners(
+                        "EX",
+                        "There was an error connecting to the TV. Please, try again"
+                    );
+                };
+                socket.onmessage = (message) => {
+                    console.log(message);
+                    if (message.data === "soniclair") {
+                        socket.close();
+                    }
+                };
+                return this.OKResponse("Login request sent");
+            } catch (e: any) {
+                return this.ErrorResponse(e.message);
+            }
+        } else {
+            return this.ErrorResponse(
+                "The QR code is not an IP address. Please try again."
+            );
+        }
     }
     async downloadAlbum(options: {
         id: string;
