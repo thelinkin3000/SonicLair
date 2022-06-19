@@ -22,6 +22,8 @@ SonicLair is a minimal, mobile-ready, album-centered music client for subsonic c
 - Android Auto support. (You can use it enabling Developer Mode and Unknown Sources in Android Auto, [here] is a tutorial to do so, thanks to the folks at [Ultrasonic])
 - Android TV support.
 - [Android TV] Connect your TV to your server using your phone and a QR Code. (All the communications are made within the LAN, no third-party servers involved)
+- [Android TV] Jukebox Mode! Run an instance of Soniclair in an Android TV and control it from another instance running on Android. No support for PWA clients as of yet.
+
 
 ## Screenshots
 ### Phone
@@ -45,7 +47,6 @@ SonicLair is a minimal, mobile-ready, album-centered music client for subsonic c
 - If you'd like to use the Android version, you can download the APK (self signed) from here, built by Github Actions from this very source code. No Google Play Store as of yet.
 
 ## Roadmap
-- Jukebox Mode (run an instance of Soniclair in an Android TV or TV Browser, or any browser hooked up to a nice screen and good speakers, and control it from another instance)
 - Chromecast support
 
 ## Projects leveraged here
