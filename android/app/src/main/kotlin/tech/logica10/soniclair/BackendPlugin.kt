@@ -78,6 +78,20 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     override fun handleOnDestroy() {
         super.handleOnDestroy()
         mClient.dispatcher.executorService.shutdown()
+        Globals.UnregisterObserver(this)
+    }
+    override fun handleOnPause() {
+        super.handleOnDestroy()
+        Globals.RegisterObserver(this)
+        registered = false;
+    }
+
+    override fun handleOnResume() {
+        super.handleOnResume()
+        if(!registered){
+            registered =true
+            Globals.RegisterObserver(this)
+        }
     }
 
     override fun load() {

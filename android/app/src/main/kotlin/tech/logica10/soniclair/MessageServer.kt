@@ -46,6 +46,10 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
         Globals.RegisterObserver(this)
     }
 
+    fun dispose(){
+        Globals.UnregisterObserver(this)
+    }
+
     private val clients: MutableList<WebSocket> = mutableListOf()
     private val controllers: MutableList<WebSocket> = mutableListOf()
 

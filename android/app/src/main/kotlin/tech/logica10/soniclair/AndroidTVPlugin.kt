@@ -12,6 +12,26 @@ import tech.logica10.soniclair.App.Companion.pairString
 
 @CapacitorPlugin(name = "AndroidTV")
 class AndroidTVPlugin : Plugin(), IBroadcastObserver {
+
+    override fun handleOnDestroy() {
+        super.handleOnDestroy()
+        Globals.RegisterObserver(this)
+        registered = false;
+    }
+    override fun handleOnPause() {
+        super.handleOnDestroy()
+        Globals.RegisterObserver(this)
+        registered = false;
+    }
+
+    override fun handleOnResume() {
+        super.handleOnResume()
+        if(!registered){
+            registered =true
+            Globals.RegisterObserver(this)
+        }
+    }
+
     override fun load(){
         if(!registered){
             registered =true

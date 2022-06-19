@@ -3,8 +3,10 @@ package tech.logica10.soniclair;
 import android.media.session.PlaybackState;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Globals{
@@ -53,7 +55,12 @@ public class Globals{
 
     public static void NotifyObservers(String action, String value) {
         for (IBroadcastObserver observer : getInstance().observers) {
-            observer.update(action, value);
+            try{
+                observer.update(action, value);
+            }
+            catch(Exception e){
+                Log.e("SonicLair Globals", e.getMessage());
+            }
         }
     }
 
