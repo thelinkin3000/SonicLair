@@ -81,6 +81,7 @@ export interface IBackendPlugin extends Plugin {
     qrLogin(options: { ip: string }): Promise<IBackendResponse<string>>;
     disconnectWebsocket(): Promise<IBackendResponse<string>>;
     getWebsocketStatus(): Promise<IBackendResponse<boolean>>;
+    sendUdpBroadcast(): Promise<IBackendResponse<String>>;
 }
 
 const VLC = registerPlugin<IBackendPlugin>("VLC", {

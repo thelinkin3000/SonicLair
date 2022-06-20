@@ -80,16 +80,17 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         mClient.dispatcher.executorService.shutdown()
         Globals.UnregisterObserver(this)
     }
+
     override fun handleOnPause() {
         super.handleOnDestroy()
         Globals.RegisterObserver(this)
-        registered = false;
+        registered = false
     }
 
     override fun handleOnResume() {
         super.handleOnResume()
-        if(!registered){
-            registered =true
+        if (!registered) {
+            registered = true
             Globals.RegisterObserver(this)
         }
     }
@@ -682,11 +683,21 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                 return
             }
             mWebSocket!!.send(json)
+
             if (jukebox && mBound && binder!!.getCurrentState().playing) {
+                val playlist = binder!!.getPlaylist()
+                val request = SetPlaylistAndPlayRequest(playlist,playlist.indexOf(binder!!.getCurrentState().currentTrack), binder!!.getCurrentState().position, binder!!.getCurrentState().playing)
+                val setPlaylistCommand = WebSocketCommand("setPlaylistAndPlay",gson!!.toJson(request))
+                val setPlaylistMessage = WebSocketMessage(gson!!.toJson(setPlaylistCommand),"command","ok")
+                mWebSocket!!.send(gson!!.toJson(setPlaylistMessage))
                 binder!!.pause()
             }
-            if(jukebox){
+
+            if (jukebox) {
                 lastIp = ip
+            } else {
+                mWebSocket!!.close(1000, "")
+                setWebsocketConnectionStatus(false)
             }
             call.resolve(okResponse(""))
         } catch (e: Exception) {
@@ -703,15 +714,20 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     @PluginMethod
     fun disconnectWebsocket(call: PluginCall) {
         try {
-            if (webSocketConnected) {
-                mWebSocket!!.close(1000, "")
-            }
             lastIp = null
             reconnect = false
+            setWebsocketConnectionStatus(false)
+            mWebSocket!!.close(1000, "")
             call.resolve(okResponse(""))
         } catch (e: Exception) {
             call.resolve(errorResponse(e.message))
         }
+    }
+
+    @PluginMethod
+    fun sendUdpBroadcast(call: PluginCall) {
+        Globals.NotifyObservers("SENDUDP", "")
+        call.resolve(okResponse(""))
     }
 
     private fun setWebsocketConnectionStatus(status: Boolean) {
@@ -719,7 +735,6 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         ret.put("connected", status)
         webSocketConnected = status
         notifyListeners("webSocketConnection", ret)
-
     }
 
     private fun connectWebSocket(url: String) {
@@ -832,12 +847,12 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                 }
             } else if (action == "EX") {
                 notifyListeners("EX", JSObject("{\"error\":\"$value\"}"))
-            } else if(action == "WS"){
+            } else if (action == "WS") {
                 val ret = JSObject()
                 ret.put("connected", value == "true")
-                notifyListeners("webSocketConnection",ret)
-            } else if(action == "RESUMED"){
-                if(reconnect && lastIp != null){
+                notifyListeners("webSocketConnection", ret)
+            } else if (action == "RESUMED") {
+                if (reconnect && lastIp != null) {
                     val account = getActiveAccount()
                     val jsonAccount = gson!!.toJson(account)
                     val message = WebSocketMessage(jsonAccount, "jukebox", "ok")
@@ -871,6 +886,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
+
             if (text == "soniclair") {
                 webSocket.close(1000, "")
                 mWebSocket = null
@@ -907,11 +923,10 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             Globals.NotifyObservers("EX", "${t.message} ${response?.message}")
-            if(mWebSocket != null){
-                try{
-                    mWebSocket!!.close(1000,"")
-                }
-                catch(e: Exception){
+            if (mWebSocket != null) {
+                try {
+                    mWebSocket!!.close(1000, "")
+                } catch (e: Exception) {
                     // Swallow this
                 }
                 setWebsocketConnectionStatus(false)

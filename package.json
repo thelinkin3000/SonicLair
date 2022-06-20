@@ -18,7 +18,7 @@
     "@fortawesome/react-fontawesome": "^0.1.18",
     "@ionic/pwa-elements": "^3.1.1",
     "@noriginmedia/norigin-spatial-navigation": "^1.0.4",
-    "@tauri-apps/api": "^1.0.0-rc.4",
+    "@tauri-apps/api": "^1.0.1",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.2.0",
     "@testing-library/user-event": "^13.5.0",
@@ -76,7 +76,7 @@
     ]
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.0.0-rc.9",
+    "@tauri-apps/cli": "^1.0.0",
     "@types/howler": "^2.2.7",
     "@types/js-md5": "^0.4.3",
     "@types/lodash": "^4.14.182",

@@ -8,7 +8,7 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import tech.logica10.soniclair.App.Companion.pairString
+import tech.logica10.soniclair.App.Companion.localIp
 
 @CapacitorPlugin(name = "AndroidTV")
 class AndroidTVPlugin : Plugin(), IBroadcastObserver {
@@ -42,7 +42,7 @@ class AndroidTVPlugin : Plugin(), IBroadcastObserver {
     @PluginMethod
     fun getIp(call: PluginCall) {
         val ret = JSObject()
-        ret.put("value", pairString ?: "")
+        ret.put("value", localIp ?: "")
         call.resolve(ret)
     }
 

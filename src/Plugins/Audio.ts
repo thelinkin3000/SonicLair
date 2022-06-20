@@ -143,6 +143,9 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             this._next();
         };
     }
+    sendUdpBroadcast(): Promise<IBackendResponse<String>> {
+        throw new Error("Method not implemented.");
+    }
 
     async getWebsocketStatus(): Promise<IBackendResponse<boolean>> {
         return this.OKResponse(false);

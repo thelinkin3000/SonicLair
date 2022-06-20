@@ -12,6 +12,7 @@ import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import tech.logica10.soniclair.App.Companion.context
 import tech.logica10.soniclair.models.Account
+import tech.logica10.soniclair.models.SetPlaylistAndPlayRequest
 import tech.logica10.soniclair.models.WebSocketCommand
 import tech.logica10.soniclair.models.WebSocketMessage
 import tech.logica10.soniclair.services.MusicService
@@ -51,7 +52,6 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
     }
 
     private val clients: MutableList<WebSocket> = mutableListOf()
-    private val controllers: MutableList<WebSocket> = mutableListOf()
 
     private val gson: Gson = Gson()
 
@@ -76,10 +76,7 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
 
     override fun onClose(conn: WebSocket, code: Int, reason: String?, remote: Boolean) {
         clients.remove(conn)
-        if (controllers.contains(conn)) {
-            controllers.remove(conn)
-        }
-        if(controllers.size == 0){
+        if(clients.size == 0){
             Globals.NotifyObservers("WS", "false")
         }
     }
@@ -112,9 +109,6 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                                 "error"
                             )
                         )
-                    }
-                    if (!controllers.contains(conn)) {
-                        controllers.add(conn)
                     }
                     conn.send(constructMessage("You're connected! Touch the TV icon in the upper left corner to disconnect.", "ok"))
                     return
@@ -155,6 +149,27 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                                 intent.action = Constants.SERVICE_PLAY_RADIO
                                 intent.putExtra("id", command.data)
                                 context.startService(intent)
+                            }
+                        }
+                        "setPlaylistAndPlay" ->{
+                            if (command.data.isBlank()) {
+                                conn.send(constructMessage("The parameters id is empty", "error"))
+                                return
+                            }
+                            val request: SetPlaylistAndPlayRequest
+                            try{
+                                request = gson.fromJson(command.data, SetPlaylistAndPlayRequest::class.java)
+                                if(request.track >= request.playlist.size){
+                                    throw Exception("The track parameter was out of bounds")
+                                }
+                            }
+                            catch(e: Exception){
+                                Globals.NotifyObservers("EX",e.message)
+                                return
+                            }
+
+                            if (mBound) {
+                                binder!!.setPlaylistAndPlay(request.playlist, request.track, request.seek, request.playing)
                             }
                         }
                         "seek" -> {

@@ -109,6 +109,5 @@ class KeyValueStorage {
                 apply()
             }
         }
-
     }
 }

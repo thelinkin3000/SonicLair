@@ -634,6 +634,27 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
     }
 
+
+    private fun setPlaylistAndPlay(
+        playlist: List<Song>,
+        track: Int,
+        seek: Float,
+        playing: Boolean
+    ) {
+        // If we're playing something on the TV, keep playing that
+        if (mMediaPlayer!!.isPlaying)
+            return
+
+        // Otherwise copy the phone's state and play it
+        this.playlist = playlist.toMutableList()
+        this.currentTrack = playlist[track]
+        loadMedia()
+        mMediaPlayer!!.position = seek
+        if (playing) {
+            mMediaPlayer!!.play()
+        }
+    }
+
     private fun notifyListeners(action: String, value: JSObject?) {
         Globals.NotifyObservers("MS${action}", value?.toString())
     }
@@ -752,11 +773,21 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             }
         }
 
+        fun setPlaylistAndPlay(playlist: List<Song>, track: Int, seek: Float, playing: Boolean) {
+            this@MusicService.setPlaylistAndPlay(playlist, track, seek, playing)
+        }
+
+        fun getPlaylist(): List<Song> {
+            return this@MusicService.playlist
+        }
+
         fun playSearch(query: String, type: SearchType) {
             CoroutineScope(IO).launch {
                 this@MusicService.playSearch(query, type)
             }
         }
     }
+
+
 }
 

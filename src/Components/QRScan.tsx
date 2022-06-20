@@ -1,7 +1,11 @@
 import { BarcodeScanner } from "@capacitor-community/barcode-scanner";
+import { PluginListenerHandle } from "@capacitor/core";
 import { Toast } from "@capacitor/toast";
+import { faTv } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import VLC from "../Plugins/VLC";
 
@@ -9,7 +13,10 @@ export default function QRScan() {
     const [show, setShow] = useState<boolean>(true);
     const scanning = useRef<Boolean>(false);
     const handler = useRef<NodeJS.Timeout>();
-
+    const vlcHandler = useRef<PluginListenerHandle>();
+    const [nearTvs, setNearTvs] = useState<string[]>([]);
+    const registered = useRef<Boolean>(false);
+    const navigate = useNavigate();
     const enableScanner = useCallback(async () => {
         scanning.current = true;
         setShow(false);
@@ -28,11 +35,44 @@ export default function QRScan() {
     }, []);
 
     useEffect(() => {
+        const f = async () => {
+            if (vlcHandler.current !== undefined) {
+                await vlcHandler.current.remove();
+            }
+            vlcHandler.current = await VLC.addListener(
+                "tvPacket",
+                (info: any) => {
+                    setNearTvs([...nearTvs, info.ip]);
+                }
+            );
+            if (!registered.current) {
+                setTimeout(async () => {
+                    await VLC.sendUdpBroadcast();
+                    registered.current = true;
+                }, 500);
+            }
+        };
+        f();
+    }, [nearTvs]);
+
+    useEffect(() => {
         return () => {
             // eslint-disable-next-line react-hooks/exhaustive-deps
             disableScanner();
         };
     }, [disableScanner]);
+
+    const connect = useCallback(
+        async (ip: string) => {
+            let ret = await VLC.qrLogin({ ip });
+            if (ret.status === "error") {
+                Toast.show({ text: ret.error });
+            } else {
+                navigate("/home");
+            }
+        },
+        [navigate]
+    );
 
     const scan = async () => {
         const permission = await VLC.getCameraPermissionStatus();
@@ -60,15 +100,12 @@ export default function QRScan() {
             disableScanner();
             clearTimeout(handler.current);
             handler.current = undefined;
-            let ret = await VLC.qrLogin({ ip: result.content! });
-            if (ret.status === "error") {
-                Toast.show({ text: ret.error });
-            }
+            connect(result.content!);
         }
     };
 
     return (
-        <div className="d-flex h-100 w-100 align-items-center justify-content-center">
+        <div className="d-flex flex-column h-100 w-100 align-items-center justify-content-center">
             <button
                 className={classNames(
                     "btn",
@@ -77,8 +114,26 @@ export default function QRScan() {
                 )}
                 onClick={scan}
             >
-                Scan code!
+                Scan QR from TV
             </button>
+            {nearTvs.length > 0 && (
+                <>
+                    <span className="subtitle text-white m-3">
+                        Tap on any item to connect without a QR Code
+                    </span>
+                    {nearTvs.map((s) => (
+                        <div
+                            className="list-group-item text-center text-white"
+                            onClick={() => {
+                                // Connect in jukebox mode
+                                connect(`${s}j`);
+                            }}
+                        >
+                            <FontAwesomeIcon icon={faTv} /> {s}
+                        </div>
+                    ))}
+                </>
+            )}
         </div>
     );
 }
