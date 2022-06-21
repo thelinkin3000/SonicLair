@@ -48,23 +48,25 @@ export default function Account() {
         }
     }, []);
     useEffect(() => {
-        if (Capacitor.getPlatform() === "android") {
-            const f = async () => {
-                try {
-                    const cacheSize = (await VLC.getSettings()).value
-                        ?.cacheSize;
+        const f = async () => {
+            try {
+                const settings = await VLC.getSettings();
+                if (Capacitor.getPlatform() === "android") {
+                    const cacheSize = settings.value?.cacheSize;
                     setValue("cacheSize", cacheSize!);
-                    const offlineMode = (await VLC.getOfflineMode()).value;
-                    setOfflineMode(offlineMode!);
-                } catch (e: any) {
-                    setValue("cacheSize", 0);
-                    Toast.show({
-                        text: "There was an error retrieving settings from the Phone.",
-                    });
                 }
-            };
-            f();
-        }
+                const transcoding = settings.value?.transcoding ?? "";
+                setValue("transcoding", transcoding);
+                const offlineMode = (await VLC.getOfflineMode()).value;
+                setOfflineMode(offlineMode!);
+            } catch (e: any) {
+                setValue("cacheSize", 0);
+                Toast.show({
+                    text: "There was an error retrieving settings from the Phone.",
+                });
+            }
+        };
+        f();
     }, [setValue]);
     const onSubmit = handleSubmit(hash);
     const { ref: cacheSizeRef, focused: cacheSizeFocused } = useFocusable({
@@ -75,11 +77,18 @@ export default function Account() {
     useEffect(() => {
         console.log(errors);
     }, [errors]);
-    const handleChange = useCallback(async (target: any) => {
-        const newOfflineMode = (await VLC.setOfflineMode({value: !offlineMode})).value;
-        setOfflineMode(newOfflineMode!);
-        Toast.show({text: `Offline mode ${newOfflineMode ? "enabled" : "disabled"}`})
-    }, [offlineMode]);
+    const handleChange = useCallback(
+        async (target: any) => {
+            const newOfflineMode = (
+                await VLC.setOfflineMode({ value: !offlineMode })
+            ).value;
+            setOfflineMode(newOfflineMode!);
+            Toast.show({
+                text: `Offline mode ${newOfflineMode ? "enabled" : "disabled"}`,
+            });
+        },
+        [offlineMode]
+    );
     return (
         <>
             <div className="d-flex flex-column align-items-center justify-content-start">
@@ -103,79 +112,110 @@ export default function Account() {
                     </button>
                 </div>
             </div>
-            {Capacitor.getPlatform() === "android" && (
-                <>
-                    <hr className="w-100 text-white" />
-                    <form className="h-100" onSubmit={onSubmit}>
-                        <div className="d-flex flex-column h-100 justify-content-start align-items-start">
-                            <div className="section-header text-white">
-                                Cache settings
-                            </div>
-                            <div
-                                ref={cacheSizeRef}
-                                className="input-group mb-2 mr-sm-2"
-                            >
-                                <input
-                                    {...register("cacheSize", {
-                                        required: {
-                                            message: "This value is required",
-                                            value: true,
-                                        },
-                                        min: 0,
-                                    })}
-                                    type="number"
-                                    className={classNames(
-                                        "form-control",
-                                        cacheSizeFocused ? "form-focused" : ""
-                                    )}
-                                    placeholder="Cache size"
-                                />
-                                <div className="input-group-append">
-                                    <div className="input-group-text">GB</div>
-                                </div>
-                            </div>
-                            <div className="subtitle text-white">
-                                Maximum storage space dedicated to the songs
-                                cache (0: No limit)
-                            </div>
-                            {errors && errors.cacheSize && (
-                                <div className="subtitle text-danger">
-                                    {errors.cacheSize.message}
-                                </div>
-                            )}
-                            <div className="section-header text-white">
-                                Offline Mode
-                            </div>
-                            <div className="form-check form-switch">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={offlineMode}
-                                    onChange={handleChange}
-                                    id="flexSwitchCheckDefault"
-                                />
-                            </div>
-                            <div className="subtitle text-white">
-                                Offline Mode (Will use the downloaded songs as library)
-                            </div>
-                            <div className="d-flex flex-row align-items-center justify-content-end w-100 mt-3">
-                                <button
-                                    ref={saveSettingsRef}
-                                    className={classNames(
-                                        "btn",
-                                        "btn-primary",
-                                        saveSettingsFocused
-                                            ? "btn-selected"
-                                            : "btn-primary"
-                                    )}
-                                >
-                                    Save settings
-                                </button>
-                            </div>
+            <>
+                <hr className="w-100 text-white" />
+                <form className="h-100" onSubmit={onSubmit}>
+                    <div className="d-flex flex-column h-100 justify-content-start align-items-start">
+                        <div className="section-header text-white">
+                            Transcoding
                         </div>
-                    </form>
-                </>
-            )}
+                        <div
+                            ref={cacheSizeRef}
+                            className="input-group mb-2 mr-sm-2"
+                        >
+                            <input
+                                {...register("transcoding")}
+                                type="text"
+                                className={classNames(
+                                    "form-control",
+                                    cacheSizeFocused ? "form-focused" : ""
+                                )}
+                                placeholder="Transcoding"
+                            />
+                        </div>
+                        <div className="subtitle text-white">
+                            The transcoding setting name used for streaming
+                            music. (May appear as "format" in your server){" "}
+                            {Capacitor.getPlatform() === "android" &&
+                                "(Used only with mobile data, on WIFI the client won't ask for transcoding.)"}
+                        </div>
+                        {Capacitor.getPlatform() === "android" && (
+                            <>
+                                <div className="section-header text-white">
+                                    Cache settings
+                                </div>
+                                <div
+                                    ref={cacheSizeRef}
+                                    className="input-group mb-2 mr-sm-2"
+                                >
+                                    <input
+                                        {...register("cacheSize", {
+                                            required: {
+                                                message:
+                                                    "This value is required",
+                                                value: true,
+                                            },
+                                            min: 0,
+                                        })}
+                                        type="number"
+                                        className={classNames(
+                                            "form-control",
+                                            cacheSizeFocused
+                                                ? "form-focused"
+                                                : ""
+                                        )}
+                                        placeholder="Cache size"
+                                    />
+                                    <div className="input-group-append">
+                                        <div className="input-group-text">
+                                            GB
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="subtitle text-white">
+                                    Maximum storage space dedicated to the songs
+                                    cache (0: No limit)
+                                </div>
+                                {errors && errors.cacheSize && (
+                                    <div className="subtitle text-danger">
+                                        {errors.cacheSize.message}
+                                    </div>
+                                )}
+                                <div className="section-header text-white">
+                                    Offline Mode
+                                </div>
+                                <div className="form-check form-switch">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        checked={offlineMode}
+                                        onChange={handleChange}
+                                        id="flexSwitchCheckDefault"
+                                    />
+                                </div>
+                                <div className="subtitle text-white">
+                                    Offline Mode (Will use the downloaded songs
+                                    as library)
+                                </div>
+                            </>
+                        )}
+                        <div className="d-flex flex-row align-items-center justify-content-end w-100 mt-3">
+                            <button
+                                ref={saveSettingsRef}
+                                className={classNames(
+                                    "btn",
+                                    "btn-primary",
+                                    saveSettingsFocused
+                                        ? "btn-selected"
+                                        : "btn-primary"
+                                )}
+                            >
+                                Save settings
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </>
         </>
     );
 }

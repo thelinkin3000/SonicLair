@@ -329,8 +329,9 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     fun setSettings(call: PluginCall) {
         try {
             val cacheSize =
-                (call.getString("cacheSize") ?: throw ParameterException("cacheSize")).toInt()
-            setSettings(Settings(cacheSize))
+                (call.getInt("cacheSize") ?: throw ParameterException("cacheSize"))
+            val transcoding = call.getString("transcoding") ?: ""
+            setSettings(Settings(cacheSize, transcoding))
             call.resolve(okResponse(""))
         } catch (e: Exception) {
             call.resolve(errorResponse(e.message))
@@ -657,6 +658,21 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         }
     }
 
+    fun getTranscoding(call: PluginCall) {
+        val transcoding = KeyValueStorage.getTranscoding()
+        call.resolve(okResponse(transcoding))
+    }
+
+    fun setTranscoding(call: PluginCall) {
+        try {
+            val transcoding =
+                call.getString("transcoding") ?: throw ParameterException("transcoding")
+            KeyValueStorage.setTranscoding(transcoding)
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
     @PluginMethod
     fun qrLogin(call: PluginCall) {
         try {
@@ -686,9 +702,16 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
 
             if (jukebox && mBound && binder!!.getCurrentState().playing) {
                 val playlist = binder!!.getPlaylist()
-                val request = SetPlaylistAndPlayRequest(playlist,playlist.indexOf(binder!!.getCurrentState().currentTrack), binder!!.getCurrentState().position, binder!!.getCurrentState().playing)
-                val setPlaylistCommand = WebSocketCommand("setPlaylistAndPlay",gson!!.toJson(request))
-                val setPlaylistMessage = WebSocketMessage(gson!!.toJson(setPlaylistCommand),"command","ok")
+                val request = SetPlaylistAndPlayRequest(
+                    playlist,
+                    playlist.indexOf(binder!!.getCurrentState().currentTrack),
+                    binder!!.getCurrentState().position,
+                    binder!!.getCurrentState().playing
+                )
+                val setPlaylistCommand =
+                    WebSocketCommand("setPlaylistAndPlay", gson!!.toJson(request))
+                val setPlaylistMessage =
+                    WebSocketMessage(gson!!.toJson(setPlaylistCommand), "command", "ok")
                 mWebSocket!!.send(gson!!.toJson(setPlaylistMessage))
                 binder!!.pause()
             }

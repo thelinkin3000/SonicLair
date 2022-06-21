@@ -14,7 +14,7 @@ class KeyValueStorage {
                 val settings: Settings = Gson().fromJson(currentSettings, Settings::class.java)
                 settings
             } catch (exception: Exception) {
-                Settings(0)
+                Settings(0, "")
             }
         }
 
@@ -106,6 +106,21 @@ class KeyValueStorage {
                 App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
             with(sharedPref.edit()) {
                 putBoolean("offlineMode", value)
+                apply()
+            }
+        }
+
+        fun getTranscoding(): String {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            return sharedPref.getString("transcoding", "")!!
+        }
+
+        fun setTranscoding(value: String){
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("transcoding", value)
                 apply()
             }
         }

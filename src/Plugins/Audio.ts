@@ -119,16 +119,19 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.ontimeupdate = (ev: any) => {
+            console.log(ev);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.setPositionState({
-                    duration: ev.path[0].duration,
+                    duration: ev.path[0].duration ?? this.currentTrack.duration,
                     playbackRate: 1,
                     position: ev.path[0].currentTime,
                 });
             }
             if (this.listeners["progress"]) {
                 this.notifyListeners("progress", {
-                    time: ev.path[0].currentTime / ev.path[0].duration,
+                    time:
+                        ev.path[0].currentTime /
+                        (ev.path[0].duration ?? this.currentTrack.duration),
                 });
             }
         };
@@ -206,11 +209,20 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }): Promise<IBackendResponse<boolean>> {
         return this.OKResponse<boolean>(false);
     }
-    getSettings(): Promise<IBackendResponse<ISettings>> {
-        throw new Error("Method not implemented.");
+    async getSettings(): Promise<IBackendResponse<ISettings>> {
+        if (localStorage.getItem("settings") === null) {
+            return this.OKResponse({ cacheSize: 0, transcoding: "" });
+        } else {
+            return this.OKResponse(
+                JSON.parse(localStorage.getItem("settings")!)
+            );
+        }
     }
-    setSettings(options: ISettings): Promise<IBackendResponse<String>> {
-        throw new Error("Method not implemented.");
+    async setSettings(options: ISettings): Promise<IBackendResponse<String>> {
+        debugger;
+        console.log("setSettings", options);
+        localStorage.setItem("settings", JSON.stringify(options));
+        return this.OKResponse("");
     }
     getCameraPermission(): Promise<IBackendResponse<String>> {
         throw new Error("Method not implemented.");
@@ -832,9 +844,15 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     getSongParams = (currentTrack: IAlbumSongResponse) => {
+        const settings = localStorage.getItem("settings");
+        let transcoding = "raw";
+        if (settings != null) {
+            transcoding = JSON.parse(settings)!.transcoding;
+        }
         return this.getAsParams({
             ...this.GetBasicParams(),
             id: currentTrack.id,
+            format: transcoding,
         });
     };
 

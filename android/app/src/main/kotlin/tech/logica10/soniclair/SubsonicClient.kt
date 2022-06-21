@@ -5,6 +5,9 @@ package tech.logica10.soniclair
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
@@ -45,6 +48,7 @@ class SubsonicClient(var initialAccount: Account) {
     }
 
     val db: SoniclairDatabase
+    val connectivityManager: ConnectivityManager
 
     init {
         account = initialAccount
@@ -54,6 +58,7 @@ class SubsonicClient(var initialAccount: Account) {
             App.context,
             SoniclairDatabase::class.java, "soniclair${authority}"
         ).build()
+        connectivityManager = App.context.getSystemService(ConnectivityManager::class.java)
     }
 
     val client: OkHttpClient = OkHttpClient.Builder()
@@ -641,6 +646,17 @@ class SubsonicClient(var initialAccount: Account) {
             uriBuilder.appendQueryParameter(key, map[key])
         }
         uriBuilder.appendQueryParameter("id", song.id)
+
+
+        if (KeyValueStorage.getSettings().transcoding != "" && connectivityManager.getNetworkCapabilities(
+                connectivityManager.activeNetwork
+            )
+                ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
+        ) {
+            uriBuilder.appendQueryParameter("format", KeyValueStorage.getSettings().transcoding)
+            uriBuilder.appendQueryParameter("estimateContentLength", "true")
+
+        }
         return uriBuilder.build().toString()
     }
 

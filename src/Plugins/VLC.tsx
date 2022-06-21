@@ -23,6 +23,7 @@ export interface ICurrentState {
 
 export interface ISettings {
     cacheSize: number;
+    transcoding: string;
 }
 
 export interface IBackendPlugin extends Plugin {
