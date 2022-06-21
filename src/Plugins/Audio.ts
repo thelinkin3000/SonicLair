@@ -122,7 +122,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             console.log(ev);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.setPositionState({
-                    duration: ev.path[0].duration ?? this.currentTrack.duration,
+                    duration: this.currentTrack.duration,
                     playbackRate: 1,
                     position: ev.path[0].currentTime,
                 });
@@ -130,8 +130,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             if (this.listeners["progress"]) {
                 this.notifyListeners("progress", {
                     time:
-                        ev.path[0].currentTime /
-                        (ev.path[0].duration ?? this.currentTrack.duration),
+                        ev.path[0].currentTime / this.currentTrack.duration,
                 });
             }
         };
@@ -844,15 +843,22 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     getSongParams = (currentTrack: IAlbumSongResponse) => {
-        const settings = localStorage.getItem("settings");
+        const s = localStorage.getItem("settings");
         let transcoding = "raw";
-        if (settings != null) {
-            transcoding = JSON.parse(settings)!.transcoding;
+        let settings: ISettings;
+        if (s != null) {
+            settings = JSON.parse(s);
+        } else {
+            settings = { cacheSize: 0, transcoding: "" };
+        }
+        if (settings.transcoding !== "") {
+            transcoding = settings.transcoding;
         }
         return this.getAsParams({
             ...this.GetBasicParams(),
             id: currentTrack.id,
             format: transcoding,
+            estimateContentLength: settings.transcoding !== "" ? "true" : "false"
         });
     };
 
