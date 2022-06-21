@@ -109,7 +109,7 @@ function App() {
             if (c.status === "ok") {
                 setContext(c.value!);
             } else {
-                setContext({ username: null, password: "", url: "", type: "" });
+                setContext({ username: null, password: "", url: "", type: "", usePlaintext: false });
             }
 
             if (Capacitor.getPlatform() === "android") {

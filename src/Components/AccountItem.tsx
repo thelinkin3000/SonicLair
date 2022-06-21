@@ -18,7 +18,7 @@ export default function AccountItem({ account, del }: AccountItemProps) {
     const { setContext } = useContext(AppContext);
     const navigate = useNavigate();
     const login = useCallback(async () => {
-        const ret = await VLC.login({ username: account.username!, password: account.password, url: account.url });
+        const ret = await VLC.login({ username: account.username!, password: account.password, url: account.url, usePlaintext: account.usePlaintext} );
         if (ret.status === "ok") {
             setContext(ret.value!);
             navigate("/home");
@@ -28,7 +28,7 @@ export default function AccountItem({ account, del }: AccountItemProps) {
                 text: ret.error
             });
         }
-    }, [account.password, account.url, account.username, navigate, setContext]);
+    }, [account.password, account.url, account.username, account.usePlaintext, navigate, setContext]);
 
     const deleteAccount = useCallback(async () => {
         const ret = await VLC.deleteAccount({ url: account.url });

@@ -58,6 +58,7 @@ export interface IBackendPlugin extends Plugin {
         username: string;
         password: string;
         url: string;
+        usePlaintext: boolean;
     }): Promise<IBackendResponse<IAccount>>;
     getActiveAccount(): Promise<IBackendResponse<IAccount>>;
     getAccounts(): Promise<IBackendResponse<IAccount[]>>;

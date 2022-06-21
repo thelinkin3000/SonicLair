@@ -7,6 +7,7 @@ import classNames from "classnames";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AppContext } from "../AppContext";
+import { IAccount } from "../Models/AppContext";
 import VLC, { ISettings } from "../Plugins/VLC";
 import "./Account.scss";
 
@@ -14,11 +15,12 @@ export default function Account() {
     const { context, setContext } = useContext(AppContext);
     const [offlineMode, setOfflineMode] = useState<boolean>(false);
     const logout = useCallback(() => {
-        const newContext = {
+        const newContext: IAccount = {
             username: null,
             url: "",
             password: "",
             type: "",
+            usePlaintext: false,
         };
         setContext(newContext);
     }, [setContext]);
@@ -98,6 +100,7 @@ export default function Account() {
                 <div className="text-header text-white">{context.username}</div>
                 <div className="text-white">on {context.url}</div>
                 <div className="text-white">running {context.type}</div>
+                {context.usePlaintext && <div className="text-danger">using plaintext password</div>}
                 <div className="logout-button-container">
                     <button
                         ref={ref}

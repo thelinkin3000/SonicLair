@@ -119,7 +119,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
         };
         this.audio.ontimeupdate = (ev: any) => {
-            console.log(ev);
             if ("mediaSession" in navigator) {
                 navigator.mediaSession.setPositionState({
                     duration: this.currentTrack.duration,
@@ -129,8 +128,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             }
             if (this.listeners["progress"]) {
                 this.notifyListeners("progress", {
-                    time:
-                        ev.path[0].currentTime / this.currentTrack.duration,
+                    time: ev.path[0].currentTime / this.currentTrack.duration,
                 });
             }
         };
@@ -351,6 +349,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                                     password: "",
                                     url: "",
                                     type: "",
+                                    usePlaintext: false,
                                 },
                             },
                         });
@@ -366,6 +365,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                                 password: "",
                                 url: "",
                                 type: "",
+                                usePlaintext: false,
                             },
                         },
                     });
@@ -379,6 +379,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                         password: "",
                         url: "",
                         type: "",
+                        usePlaintext: false,
                     },
                     accounts: [],
                     spotifyToken: await this.getSpotifyToken(),
@@ -426,19 +427,28 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         username: string;
         password: string;
         url: string;
+        usePlaintext: boolean;
     }): Promise<IBackendResponse<IAccount>> {
         const uuid = "abcd1234";
         const hash = md5(`${options.password}${uuid}`);
         const basicParams: IBasicParams = {
             u: options.username,
-            t: hash,
-            s: uuid,
+            t: options.usePlaintext ? undefined : hash,
+            s: options.usePlaintext ? undefined : uuid,
             v: "1.16.1",
             c: "soniclair",
             f: "json",
+            p: options.usePlaintext ? options.password : undefined,
         };
+
         let newContext: IAppContext = {
-            activeAccount: { username: null, password: "", url: "", type: "" },
+            activeAccount: {
+                username: null,
+                password: "",
+                url: "",
+                type: "",
+                usePlaintext: false,
+            },
             accounts: [],
             spotifyToken: "",
         };
@@ -451,11 +461,12 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 ret?.status === 200 &&
                 ret?.data["subsonic-response"]?.status === "ok"
             ) {
-                const creds = {
+                const creds: IAccount = {
                     username: options.username,
                     password: options.password,
                     url: this.removeTrailingSlash(options.url),
                     type: ret.data["subsonic-response"].type,
+                    usePlaintext: options.usePlaintext,
                 };
                 if (
                     this.context!.accounts.filter((s) => s.url === options.url)
@@ -519,11 +530,12 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             const hash = md5(`${c.password}${uuid}`);
             return {
                 u: c.username!,
-                t: hash,
-                s: uuid,
+                t: c.usePlaintext ? undefined : hash,
+                s: c.usePlaintext ? undefined : uuid,
                 v: "1.16.1",
                 c: "soniclair",
                 f: "json",
+                p: c.usePlaintext ? c.password : undefined,
             };
         }
         if (this.context === undefined) {
@@ -532,11 +544,14 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         const hash = md5(`${this.context.activeAccount.password}${uuid}`);
         return {
             u: this.context.activeAccount.username!,
-            t: hash,
-            s: uuid,
+            t: this.context.activeAccount.usePlaintext ? undefined : hash,
+            s: this.context.activeAccount.usePlaintext ? undefined : uuid,
             v: "1.16.1",
             c: "soniclair",
             f: "json",
+            p: this.context.activeAccount.usePlaintext
+                ? this.context.activeAccount.password
+                : undefined,
         };
     }
 
@@ -583,6 +598,13 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         } else {
             return this.ErrorResponse(ret?.statusText);
         }
+    }
+
+    scrobble() {
+        const params = { ...this.GetBasicParams(), id: this.currentTrack.id };
+        axios.get(`${this.context!.activeAccount.url}/rest/scrobble`, {
+            params: params,
+        });
     }
 
     async playAlbum(options: {
@@ -858,7 +880,8 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             ...this.GetBasicParams(),
             id: currentTrack.id,
             format: transcoding,
-            estimateContentLength: settings.transcoding !== "" ? "true" : "false"
+            estimateContentLength:
+                settings.transcoding !== "" ? "true" : "false",
         });
     };
 
@@ -881,6 +904,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         await this.notifyListeners("currentTrack", {
             currentTrack: this.currentTrack,
         });
+        this.scrobble();
         this.audio.src = `${
             this.context.activeAccount.url
         }/rest/stream?${this.getSongParams(this.currentTrack)}`;
@@ -923,7 +947,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
 
     seek(options: { time: number }): Promise<IBackendResponse<string>> {
         console.log(options.time);
-        this.audio.currentTime = options.time * this.audio.duration;
+        this.audio.currentTime = options.time * this.currentTrack.duration;
         return Promise.resolve(this.OKResponse(""));
     }
 
@@ -932,7 +956,18 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     getAsParams(data: any): string {
-        return new URLSearchParams(data).toString();
+        let params = new URLSearchParams(data);
+        let keysForDel: string[] = [];
+        params.forEach((value, key) => {
+            if (value === "undefined") {
+                keysForDel.push(key);
+            }
+        });
+
+        keysForDel.forEach((key) => {
+            params.delete(key);
+        });
+        return params.toString();
     }
 
     OKResponse<T>(value: T) {

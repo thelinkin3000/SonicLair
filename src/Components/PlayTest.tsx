@@ -20,6 +20,7 @@ interface FormData {
     username: string;
     password: string;
     url: string;
+    usePlaintext: boolean;
 }
 
 export default function PlayTest() {
@@ -31,18 +32,22 @@ export default function PlayTest() {
     const [showQr, setShowQr] = useState<boolean>(false);
     const controls = useAnimation();
 
-    const hash = useCallback(async (data: FormData) => {
-        const ret = await VLC.login(data);
-        if (ret.status === "ok") {
-            setContext(ret.value!);
-            navigate("/home", { replace: true, state: [] });
-        } else {
-            await Toast.show({
-                text: ret.error,
-            });
-        }
-    }, [navigate, setContext]);
-    
+    const hash = useCallback(
+        async (data: FormData) => {
+            debugger;
+            const ret = await VLC.login(data);
+            if (ret.status === "ok") {
+                setContext(ret.value!);
+                navigate("/home", { replace: true, state: [] });
+            } else {
+                await Toast.show({
+                    text: ret.error,
+                });
+            }
+        },
+        [navigate, setContext]
+    );
+
     useEffect(() => {
         AndroidTVPlugin.addListener("login", (info: any) => {
             hash(info);
@@ -85,10 +90,7 @@ export default function PlayTest() {
             onSubmit();
         },
     });
-    const {
-        ref: qrRef,
-        focused: qrFocused,
-    } = useFocusable({
+    const { ref: qrRef, focused: qrFocused } = useFocusable({
         onEnterPress: () => {
             setShowQr(!showQr);
         },
@@ -262,6 +264,16 @@ export default function PlayTest() {
                                 {errors.url.message}
                             </div>
                         )}
+
+                        <div className="form-check form-switch">
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="flexSwitchCheckDefault"
+                                {...register("usePlaintext", { required: true })}
+                            />
+                            <label className="w-100 text-start form-label text-white"> Use plaintext password (insecure on http connections, needed for some servers)</label>
+                        </div>
 
                         <button
                             ref={buttonRef}

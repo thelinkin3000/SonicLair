@@ -6,7 +6,7 @@ export const AppContextDefValue: IAccount = {
     password: "",
     url: "",
     type: "",
-
+    usePlaintext: false,
 };
 
 export const AppContext = React.createContext<{ context: IAccount, setContext: Dispatch<SetStateAction<IAccount>> }>

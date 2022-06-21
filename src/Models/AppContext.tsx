@@ -9,6 +9,7 @@ export interface IAccount {
     password: string;
     url: string;
     type: string;
+    usePlaintext: boolean
 }
 
 export interface IAudioContext {
