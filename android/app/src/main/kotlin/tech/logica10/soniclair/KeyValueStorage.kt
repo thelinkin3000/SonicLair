@@ -35,7 +35,7 @@ class KeyValueStorage {
                 val account: Account = Gson().fromJson(activeAccount, Account::class.java)
                 account
             } catch (exception: Exception) {
-                Account(null, "", "", "")
+                Account(null, "", "", "", false)
             }
         }
 

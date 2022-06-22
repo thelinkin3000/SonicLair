@@ -6,7 +6,6 @@ package tech.logica10.soniclair
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat
@@ -40,7 +39,7 @@ import java.util.concurrent.TimeUnit
 
 class SubsonicClient(var initialAccount: Account) {
     companion object {
-        var account: Account = Account(null, "", "", "")
+        var account: Account = Account(null, "", "", "", false)
         var spotifyToken: String = ""
         var downloadQueue: MutableList<Song> = mutableListOf()
         var downloadQueueForce: HashMap<String, Boolean> = HashMap()
@@ -75,11 +74,12 @@ class SubsonicClient(var initialAccount: Account) {
             BigInteger(1, md.digest(saltedPassword.toByteArray())).toString(16).padStart(32, '0')
         return BasicParams(
             account.username ?: "",
-            hash,
-            salt,
+            if(account.usePlaintext) null else hash,
+            if(account.usePlaintext) null else salt,
             "1.16.1",
             "soniclair",
             "json",
+            if(account.usePlaintext) account.password else null
         )
     }
 
@@ -646,6 +646,7 @@ class SubsonicClient(var initialAccount: Account) {
             uriBuilder.appendQueryParameter(key, map[key])
         }
         uriBuilder.appendQueryParameter("id", song.id)
+        uriBuilder.appendQueryParameter("estimateContentLength", "true")
 
 
         if (KeyValueStorage.getSettings().transcoding != "" && connectivityManager.getNetworkCapabilities(
@@ -654,7 +655,6 @@ class SubsonicClient(var initialAccount: Account) {
                 ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
         ) {
             uriBuilder.appendQueryParameter("format", KeyValueStorage.getSettings().transcoding)
-            uriBuilder.appendQueryParameter("estimateContentLength", "true")
 
         }
         return uriBuilder.build().toString()
@@ -678,7 +678,7 @@ class SubsonicClient(var initialAccount: Account) {
         )!!.song
     }
 
-    fun login(username: String, password: String, url: String): Account {
+    fun login(username: String, password: String, url: String, usePlaintext: Boolean): Account {
         val salt = "abcd1234"
         val saltedPassword = "${password}${salt}"
         val md = MessageDigest.getInstance("MD5")
@@ -686,11 +686,12 @@ class SubsonicClient(var initialAccount: Account) {
             BigInteger(1, md.digest(saltedPassword.toByteArray())).toString(16).padStart(32, '0')
         val basicParams = BasicParams(
             username,
-            hash,
-            salt,
+            if(usePlaintext) null else hash,
+            if(usePlaintext) null else salt,
             "1.16.1",
             "soniclair",
             "json",
+            if(usePlaintext) password else null
         )
         val uriBuilder = Uri.parse(url).buildUpon()
             .appendPath("rest")
@@ -715,7 +716,7 @@ class SubsonicClient(var initialAccount: Account) {
         if (ret.status != "ok") {
             throw Exception(ret.error?.message)
         }
-        account = Account(username, password, url, ret.type)
+        account = Account(username, password, url, ret.type ?: "Unknown Server", usePlaintext)
         KeyValueStorage.setActiveAccount(account)
         val accounts = KeyValueStorage.getAccounts()
         val exists = accounts.filter { it.url == url }.size == 1

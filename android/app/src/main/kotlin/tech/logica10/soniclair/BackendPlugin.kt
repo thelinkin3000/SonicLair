@@ -163,11 +163,13 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         val username = data.getString("username") ?: throw ParameterException("username")
         val password = data.getString("password") ?: throw Exception("password")
         val url = data.getString("url") ?: throw Exception("url")
+        val usePlaintext = data.getBoolean("usePlaintext")
         try {
             val account = subsonicClient!!.login(
                 username,
                 password,
-                url
+                url,
+                usePlaintext
             )
             setActiveAccount(account)
             call.resolve(okResponse(account))

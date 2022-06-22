@@ -270,10 +270,18 @@ export default function PlayTest() {
                                 className="form-check-input"
                                 type="checkbox"
                                 id="flexSwitchCheckDefault"
-                                {...register("usePlaintext", { required: true })}
+                                {...register("usePlaintext")}
                             />
-                            <label className="w-100 text-start form-label text-white"> Use plaintext password (insecure on http connections, needed for some servers)</label>
+                            <label className="w-100 text-start form-label text-white">
+                                Use plaintext password (insecure on http
+                                connections, needed for some servers)
+                            </label>
                         </div>
+                        {errors && errors.url && (
+                            <div className="col-12 text-danger">
+                                {errors.usePlaintext?.message}
+                            </div>
+                        )}
 
                         <button
                             ref={buttonRef}
