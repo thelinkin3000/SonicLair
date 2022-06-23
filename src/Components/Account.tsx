@@ -76,9 +76,6 @@ export default function Account() {
             setFocus("cacheSize");
         },
     });
-    useEffect(() => {
-        console.log(errors);
-    }, [errors]);
     const handleChange = useCallback(
         async (target: any) => {
             const newOfflineMode = (
@@ -92,15 +89,17 @@ export default function Account() {
         [offlineMode]
     );
     return (
-        <>
-            <div className="d-flex flex-column align-items-center justify-content-start">
+        <div className="d-flex flex-column align-items-center justify-content-start overflow-scroll scrollable">
+            <div className="d-flex flex-column align-items-center justify-content-start w-100">
                 <div className="text-white account-icon-container">
                     <FontAwesomeIcon icon={faUser} size="5x"></FontAwesomeIcon>
                 </div>
                 <div className="text-header text-white">{context.username}</div>
                 <div className="text-white">on {context.url}</div>
                 <div className="text-white">running {context.type}</div>
-                {context.usePlaintext && <div className="text-danger">using plaintext password</div>}
+                {context.usePlaintext && (
+                    <div className="text-danger">using plaintext password</div>
+                )}
                 <div className="logout-button-container">
                     <button
                         ref={ref}
@@ -115,110 +114,102 @@ export default function Account() {
                     </button>
                 </div>
             </div>
-            <>
-                <hr className="w-100 text-white" />
-                <form className="h-100" onSubmit={onSubmit}>
-                    <div className="d-flex flex-column h-100 justify-content-start align-items-start">
-                        <div className="section-header text-white">
-                            Transcoding
-                        </div>
-                        <div
-                            ref={cacheSizeRef}
-                            className="input-group mb-2 mr-sm-2"
-                        >
-                            <input
-                                {...register("transcoding")}
-                                type="text"
-                                className={classNames(
-                                    "form-control",
-                                    cacheSizeFocused ? "form-focused" : ""
-                                )}
-                                placeholder="Transcoding"
-                            />
-                        </div>
-                        <div className="subtitle text-white">
-                            The transcoding setting name used for streaming
-                            music. (May appear as "format" in your server){" "}
-                            {Capacitor.getPlatform() === "android" &&
-                                "(Used only with mobile data, on WIFI the client won't ask for transcoding.)"}
-                        </div>
-                        {Capacitor.getPlatform() === "android" && (
-                            <>
-                                <div className="section-header text-white">
-                                    Cache settings
-                                </div>
-                                <div
-                                    ref={cacheSizeRef}
-                                    className="input-group mb-2 mr-sm-2"
-                                >
-                                    <input
-                                        {...register("cacheSize", {
-                                            required: {
-                                                message:
-                                                    "This value is required",
-                                                value: true,
-                                            },
-                                            min: 0,
-                                        })}
-                                        type="number"
-                                        className={classNames(
-                                            "form-control",
-                                            cacheSizeFocused
-                                                ? "form-focused"
-                                                : ""
-                                        )}
-                                        placeholder="Cache size"
-                                    />
-                                    <div className="input-group-append">
-                                        <div className="input-group-text">
-                                            GB
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="subtitle text-white">
-                                    Maximum storage space dedicated to the songs
-                                    cache (0: No limit)
-                                </div>
-                                {errors && errors.cacheSize && (
-                                    <div className="subtitle text-danger">
-                                        {errors.cacheSize.message}
-                                    </div>
-                                )}
-                                <div className="section-header text-white">
-                                    Offline Mode
-                                </div>
-                                <div className="form-check form-switch">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        checked={offlineMode}
-                                        onChange={handleChange}
-                                        id="flexSwitchCheckDefault"
-                                    />
-                                </div>
-                                <div className="subtitle text-white">
-                                    Offline Mode (Will use the downloaded songs
-                                    as library)
-                                </div>
-                            </>
-                        )}
-                        <div className="d-flex flex-row align-items-center justify-content-end w-100 mt-3">
-                            <button
-                                ref={saveSettingsRef}
-                                className={classNames(
-                                    "btn",
-                                    "btn-primary",
-                                    saveSettingsFocused
-                                        ? "btn-selected"
-                                        : "btn-primary"
-                                )}
-                            >
-                                Save settings
-                            </button>
-                        </div>
+
+            <hr className="w-100 text-white" />
+            <form className="h-100 w-100" onSubmit={onSubmit}>
+                <div className="d-flex flex-column h-100 justify-content-start align-items-start">
+                    <div className="section-header text-white">Transcoding</div>
+                    <div
+                        ref={cacheSizeRef}
+                        className="input-group mb-2 mr-sm-2"
+                    >
+                        <input
+                            {...register("transcoding")}
+                            type="text"
+                            className={classNames(
+                                "form-control",
+                                cacheSizeFocused ? "form-focused" : ""
+                            )}
+                            placeholder="Transcoding"
+                        />
                     </div>
-                </form>
-            </>
-        </>
+                    <div className="subtitle text-white">
+                        The transcoding setting name used for streaming music.
+                        (May appear as "format" in your server){" "}
+                        {Capacitor.getPlatform() === "android" &&
+                            "(Used only with mobile data, on WIFI the client won't ask for transcoding.)"}
+                    </div>
+                    {Capacitor.getPlatform() === "android" && (
+                        <>
+                            <div className="section-header text-white">
+                                Cache settings
+                            </div>
+                            <div
+                                ref={cacheSizeRef}
+                                className="input-group mb-2 mr-sm-2"
+                            >
+                                <input
+                                    {...register("cacheSize", {
+                                        required: {
+                                            message: "This value is required",
+                                            value: true,
+                                        },
+                                        min: 0,
+                                    })}
+                                    type="number"
+                                    className={classNames(
+                                        "form-control",
+                                        cacheSizeFocused ? "form-focused" : ""
+                                    )}
+                                    placeholder="Cache size"
+                                />
+                                <div className="input-group-append">
+                                    <div className="input-group-text">GB</div>
+                                </div>
+                            </div>
+                            <div className="subtitle text-white">
+                                Maximum storage space dedicated to the songs
+                                cache (0: No limit)
+                            </div>
+                            {errors && errors.cacheSize && (
+                                <div className="subtitle text-danger">
+                                    {errors.cacheSize.message}
+                                </div>
+                            )}
+                            <div className="section-header text-white">
+                                Offline Mode
+                            </div>
+                            <div className="form-check form-switch">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    checked={offlineMode}
+                                    onChange={handleChange}
+                                    id="flexSwitchCheckDefault"
+                                />
+                            </div>
+                            <div className="subtitle text-white">
+                                Offline Mode (Will use the downloaded songs as
+                                library)
+                            </div>
+                        </>
+                    )}
+                    <div className="d-flex flex-row align-items-center justify-content-end w-100 mt-3">
+                        <button
+                            ref={saveSettingsRef}
+                            className={classNames(
+                                "btn",
+                                "btn-primary",
+                                saveSettingsFocused
+                                    ? "btn-selected"
+                                    : "btn-primary"
+                            )}
+                        >
+                            Save settings
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     );
 }

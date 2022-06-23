@@ -1,6 +1,7 @@
 import {
     faCompactDisc,
     faHouseChimney,
+    faListOl,
     faMagnifyingGlass,
     faQrcode,
     faUserAlt,
@@ -71,6 +72,12 @@ export default function Sidebar({
                     className="sidebar-item d-flex align-items-center justify-content-center text-white"
                 >
                     <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </div>
+                <div
+                    onClick={() => nav("/playlists")}
+                    className="sidebar-item d-flex align-items-center justify-content-center text-white"
+                >
+                    <FontAwesomeIcon icon={faListOl} />
                 </div>
                 {Capacitor.getPlatform() === "android" && (
                     <div

@@ -27,6 +27,11 @@ import {
 } from "../Models/API/Responses/IArtistResponse";
 import { IArtistsResponse } from "../Models/API/Responses/IArtistsResponse";
 import {
+    IPlaylist,
+    IPlaylistResponse,
+    IPlaylistsResponse,
+} from "../Models/API/Responses/IPlaylistsResponse";
+import {
     ISpotifyArtistItem,
     ISpotifyArtistsSearch,
 } from "../Models/API/Responses/ISpotifyResponse";
@@ -38,6 +43,7 @@ import {
     ICurrentState,
     ISettings,
 } from "./VLC";
+import { GetAsParams, GetAsUrlParams, getPlaylistDuration } from "../Helpers";
 
 function ValidateIPaddress(ipaddress: string): boolean {
     if (
@@ -51,7 +57,7 @@ function ValidateIPaddress(ipaddress: string): boolean {
 }
 
 export class Backend extends WebPlugin implements IBackendPlugin {
-    playlist: IAlbumSongResponse[];
+    currentPlaylist: IPlaylist;
     isPlaying: boolean;
     audio: HTMLAudioElement;
     context: IAppContext;
@@ -80,8 +86,18 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         } else {
             this.context = JSON.parse(thisCreds);
         }
-
-        this.playlist = [];
+        this.currentPlaylist = {
+            comment: "",
+            coverArt: "",
+            created: "",
+            duration: 0,
+            entry: [],
+            id: "",
+            name: "",
+            owner: "",
+            public: false,
+            songCount: 0,
+        };
         this.audio = new Audio();
         this.isPlaying = false;
 
@@ -143,6 +159,150 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             this._next();
         };
     }
+    async removeFromPlaylist(options: {
+        id: string;
+        track: number;
+    }): Promise<IBackendResponse<string>> {
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/updatePlaylist`, {
+            params: {
+                ...this.GetBasicParams(),
+                songIndexToRemove: options.track,
+                playlistId: options.id,
+            },
+        });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse("");
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
+    async createPlaylist(options: {
+        songId: string[];
+        name: string;
+    }): Promise<IBackendResponse<IPlaylist>> {
+        const params = GetAsUrlParams(this.GetBasicParams());
+        params.append("name", options.name);
+        options.songId.forEach((s) => params.append("songId", s));
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/createPlaylist`, {
+            params: params,
+        });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret?.data["subsonic-response"].playlist);
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
+    async removePlaylist(options: {
+        id: string;
+    }): Promise<IBackendResponse<string>> {
+        const params = GetAsUrlParams(this.GetBasicParams());
+        params.append("id", options.id);
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/deletePlaylist`, {
+            params: params,
+        });
+        if (ret?.status !== 200) {
+            return this.ErrorResponse(ret?.statusText);
+        } else {
+            return this.OKResponse("");
+        }
+    }
+
+    async updatePlaylist(options: {
+        playlist: IPlaylist;
+    }): Promise<IBackendResponse<IPlaylist>> {
+        // First we update the playlist settings
+        const params = GetAsUrlParams(this.GetBasicParams());
+        params.append("name", options.playlist.name);
+        params.append("comment", options.playlist.comment ?? "");
+        params.append("public", options.playlist.public ? "true" : "false");
+        params.append("playlistId", options.playlist.id);
+
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/updatePlaylist`, {
+            params: params,
+        });
+        if (ret?.status !== 200) {
+            return this.ErrorResponse(ret?.statusText);
+        }
+        const createParams = GetAsUrlParams(this.GetBasicParams());
+
+        // Now we update the song order
+        createParams.append("playlistId", options.playlist.id);
+        options.playlist.entry.forEach((s) =>
+            createParams.append("songId", s.id)
+        );
+        const createRet = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/createPlaylist`, {
+            params: createParams,
+        });
+        if (createRet?.status !== 200) {
+            return this.ErrorResponse(ret?.statusText);
+        } else {
+            return this.OKResponse(ret?.data["subsonic-response"].playlist);
+        }
+    }
+
+    async addToPlaylist(options: {
+        id: string | null;
+        songId: string;
+    }): Promise<IBackendResponse<string>> {
+        debugger;
+        if (options.id === null) {
+            const r = await this.createPlaylist({
+                songId: [options.songId],
+                name: "New playlist",
+            });
+            if(r.status === "ok"){
+                return this.OKResponse("");
+            }
+            else{
+                return this.ErrorResponse(r.error);
+            }
+        }
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/updatePlaylist`, {
+            params: {
+                ...this.GetBasicParams(),
+                songIdToAdd: options.songId,
+                playlistId: options.id,
+            },
+        });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse("");
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
     sendUdpBroadcast(): Promise<IBackendResponse<String>> {
         throw new Error("Method not implemented.");
     }
@@ -216,7 +376,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         }
     }
     async setSettings(options: ISettings): Promise<IBackendResponse<String>> {
-        debugger;
         console.log("setSettings", options);
         localStorage.setItem("settings", JSON.stringify(options));
         return this.OKResponse("");
@@ -235,6 +394,10 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 playtime: this.audio.currentTime / this.audio.duration,
             })
         );
+    }
+
+    async getCurrentPlaylist(): Promise<IBackendResponse<IPlaylist>> {
+        return this.OKResponse(this.currentPlaylist);
     }
     getActiveAccount(): Promise<IBackendResponse<IAccount>> {
         return Promise.resolve(this.OKResponse(this.context.activeAccount));
@@ -309,12 +472,53 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         }
     }
 
+    async getPlaylists(): Promise<IBackendResponse<IPlaylist[]>> {
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistsResponse;
+        }>(`${this.context.activeAccount.url}/rest/getPlaylists`, {
+            params: this.GetBasicParams(),
+        });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(
+                    ret.data["subsonic-response"].playlists.playlist
+                );
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+    async getPlaylist(options: {
+        id: string;
+    }): Promise<IBackendResponse<IPlaylist>> {
+        const ret = await axios.get<{
+            "subsonic-response": IPlaylistResponse;
+        }>(`${this.context.activeAccount.url}/rest/getPlaylist`, {
+            params: { ...this.GetBasicParams(), id: options.id },
+        });
+        if (ret?.status === 200) {
+            if (ret?.data["subsonic-response"]?.status === "ok") {
+                return this.OKResponse(ret.data["subsonic-response"].playlist);
+            } else {
+                return this.ErrorResponse(
+                    ret?.data["subsonic-response"]?.error?.message!
+                );
+            }
+        } else {
+            return this.ErrorResponse(ret?.statusText);
+        }
+    }
+
     getAlbumArt(options: { id: string }): Promise<IBackendResponse<string>> {
         return Promise.resolve(
             this.OKResponse(
                 `${
                     this.context.activeAccount.url
-                }/rest/getCoverArt?${this.getAsParams({
+                }/rest/getCoverArt?${GetAsParams({
                     ...this.GetBasicParams(),
                     id: options.id,
                 })}`
@@ -563,7 +767,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         }>(`${this.context.activeAccount.url}/rest/getSong`, {
             params: { ...this.GetBasicParams(), size: 10, id: options.id },
         });
-        debugger;
         if (ret?.status === 200) {
             if (ret?.data["subsonic-response"]?.status === "ok") {
                 return this.OKResponse(ret.data["subsonic-response"].song);
@@ -615,8 +818,46 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         if (album.status !== "ok") {
             return this.ErrorResponse(album.error);
         }
-        this.playlist = album.value!.song;
-        this.currentTrack = this.playlist[options.track];
+        this.currentPlaylist = {
+            comment: `by ${album.value?.artist}`,
+            coverArt: album.value!.coverArt,
+            created: "",
+            duration: getPlaylistDuration(album.value!.song),
+            entry: album.value!.song,
+            id: "current",
+            name: album.value!.name!,
+            owner: (await this.getActiveAccount()).value!.username!,
+            public: false,
+            songCount: album.value!.song.length,
+        };
+
+        this.currentTrack = this.currentPlaylist.entry[options.track];
+        this._playCurrent();
+        return Promise.resolve(this.OKResponse(""));
+    }
+    async playPlaylist(options: {
+        playlist: string;
+        track: number;
+    }): Promise<IBackendResponse<string>> {
+        const playlist = await this.getPlaylist({ id: options.playlist });
+        if (playlist.status !== "ok") {
+            return this.ErrorResponse(playlist.error);
+        }
+        this.currentPlaylist = playlist.value!;
+        this.currentTrack = this.currentPlaylist.entry[options.track];
+        this._playCurrent();
+        return Promise.resolve(this.OKResponse(""));
+    }
+
+    async skipTo(options: {
+        track: number;
+    }): Promise<IBackendResponse<string>> {
+        if (options.track >= this.currentPlaylist.entry.length) {
+            return this.ErrorResponse(
+                "The track does not exist on the playlist"
+            );
+        }
+        this.currentTrack = this.currentPlaylist.entry[options.track];
         this._playCurrent();
         return Promise.resolve(this.OKResponse(""));
     }
@@ -624,13 +865,27 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     async playRadio(options: {
         song: string;
     }): Promise<IBackendResponse<string>> {
-        const album = await this.getSimilarSongs({ id: options.song });
-        if (album.status !== "ok") {
-            return this.ErrorResponse(album.error);
+        const songList = await this.getSimilarSongs({ id: options.song });
+        if (songList.status !== "ok") {
+            return this.ErrorResponse(songList.error);
         }
         const song = await this.getSong({ id: options.song });
-        this.playlist = [song.value!, ...album.value!];
-        this.currentTrack = this.playlist[0];
+        if (song.status !== "ok") {
+            return this.ErrorResponse(song.error);
+        }
+        this.currentPlaylist = {
+            comment: `by ${song.value?.artist}`,
+            coverArt: song.value!.albumId,
+            created: "",
+            duration: getPlaylistDuration([song.value!, ...songList.value!]),
+            entry: [song.value!, ...songList.value!],
+            id: "current",
+            name: `Radio based on ${song.value!.title}`,
+            owner: (await this.getActiveAccount()).value!.username!,
+            public: false,
+            songCount: [song.value!, ...songList.value!].length,
+        };
+        this.currentTrack = this.currentPlaylist.entry[0];
         this._playCurrent();
         return this.OKResponse("");
     }
@@ -876,7 +1131,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         if (settings.transcoding !== "") {
             transcoding = settings.transcoding;
         }
-        return this.getAsParams({
+        return GetAsParams({
             ...this.GetBasicParams(),
             id: currentTrack.id,
             format: transcoding,
@@ -912,9 +1167,11 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     _prev() {
-        if (this.playlist.indexOf(this.currentTrack) !== 0) {
+        if (this.currentPlaylist.entry.indexOf(this.currentTrack) !== 0) {
             this.currentTrack =
-                this.playlist[this.playlist.indexOf(this.currentTrack) - 1];
+                this.currentPlaylist.entry[
+                    this.currentPlaylist.entry.indexOf(this.currentTrack) - 1
+                ];
             this._playCurrent();
         }
     }
@@ -926,11 +1183,13 @@ export class Backend extends WebPlugin implements IBackendPlugin {
 
     _next() {
         if (
-            this.playlist.indexOf(this.currentTrack) !==
-            this.playlist.length - 1
+            this.currentPlaylist.entry.indexOf(this.currentTrack) !==
+            this.currentPlaylist.entry.length - 1
         ) {
             this.currentTrack =
-                this.playlist[this.playlist.indexOf(this.currentTrack) + 1];
+                this.currentPlaylist.entry[
+                    this.currentPlaylist.entry.indexOf(this.currentTrack) + 1
+                ];
             this._playCurrent();
         }
     }
@@ -953,21 +1212,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
 
     removeTrailingSlash(str: string) {
         return str.replace(/\/+$/, "");
-    }
-
-    getAsParams(data: any): string {
-        let params = new URLSearchParams(data);
-        let keysForDel: string[] = [];
-        params.forEach((value, key) => {
-            if (value === "undefined") {
-                keysForDel.push(key);
-            }
-        });
-
-        keysForDel.forEach((key) => {
-            params.delete(key);
-        });
-        return params.toString();
     }
 
     OKResponse<T>(value: T) {

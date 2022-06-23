@@ -13,17 +13,27 @@ import VLC from "../Plugins/VLC";
 
 export default function Albums() {
     const [albums, setAlbums] = useState<IAlbumArtistResponse[]>([]);
-    const [filteredAlbums, setFilteredAlbums] = useState<IAlbumArtistResponse[]>([]);
+    const [filteredAlbums, setFilteredAlbums] = useState<
+        IAlbumArtistResponse[]
+    >([]);
     const [fetched, setFetched] = useState<boolean>(false);
     const [canSearch, setCanSearch] = useState<boolean>(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const { stateContext } = useContext(StateContext);
-    
+
     const gridRef = (ref: Grid) => {
-        if (ref && (stateContext.selectedAlbum[0] !== 0 || stateContext.selectedAlbum[1] !== 0)) {
-            ref.scrollToItem({ columnIndex: stateContext.selectedAlbum[1], rowIndex: stateContext.selectedAlbum[0], align: "center" });
+        if (
+            ref &&
+            (stateContext.selectedAlbum[0] !== 0 ||
+                stateContext.selectedAlbum[1] !== 0)
+        ) {
+            ref.scrollToItem({
+                columnIndex: stateContext.selectedAlbum[1],
+                rowIndex: stateContext.selectedAlbum[0],
+                align: "center",
+            });
         }
-    }
+    };
 
     useEffect(() => {
         const fetch = async () => {
@@ -33,8 +43,7 @@ export default function Albums() {
                 setFilteredAlbums(al.value!);
             }
             setFetched(true);
-
-        }
+        };
         if (!fetched) {
             fetch();
         }
@@ -43,11 +52,17 @@ export default function Albums() {
     const search = (val: any) => {
         if (val.target.value.length === 0) {
             setFilteredAlbums(albums);
+        } else {
+            setFilteredAlbums(
+                albums.filter(
+                    (s) =>
+                        s.name
+                            .toUpperCase()
+                            .indexOf(val.target.value.toUpperCase()) !== -1
+                )
+            );
         }
-        else {
-            setFilteredAlbums(albums.filter(s => s.name.toUpperCase().indexOf(val.target.value.toUpperCase()) !== -1));
-        }
-    }
+    };
 
     useEffect(() => {
         if (canSearch) {
@@ -57,49 +72,94 @@ export default function Albums() {
 
     const toggleSearch = () => {
         setCanSearch(!canSearch);
-    }
+    };
 
     const { gridProps, autoFillRef, columnCount } = useAutoFill(filteredAlbums);
 
-    const AlbumCardWrapper = useCallback(({ data, style, columnIndex, rowIndex }: GridChildComponentProps<IAlbumArtistResponse[]>) => {
-        const index = rowIndex * columnCount + columnIndex;
-        if (data[index] === undefined) {
-            return (<></>);
-        }
-        return (<div style={{ ...style }} key={`${rowIndex},${columnIndex}`} id={`${rowIndex},${columnIndex}`}>
-            <AlbumCard item={data[index]} forceWidth={false} columnIndex={columnIndex} rowIndex={rowIndex} />
-        </div>
-        )
-    }, [columnCount]);
+    const AlbumCardWrapper = useCallback(
+        ({
+            data,
+            style,
+            columnIndex,
+            rowIndex,
+        }: GridChildComponentProps<IAlbumArtistResponse[]>) => {
+            const index = rowIndex * columnCount + columnIndex;
+            if (data[index] === undefined) {
+                return <></>;
+            }
+            return (
+                <div
+                    style={{ ...style }}
+                    key={`${rowIndex},${columnIndex}`}
+                    id={`${rowIndex},${columnIndex}`}
+                    className="d-flex flex-column align-items-center justify-content-center"
+
+                >
+                    <AlbumCard
+                        item={data[index]}
+                        forceWidth={false}
+                        columnIndex={columnIndex}
+                        rowIndex={rowIndex}
+                    />
+                </div>
+            );
+        },
+        [columnCount]
+    );
 
     if (albums.length === 0) {
-        return (<div className="row" style={{ height: "100%" }}>
-            <div className="col-12 d-flex align-items-center justify-content-center" style={{ height: "100%" }}>
-                <Loading />
+        return (
+            <div className="row" style={{ height: "100%" }}>
+                <div
+                    className="col-12 d-flex align-items-center justify-content-center"
+                    style={{ height: "100%" }}
+                >
+                    <Loading />
+                </div>
             </div>
-        </div>);
+        );
     }
 
-    return (<>
-        <div className="artist-container d-flex flex-column">
-            <div className="d-flex flex-row align-items-center justify-content-between w-100">
-                <div className="section-header text-white">Albums</div>
-                <button type="button" className="btn btn-link text-white" onClick={toggleSearch}>
-                    <FontAwesomeIcon icon={faMagnifyingGlass}></FontAwesomeIcon>
-                </button>
+    return (
+        <>
+            <div className="artist-container d-flex flex-column">
+                <div className="d-flex flex-row align-items-center justify-content-between w-100">
+                    <div className="section-header text-white">Albums</div>
+                    <button
+                        type="button"
+                        className="btn btn-link text-white"
+                        onClick={toggleSearch}
+                    >
+                        <FontAwesomeIcon
+                            icon={faMagnifyingGlass}
+                        ></FontAwesomeIcon>
+                    </button>
+                </div>
+                <input
+                    ref={searchRef}
+                    className={classNames(
+                        "form-control",
+                        "mb-2",
+                        canSearch ? "" : "d-none"
+                    )}
+                    placeholder="Search..."
+                    onKeyUp={search}
+                />
+                <div
+                    ref={autoFillRef}
+                    style={{ height: "100%", width: "100%" }}
+                >
+                    <Grid
+                        ref={gridRef}
+                        {...gridProps}
+                        useIsScrolling={true}
+                        style={{ overflowY: "auto", overflowX: "hidden" }}
+                        itemData={filteredAlbums}
+                    >
+                        {AlbumCardWrapper}
+                    </Grid>
+                </div>
             </div>
-            <input ref={searchRef} className={classNames("form-control", "mb-2", canSearch ? "" : "d-none")} placeholder="Search..." onKeyUp={search} />
-            <div ref={autoFillRef} style={{ height: "100%", width: "100%" }}>
-                <Grid ref={gridRef}
-                    {...gridProps}
-                    useIsScrolling={true}
-                    style={{overflowY:"auto",overflowX:"hidden"}}
-                    itemData={filteredAlbums}>
-                    {AlbumCardWrapper}
-                </Grid>
-            </div>
-        </div>
-    </>
-
-    )
+        </>
+    );
 }

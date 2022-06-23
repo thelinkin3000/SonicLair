@@ -43,6 +43,9 @@ import QRScan from "./Components/QRScan";
 import { App as CapacitorApp } from "@capacitor/app";
 import TVJukebox from "./Components/TVJukebox";
 import { TVTopBar } from "./Components/TVTopBar";
+import Playlists from "./Components/Playlists";
+import Playlist from "./Components/Playlist";
+import EditPlaylist from "./Components/EditPlaylist";
 
 function App() {
     const [context, setContext] = useState<IAccount>(AppContextDefValue);
@@ -193,6 +196,18 @@ function App() {
                                                 <Route
                                                     path="/albums"
                                                     element={<Albums />}
+                                                />
+                                                <Route
+                                                    path="/playlists"
+                                                    element={<Playlists />}
+                                                />
+                                                <Route
+                                                    path="/playlist"
+                                                    element={<Playlist />}
+                                                />
+                                                <Route
+                                                    path="/editPlaylist"
+                                                    element={<EditPlaylist />}
                                                 />
                                                 <Route
                                                     path="/search"

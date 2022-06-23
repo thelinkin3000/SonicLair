@@ -7,3 +7,4 @@ export interface IArtistsResponse extends ISubsonicResponse {
         index: IArtistIndex[];
     };
 }
+

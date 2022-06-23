@@ -11,6 +11,7 @@ import { MenuContext } from "../AppContext";
 import VLC from "../Plugins/VLC";
 import { Toast } from "@capacitor/toast";
 import { PluginListenerHandle } from "@capacitor/core";
+import { IPlaylist } from "../Models/API/Responses/IPlaylistsResponse";
 
 export default function SongItem({
     item,
@@ -67,6 +68,63 @@ export default function SongItem({
         f();
     }, [item]);
 
+    const addToPlaylists = useCallback(
+        async (x: number, y: number) => {
+            const playlists = await VLC.getPlaylists();
+            const add = async (s: IPlaylist | null) => {
+                const ret = await VLC.addToPlaylist({
+                    id: s?.id ?? null,
+                    songId: item.id,
+                });
+                if (ret.status === "ok") {
+                    Toast.show({
+                        text: "Song added successfully",
+                    });
+                } else {
+                    Toast.show({ text: ret.error });
+                }
+            };
+            if (playlists.status === "ok") {
+                setMenuContext({
+                    x: "10vw",
+                    y: "10vh",
+                    show: true,
+                    body: (
+                        <div
+                            className="d-flex flex-column px-2"
+                            style={{ width: "80vw", height: "80vh" }}
+                        >
+                            <div className="text-white w-100 section-header mb-3">
+                                Available playlists
+                            </div>
+                            <div className="d-flex flex-column w-100 h-100 scrollable overflow-scroll">
+                            <button
+                                        className="btn btn-primary mb-2"
+                                        onClick={() => {
+                                            add(null);
+                                        }}
+                                    >
+                                        Create playlist and add
+                                    </button>
+                                {playlists.value?.map((s) => (
+                                    <button
+                                        className="btn btn-primary mb-1"
+                                        onClick={() => {
+                                            add(s);
+                                        }}
+                                    >
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ),
+                });
+            }
+        },
+        [item.id, setMenuContext]
+    );
+
     const ref = (r: HTMLDivElement) => {
         if (r) {
             listeners.current.forEach((element) => {
@@ -79,14 +137,24 @@ export default function SongItem({
                     y: ev.pageY,
                     show: true,
                     body: (
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => {
-                                playRadio();
-                            }}
-                        >
-                            Start radio
-                        </button>
+                        <div className="d-flex flex-column">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    playRadio();
+                                }}
+                            >
+                                Start radio
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    addToPlaylists(ev.pageX, ev.pageY);
+                                }}
+                            >
+                                Add to Playlist
+                            </button>
+                        </div>
                     ),
                 });
             };

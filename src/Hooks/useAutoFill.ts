@@ -42,7 +42,6 @@ export default function useAutoFill<T>(data: T[]) {
     });
     const autoFillRef = useCallback(
         (r: HTMLDivElement | undefined | null) => {
-            console.log("called");
             if (!r) return;
             listRef.current = r;
             setWidth(r.clientWidth);
@@ -62,11 +61,10 @@ export default function useAutoFill<T>(data: T[]) {
                 h = w + 50;
             }
             const rowCount = Math.ceil(data.length / columns);
-            console.log("rows", rowCount);
             setColumnCount(columns);
             setColumnWidth(w);
             setGridProps({
-                className: "scrollable",
+                className: "scrollable-hidden",
                 columnCount: columns,
                 columnWidth: w,
                 rowCount: rowCount,

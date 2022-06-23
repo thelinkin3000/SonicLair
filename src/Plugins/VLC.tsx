@@ -7,6 +7,7 @@ import {
     IInnerAlbumResponse,
     IInnerArtistResponse,
 } from "../Models/API/Responses/IArtistResponse";
+import { IPlaylist } from "../Models/API/Responses/IPlaylistsResponse";
 import { IAccount } from "../Models/AppContext";
 
 export interface IBackendResponse<T> {
@@ -27,15 +28,39 @@ export interface ISettings {
 }
 
 export interface IBackendPlugin extends Plugin {
+    getCurrentPlaylist(): Promise<IBackendResponse<IPlaylist>>;
+    removeFromPlaylist(options: {
+        id: string;
+        track: number;
+    }): Promise<IBackendResponse<string>>;
+    addToPlaylist(options: {
+        id: string | null;
+        songId: string;
+    }): Promise<IBackendResponse<string>>;
+    createPlaylist(options: {
+        songId: string[];
+        name: string;
+    }): Promise<IBackendResponse<IPlaylist>>;
+    updatePlaylist(options: {
+        playlist: IPlaylist
+    }): Promise<IBackendResponse<IPlaylist>>;
+    removePlaylist(options: {
+        id: string
+    }): Promise<IBackendResponse<string>>;
     play(): Promise<IBackendResponse<string>>;
     pause(): Promise<IBackendResponse<string>>;
     setVolume(options: { volume: number }): Promise<IBackendResponse<string>>;
     seek(options: { time: number }): Promise<IBackendResponse<string>>;
+    skipTo(options: { track: number }): Promise<IBackendResponse<string>>;
     playAlbum(options: {
         album: string;
         track: number;
     }): Promise<IBackendResponse<string>>;
     playRadio(options: { song: string }): Promise<IBackendResponse<string>>;
+    playPlaylist(options: {
+        playlist: string;
+        track: number;
+    }): Promise<IBackendResponse<string>>;
     getArtists(): Promise<IBackendResponse<IArtist[]>>;
     getArtist(options: {
         id: string;
@@ -54,6 +79,8 @@ export interface IBackendPlugin extends Plugin {
         size: number | null;
     }): Promise<IBackendResponse<IAlbumArtistResponse[]>>;
     getRandomSongs(): Promise<IBackendResponse<IAlbumSongResponse[]>>;
+    getPlaylists(): Promise<IBackendResponse<IPlaylist[]>>;
+    getPlaylist(options: { id: string }): Promise<IBackendResponse<IPlaylist>>;
     login(options: {
         username: string;
         password: string;

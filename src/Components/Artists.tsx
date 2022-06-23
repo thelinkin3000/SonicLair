@@ -88,6 +88,7 @@ export default function Artists() {
             return (
                 <div
                     style={{ ...style }}
+                    className="d-flex flex-column align-items-center justify-content-center"
                     id={`${rowIndex},${columnIndex}`}
                     key={`${rowIndex},${columnIndex}`}
                 >

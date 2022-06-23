@@ -114,7 +114,10 @@ export default function Artist() {
                 return <div style={{ ...style }}></div>;
             }
             return (
-                <div style={{ ...style }}>
+                <div
+                    style={{ ...style }}
+                    className="d-flex flex-column align-items-center justify-content-center"
+                >
                     <AlbumCard
                         key={`albumcard-${index}`}
                         item={data[index]}

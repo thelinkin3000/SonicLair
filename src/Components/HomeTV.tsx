@@ -86,7 +86,7 @@ export default function HomeTV() {
                                 ref={topAlbumsRef}
                             >
                                 <span className="section-header text-white">
-                                    Top Albums
+                                    Most Played Albums
                                 </span>
                                 <hr className="text-white w-100" />
                             </div>

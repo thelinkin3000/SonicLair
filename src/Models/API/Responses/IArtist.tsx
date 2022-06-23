@@ -5,3 +5,4 @@ export interface IArtist {
     albumCount: number;
     artistImageUrl: string;
 }
+

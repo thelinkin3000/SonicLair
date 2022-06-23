@@ -13,8 +13,8 @@ export const AppContext = React.createContext<{ context: IAccount, setContext: D
     ({ context: AppContextDefValue, setContext: (c) => { } });
 
 export interface IMenuContext {
-    x: number;
-    y: number;
+    x: number | string;
+    y: number | string;
     show: boolean;
     body: any;
 }

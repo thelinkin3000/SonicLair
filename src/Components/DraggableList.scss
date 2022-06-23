@@ -1,0 +1,16 @@
+@import "../Styles/colors.scss";
+
+.cancel{
+    position:absolute;
+    width: 30vw;
+    height: 10vh;
+    background-color: $red-state;
+    z-index: 10000000000000000000;
+    transition: 0.5s ease;
+    border-radius: 5px;
+}
+
+.cancel.cancel-hover{
+    background-color: $red-state-highlight;
+    
+}
