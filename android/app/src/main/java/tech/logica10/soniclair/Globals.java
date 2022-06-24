@@ -31,7 +31,6 @@ public class Globals{
         stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
         stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE |  PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
-        mediaSession.setCallback(new MediaCallbacks());
     }
 
     // Static method
