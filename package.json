@@ -62,7 +62,10 @@
       "react-app",
       "react-app/jest",
       "prettier"
-    ]
+    ],
+    "rules": {
+      "no-console": "warn"
+    }
   },
   "browserslist": {
     "production": [

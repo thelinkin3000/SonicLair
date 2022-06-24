@@ -11,7 +11,6 @@ export default function Search() {
     const [searchValue, setSearchValue] = useState<string>("");
     const [result, setResult] = useState<ISearchResult | null>(null);
     const setValue = (ev: any) => {
-        console.log("changing");
         setSearchValue(ev.target.value);
     };
     const [androidTv, setAndroidTv] = useState(false);
@@ -26,8 +25,6 @@ export default function Search() {
             timeoutRef.current = setTimeout(async () => {
                 const result = await VLC.search({ query: searchValue });
                 if (result.status === "ok") {
-                    console.log(searchValue);
-                    console.log(result.value!);
                     setResult(result.value!);
                 }
             }, 350);

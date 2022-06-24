@@ -16,3 +16,4 @@ class Song(
     var albumId: String,
     var coverArt: String
 )
+

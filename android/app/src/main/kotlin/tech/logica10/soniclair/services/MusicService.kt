@@ -36,6 +36,7 @@ import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import tech.logica10.soniclair.*
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
+import tech.logica10.soniclair.models.Playlist
 import tech.logica10.soniclair.models.SearchType
 import tech.logica10.soniclair.models.Song
 import java.io.File
@@ -73,7 +74,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         .setName("SonicLair")
         .setDescription("Currently playing notification")
         .build()
-    private var playlist: MutableList<Song> = mutableListOf()
+    private var playlist: Playlist = getDefaultPlaylist()
     private var prevAction: NotificationCompat.Action? = null
     private var pauseAction: NotificationCompat.Action? = null
     private var playAction: NotificationCompat.Action? = null
@@ -100,6 +101,13 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         Globals.RegisterObserver(this)
         mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
     }
+
+    companion object {
+        fun getDefaultPlaylist(): Playlist {
+            return Playlist("", "", "", "", false, 0, 0, "", "", listOf())
+        }
+    }
+
 
     private fun getNotificationBuilder(): NotificationCompat.Builder {
         return NotificationCompat.Builder(App.context, "soniclair")
@@ -355,6 +363,13 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                             playRadio(id)
                         }
                     }
+                    Constants.SERVICE_PLAY_PLAYLIST -> {
+                        val id = intent.extras?.getString("id")
+                        val track = intent.extras?.getInt("track")
+                        if (id != null) {
+                            playPlaylist(id, track ?: 0)
+                        }
+                    }
                     Constants.SERVICE_PLAY_SEARCH -> {
                         val id = intent.extras?.getString("query")
                         if (id != null) {
@@ -471,19 +486,36 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     }
 
+    private fun getSongsDuration(songs: List<Song>): Int {
+        return songs.sumOf { s -> s.duration }
+    }
+
     @Throws(Exception::class)
     private fun playRadio(id: String) {
-        playlist.clear()
+        playlist = getDefaultPlaylist()
         try {
-            playlist.addAll(subsonicClient.getSimilarSongs(id))
-            playlist.add(0, subsonicClient.getSong(id))
-            currentTrack = playlist[0]
+            val songs: MutableList<Song> = mutableListOf()
+            songs.addAll(subsonicClient.getSimilarSongs(id))
+            songs.add(0, subsonicClient.getSong(id))
+            playlist = Playlist(
+                "current",
+                "Internet radio based on ${songs[0].title}",
+                "by ${songs[0].artist}",
+                getActiveAccount().username!!,
+                false,
+                songs.size,
+                getSongsDuration(songs),
+                "",
+                songs[0].albumId,
+                songs
+            )
+            currentTrack = songs[0]
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                     ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
                 && !KeyValueStorage.getOfflineMode()
                 && !App.isTv
             ) {
-                subsonicClient.downloadPlaylist(playlist, false)
+                subsonicClient.downloadPlaylist(songs, false)
             }
             loadMedia()
             play()
@@ -493,24 +525,76 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         }
     }
 
-    private fun playAlbum(id: String, track: Int) {
-        playlist.clear()
+    fun skipTo(track: Int) {
         try {
-            playlist.addAll(
-                if (KeyValueStorage.getOfflineMode()) {
-                    subsonicClient.getLocalAlbumWithSongs(id)!!.song
-                } else {
-                    subsonicClient.getAlbum(id).song
-                }
-            )
-            currentTrack = playlist[track]
+            if (track >= playlist.entry.size) {
+                throw Exception("Track does not exist on playlist")
+            }
+            currentTrack = playlist.entry[track]
+            loadMedia()
+            play()
+        } catch (e: Exception) {
+            Globals.NotifyObservers("EX", e.message)
+            // Nobody listening still
+        }
+
+    }
+
+    private fun playPlaylist(id: String, track: Int) {
+        playlist = getDefaultPlaylist()
+        try {
+            playlist = subsonicClient.getPlaylist(id)
+
+            currentTrack = playlist.entry[track]
 
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                     ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
                 && !KeyValueStorage.getOfflineMode()
                 && !App.isTv
             ) {
-                subsonicClient.downloadPlaylist(playlist, false)
+                subsonicClient.downloadPlaylist(playlist.entry, false)
+            }
+            loadMedia()
+            play()
+        } catch (e: Exception) {
+            Globals.NotifyObservers("EX", e.message)
+            // Nobody listening still
+        }
+    }
+
+
+    private fun playAlbum(id: String, track: Int) {
+        playlist = getDefaultPlaylist()
+        try {
+            val songs: MutableList<Song> = mutableListOf()
+            songs.addAll(
+                if (KeyValueStorage.getOfflineMode()) {
+                    subsonicClient.getLocalAlbumWithSongs(id)!!.song
+                } else {
+                    subsonicClient.getAlbum(id).song
+                }
+            )
+            playlist = Playlist(
+                "current",
+                songs[0].album,
+                "by ${songs[0].artist}",
+                getActiveAccount().username!!,
+                false,
+                songs.size,
+                getSongsDuration(songs),
+                "",
+                songs[0].albumId,
+                songs
+            )
+
+            currentTrack = songs[track]
+
+            if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+                && !KeyValueStorage.getOfflineMode()
+                && !App.isTv
+            ) {
+                subsonicClient.downloadPlaylist(songs, false)
             }
             loadMedia()
             play()
@@ -568,8 +652,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     @Throws(JSONException::class, ExecutionException::class, InterruptedException::class)
     private fun next() {
-        if (playlist.indexOf(currentTrack) < playlist.size - 1) {
-            currentTrack = playlist[playlist.indexOf(currentTrack) + 1]
+        if (playlist.entry.indexOf(currentTrack) < playlist.entry.size - 1) {
+            currentTrack = playlist.entry[playlist.entry.indexOf(currentTrack) + 1]
             try {
                 loadMedia()
                 play()
@@ -581,8 +665,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     @Throws(JSONException::class, ExecutionException::class, InterruptedException::class)
     private fun prev() {
-        if (playlist.indexOf(currentTrack) > 0) {
-            currentTrack = playlist[playlist.indexOf(currentTrack) - 1]
+        if (playlist.entry.indexOf(currentTrack) > 0) {
+            currentTrack = playlist.entry[playlist.entry.indexOf(currentTrack) - 1]
             try {
                 loadMedia()
                 play()
@@ -636,7 +720,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
 
     private fun setPlaylistAndPlay(
-        playlist: List<Song>,
+        playlist: Playlist,
         track: Int,
         seek: Float,
         playing: Boolean
@@ -646,8 +730,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             return
 
         // Otherwise copy the phone's state and play it
-        this.playlist = playlist.toMutableList()
-        this.currentTrack = playlist[track]
+        this.playlist = playlist
+        this.currentTrack = playlist.entry[track]
         loadMedia()
         mMediaPlayer!!.position = seek
         if (playing) {
@@ -773,11 +857,19 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             }
         }
 
-        fun setPlaylistAndPlay(playlist: List<Song>, track: Int, seek: Float, playing: Boolean) {
+        fun playPlaylist(id: String, track: Int) {
+            this@MusicService.playPlaylist(id, track)
+        }
+
+        fun setPlaylistAndPlay(playlist: Playlist, track: Int, seek: Float, playing: Boolean){
             this@MusicService.setPlaylistAndPlay(playlist, track, seek, playing)
         }
 
-        fun getPlaylist(): List<Song> {
+        fun skipTo(track: Int) {
+            this@MusicService.skipTo(track)
+        }
+
+        fun getPlaylist(): Playlist {
             return this@MusicService.playlist
         }
 

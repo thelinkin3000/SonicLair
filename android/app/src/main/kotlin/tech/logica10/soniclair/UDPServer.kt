@@ -43,7 +43,6 @@ class UDPServer(
         // Send it and forget it
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val buffer = ByteArray(1500)
                 val packet = DatagramPacket("soniclairClient".toByteArray(Charsets.UTF_8), "soniclairClient".toByteArray(Charsets.UTF_8).size, broadcastAddress, 30002)
                 @Suppress("BlockingMethodInNonBlockingContext")
                 broadcastSocket!!.send(packet)

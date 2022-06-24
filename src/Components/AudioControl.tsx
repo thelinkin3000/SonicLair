@@ -54,7 +54,7 @@ export default function AudioControl() {
                     setAndroidTV((await AndroidTVPlugin.get()).value);
                 }
             } catch (e: any) {
-                console.error("ERROR ANDROID TV", e);
+                
             }
         };
         fetch();

@@ -9,10 +9,7 @@ import android.net.Uri
 import android.os.IBinder
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.getcapacitor.JSObject
-import com.getcapacitor.Plugin
-import com.getcapacitor.PluginCall
-import com.getcapacitor.PluginMethod
+import com.getcapacitor.*
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -363,7 +360,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     @PluginMethod
     fun getAlbumArt(call: PluginCall) {
         try {
-            val id = call.getString("id") ?: throw ParameterException("id")
+            val id = call.getString("id") ?: ""
             if (getOfflineMode()) {
                 call.resolve(okResponse(subsonicClient!!.getLocalAlbumArt(id)))
             } else {
@@ -660,21 +657,6 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         }
     }
 
-    fun getTranscoding(call: PluginCall) {
-        val transcoding = KeyValueStorage.getTranscoding()
-        call.resolve(okResponse(transcoding))
-    }
-
-    fun setTranscoding(call: PluginCall) {
-        try {
-            val transcoding =
-                call.getString("transcoding") ?: throw ParameterException("transcoding")
-            KeyValueStorage.setTranscoding(transcoding)
-        } catch (e: Exception) {
-            call.resolve(errorResponse(e.message))
-        }
-    }
-
     @PluginMethod
     fun qrLogin(call: PluginCall) {
         try {
@@ -706,7 +688,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                 val playlist = binder!!.getPlaylist()
                 val request = SetPlaylistAndPlayRequest(
                     playlist,
-                    playlist.indexOf(binder!!.getCurrentState().currentTrack),
+                    playlist.entry.indexOf(binder!!.getCurrentState().currentTrack),
                     binder!!.getCurrentState().position,
                     binder!!.getCurrentState().playing
                 )
@@ -753,6 +735,137 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     fun sendUdpBroadcast(call: PluginCall) {
         Globals.NotifyObservers("SENDUDP", "")
         call.resolve(okResponse(""))
+    }
+
+    @PluginMethod
+    fun getCurrentPlaylist(call: PluginCall) {
+        if (mBound) {
+            call.resolve(okResponse(binder!!.getPlaylist()))
+        } else {
+            call.resolve(okResponse(MusicService.getDefaultPlaylist()))
+        }
+    }
+
+    @PluginMethod
+    fun getPlaylists(call: PluginCall) {
+        try {
+            call.resolve(okArrayResponse(subsonicClient!!.getPlaylists()))
+        }
+        catch(e: Exception){
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
+    @PluginMethod
+    fun getPlaylist(call: PluginCall) {
+        try {
+            val id = call.getString("id") ?: throw ParameterException("id")
+            val ret = subsonicClient!!.getPlaylist(id)
+            call.resolve(okResponse(ret))
+        }
+        catch(e: Exception){
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
+    @PluginMethod
+    fun removeFromPlaylist(call: PluginCall) {
+        try {
+            val id: String = call.getString("id") ?: throw ParameterException("id")
+            val track: Int = call.getInt("track") ?: throw ParameterException("track")
+            subsonicClient!!.removeFromPlaylist(id, track)
+            call.resolve(okResponse(""))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+
+    }
+
+    @PluginMethod
+    fun addToPlaylist(call: PluginCall) {
+        try {
+            val id: String = call.getString("id") ?: ""
+            val songId: String = call.getString("songId") ?: throw ParameterException("songId")
+            if (id === "") {
+                subsonicClient!!.createPlaylist(listOf(songId), "New playlist")
+            } else {
+                subsonicClient!!.addToPlaylist(id, songId)
+            }
+            call.resolve(okResponse(""))
+
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
+    @PluginMethod
+    fun createPlaylist(call: PluginCall) {
+        try {
+            val name: String = call.getString("name") ?: throw ParameterException("name")
+            val jsIds: JSArray = call.getArray("songId") ?: throw ParameterException("songId")
+            val ids: MutableList<String> = jsIds.toList()
+            val ret = subsonicClient!!.createPlaylist(ids, name)
+            call.resolve(okResponse(ret))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+
+    }
+
+    @PluginMethod
+    fun updatePlaylist(call: PluginCall) {
+        try {
+            val playlist: Playlist = gson!!.fromJson(call.getObject("playlist").toString(), Playlist::class.java)
+            val ret = subsonicClient!!.updatePlaylist(playlist)
+            call.resolve(okResponse(ret))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
+    @PluginMethod
+    fun removePlaylist(call: PluginCall) {
+        try {
+            val id = call.getString("id") ?: throw ParameterException("id")
+            subsonicClient!!.removePlaylist(id)
+            call.resolve(okResponse(""))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+
+    }
+
+    @PluginMethod
+    fun skipTo(call: PluginCall) {
+        try {
+            val track = call.getInt("track") ?: throw ParameterException("track")
+            if (mBound) {
+                binder!!.skipTo(track)
+            }
+            call.resolve(okResponse(""))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
+    }
+
+    @PluginMethod
+    fun playPlaylist(call: PluginCall) {
+        try {
+            val track = call.getInt("track") ?: throw ParameterException("track")
+            val id = call.getString("playlist") ?: throw ParameterException("playlist")
+            if (mBound) {
+                binder!!.playPlaylist(id, track)
+            } else {
+                val intent = Intent(App.context, MusicService::class.java)
+                intent.action = Constants.SERVICE_PLAY_PLAYLIST
+                intent.putExtra("id", id)
+                intent.putExtra("track", track)
+                App.context.startService(intent)
+            }
+            call.resolve(okResponse(""))
+        } catch (e: Exception) {
+            call.resolve(errorResponse(e.message))
+        }
     }
 
     private fun setWebsocketConnectionStatus(status: Boolean) {

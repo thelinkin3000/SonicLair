@@ -1,4 +1,7 @@
+import { PluginListenerHandle } from "@capacitor/core";
 import { Toast } from "@capacitor/toast";
+import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import {
     CSSProperties,
@@ -35,6 +38,9 @@ export function PlaylistEntry({
         []
     );
     const { setMenuContext } = useContext(MenuContext);
+    const [downloadProgress, setDownloadProgress] = useState<number>(0);
+    const vlcListener = useRef<PluginListenerHandle>();
+    const [cached, setCached] = useState<boolean>(false);
 
     const [coverArt, setCoverArt] = useState<string>("");
     useEffect(() => {
@@ -46,6 +52,27 @@ export function PlaylistEntry({
         };
         func();
     }, [coverArt, item.albumId]);
+    useEffect(() => {
+        const f = async () => {
+            if (vlcListener.current) {
+                await vlcListener.current.remove();
+            }
+            vlcListener.current = await VLC.addListener(
+                `progress${item.id}`,
+                (info: any) => {
+                    setDownloadProgress(info.progress);
+                    if (info.progress >= 99) {
+                        setCached(true);
+                    }
+                }
+            );
+            const status = await VLC.getSongStatus({ id: item.id });
+            if (status.status === "ok") {
+                setCached(status.value!!);
+            }
+        };
+        f();
+    }, [item]);
 
     const selfRef = useRef<HTMLDivElement>();
 
@@ -143,10 +170,30 @@ export function PlaylistEntry({
                         by {item.artist}, from {item.album}
                     </span>
                 </div>
-                {actionable && <div className="col-auto d-flex flex-row align-items-center justify-content-end">
-                    {SecondsToHHSS(item.duration)}
-                </div>}
-                
+                {actionable && (
+                    <div className="col-auto d-flex flex-row align-items-center justify-content-end">
+                        {SecondsToHHSS(item.duration)}
+                        {cached && <FontAwesomeIcon icon={faArrowDown} className="p-2"></FontAwesomeIcon>}
+                    </div>
+                )}
+                {downloadProgress > 0 && downloadProgress < 100 && (
+                    <div className="col-12 py-2">
+                        <div
+                            className="progress"
+                            style={{ height: "2px", margin: 0, padding: 0 }}
+                        >
+                            <div
+                                className="progress-bar progress-bar-soniclair"
+                                role="progressbar"
+                                style={{
+                                    width: `${downloadProgress}%`,
+                                    margin: 0,
+                                    padding: 0,
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

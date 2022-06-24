@@ -47,7 +47,7 @@ class SubsonicClient(var initialAccount: Account) {
     }
 
     val db: SoniclairDatabase
-    val connectivityManager: ConnectivityManager
+    private val connectivityManager: ConnectivityManager
 
     init {
         account = initialAccount
@@ -74,12 +74,12 @@ class SubsonicClient(var initialAccount: Account) {
             BigInteger(1, md.digest(saltedPassword.toByteArray())).toString(16).padStart(32, '0')
         return BasicParams(
             account.username ?: "",
-            if(account.usePlaintext) null else hash,
-            if(account.usePlaintext) null else salt,
+            if (account.usePlaintext) null else hash,
+            if (account.usePlaintext) null else salt,
             "1.16.1",
             "soniclair",
             "json",
-            if(account.usePlaintext) account.password else null
+            if (account.usePlaintext) account.password else null
         )
     }
 
@@ -349,7 +349,17 @@ class SubsonicClient(var initialAccount: Account) {
         }
         if (parameters != null) {
             for (key in parameters.keys) {
-                uriBuilder.appendQueryParameter(key, parameters[key])
+                if(parameters[key] == null)
+                {
+                    continue;
+                }
+                if (parameters[key]!!.contains(",")) {
+                    parameters[key]!!.split(",").forEach {
+                        uriBuilder.appendQueryParameter(key, it.trim())
+                    }
+                } else {
+                    uriBuilder.appendQueryParameter(key, parameters[key])
+                }
             }
         }
 
@@ -678,6 +688,86 @@ class SubsonicClient(var initialAccount: Account) {
         )!!.song
     }
 
+    fun getPlaylist(id: String): Playlist {
+        val params = getBasicParams().asMap()
+        params["id"] = id
+        return makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "getPlaylist"),
+            params
+        )!!.playlist
+    }
+
+    fun getPlaylists(): List<Playlist> {
+        val params = getBasicParams().asMap()
+        return makeSubsonicRequest<PlaylistsResponse>(
+            listOf("rest", "getPlaylists"),
+            params
+        )!!.playlists.playlist
+    }
+
+    fun removePlaylist(id: String) {
+        val params = getBasicParams().asMap()
+        params["id"] = id
+        makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "deletePlaylist"),
+            params,
+            true
+        )
+    }
+
+    fun removeFromPlaylist(id: String, track: Int) {
+        val params = getBasicParams().asMap()
+        params["playlistId"] = id
+        params["songIndexToRemove"] = track.toString()
+        makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "updatePlaylist"),
+            params,
+            true
+        )
+    }
+
+    fun addToPlaylist(id: String, songId: String) {
+        val params = getBasicParams().asMap()
+        params["playlistId"] = id
+        params["songIdToAdd"] = songId
+        makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "updatePlaylist"),
+            params,
+            true
+        )
+    }
+
+    fun updatePlaylist(playlist: Playlist): Playlist {
+        val params = getBasicParams().asMap()
+        params["name"] = playlist.name
+        params["comment"] = playlist.comment
+        params["public"] = if (playlist.public) "true" else "false"
+        params["playlistId"] = playlist.id
+        makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "updatePlaylist"),
+            params,
+            true
+        )
+        val songsParams = getBasicParams().asMap()
+        songsParams["playlistId"] = playlist.id
+        songsParams["songId"] = playlist.entry.joinToString(",") { it.id }
+        return makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "createPlaylist"),
+            songsParams
+        )!!.playlist
+    }
+
+    fun createPlaylist(ids: List<String>, name: String): Playlist {
+        val songsParams = getBasicParams().asMap()
+        songsParams["name"] = name
+        songsParams["songId"] = ids.joinToString(",")
+        return makeSubsonicRequest<PlaylistResponse>(
+            listOf("rest", "createPlaylist"),
+            songsParams
+        )!!.playlist
+    }
+
+
     fun login(username: String, password: String, url: String, usePlaintext: Boolean): Account {
         val salt = "abcd1234"
         val saltedPassword = "${password}${salt}"
@@ -686,12 +776,12 @@ class SubsonicClient(var initialAccount: Account) {
             BigInteger(1, md.digest(saltedPassword.toByteArray())).toString(16).padStart(32, '0')
         val basicParams = BasicParams(
             username,
-            if(usePlaintext) null else hash,
-            if(usePlaintext) null else salt,
+            if (usePlaintext) null else hash,
+            if (usePlaintext) null else salt,
             "1.16.1",
             "soniclair",
             "json",
-            if(usePlaintext) password else null
+            if (usePlaintext) password else null
         )
         val uriBuilder = Uri.parse(url).buildUpon()
             .appendPath("rest")
@@ -736,68 +826,78 @@ class SubsonicClient(var initialAccount: Account) {
             downloadQueueForce[it.id] = force
         }
         if (!downloading) {
-            download()
+            download(true)
         }
     }
 
-    private fun download() {
+    private fun download(spawn: Boolean) {
         if (downloadQueue.size > 0) {
             downloading = true
-            CoroutineScope(IO).launch {
-                if (KeyValueStorage.getSettings().cacheSize > 0) {
-                    val dir = File(
-                        Helpers.constructPath(
-                            listOf(
-                                App.context.filesDir.path,
-                                getSongsDirectory()
+            val index = if (spawn) 2 else 0;
+            for (i in 0..index) {
+                CoroutineScope(IO).launch {
+                    Thread.sleep(i.toLong() * 500)
+                    if(downloadQueue.size == 0){
+                        return@launch
+                    }
+                    val song = downloadQueue[0]
+                    val force = downloadQueueForce[song.id] ?: false
+                    downloadQueueForce.remove(downloadQueue[0].id)
+                    downloadQueue.removeAt(0)
+                    if (KeyValueStorage.getSettings().cacheSize > 0) {
+                        val dir = File(
+                            Helpers.constructPath(
+                                listOf(
+                                    App.context.filesDir.path,
+                                    getSongsDirectory()
+                                )
                             )
                         )
-                    )
-                    if (dir.exists()) {
-                        val files = dir.listFiles()?.toList()
-                            ?.sortedBy { file -> file.lastModified() }?.toMutableList()
-                            ?: mutableListOf<File>()
-                        var size = files.sumOf { it.length() }
-                        while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024 * 1024)) {
-                            files[0].delete()
-                            files.remove(files[0])
-                            unregisterSong(files[0].name)
-                            size = files.sumOf { it.length() }
+                        if (dir.exists()) {
+                            val files = dir.listFiles()?.toList()
+                                ?.sortedBy { file -> file.lastModified() }?.toMutableList()
+                                ?: mutableListOf<File>()
+                            var size = files.sumOf { it.length() }
+                            while (size > KeyValueStorage.getSettings().cacheSize * (1024 * 1024 * 1024)) {
+                                files[0].delete()
+                                files.remove(files[0])
+                                unregisterSong(files[0].name)
+                                size = files.sumOf { it.length() }
+                            }
                         }
                     }
+                    if (!File(getLocalSongUri(song.id)).exists() || force) {
+                        registerSong(song)
+                        downloadSong(song.id)
+                    }
+                    download(false)
                 }
-                if (!File(getLocalSongUri(downloadQueue[0].id)).exists() || downloadQueueForce[downloadQueue[0].id] == true) {
-                    registerSong(downloadQueue[0])
-                    downloadSong(downloadQueue[0].id)
-                }
-                downloadQueueForce.remove(downloadQueue[0].id)
-                downloadQueue.removeAt(0)
-                download()
             }
         } else {
             downloading = false
         }
     }
 
-    private fun saveImage(image: Bitmap, directory: String, path: String) {
-        val storageDir = File(directory)
-        var success = true
-        if (!storageDir.exists()) {
-            success = storageDir.mkdirs()
-        }
-        if (success) {
-            val imageFile = File(path)
-            try {
-                val fOut: OutputStream = FileOutputStream(imageFile)
-                image.compress(Bitmap.CompressFormat.PNG, 100, fOut)
-                fOut.flush()
-                fOut.close()
-                Log.i("Image save", "image successfully saved")
-            } catch (e: Exception) {
-                Log.e("Image saver", e.message!!)
-                Globals.NotifyObservers("EX", e.message)
-            }
+}
+
+private fun saveImage(image: Bitmap, directory: String, path: String) {
+    val storageDir = File(directory)
+    var success = true
+    if (!storageDir.exists()) {
+        success = storageDir.mkdirs()
+    }
+    if (success) {
+        val imageFile = File(path)
+        try {
+            val fOut: OutputStream = FileOutputStream(imageFile)
+            image.compress(Bitmap.CompressFormat.PNG, 100, fOut)
+            fOut.flush()
+            fOut.close()
+            Log.i("Image save", "image successfully saved")
+        } catch (e: Exception) {
+            Log.e("Image saver", e.message!!)
+            Globals.NotifyObservers("EX", e.message)
         }
     }
-
 }
+

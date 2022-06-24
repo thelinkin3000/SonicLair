@@ -17,10 +17,11 @@ export default function Playlists() {
         if (current.status === "ok" && ret.status === "ok") {
             setPlaylists([current.value!!, ...ret.value!!]);
         }
-    },[]);
+    }, []);
     useEffect(() => {
-        
-        fetch();
+        if (playlists.length === 0) {
+            fetch();
+        }
     }, [fetch, playlists]);
 
     const areYouSure = useCallback(
@@ -47,7 +48,12 @@ export default function Playlists() {
                             <span className="w-100 text-center text-white">
                                 {`Are you sure you want to delete the playlist "${item.name}"?`}
                             </span>
-                            <button className="btn btn-danger" onClick={yesImSure}>Delete</button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={yesImSure}
+                            >
+                                Delete
+                            </button>
                         </div>
                     ),
                 });
@@ -56,7 +62,7 @@ export default function Playlists() {
         [fetch, setMenuContext]
     );
     return (
-        <div className="d-flex flex-column w-100 h-100 align-items-start">
+        <div className="d-flex flex-column w-100 h-100 align-items-start playlist-container">
             {playlists.length > 0 && playlists[0].name !== "" && (
                 <>
                     <div className="section-header text-white">

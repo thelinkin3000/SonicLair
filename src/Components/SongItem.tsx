@@ -53,7 +53,6 @@ export default function SongItem({
             vlcListener.current = await VLC.addListener(
                 `progress${item.id}`,
                 (info: any) => {
-                    console.log(info);
                     setDownloadProgress(info.progress);
                     if (info.progress >= 99) {
                         setCached(true);

@@ -118,7 +118,7 @@ export default function Playlist() {
                 </button>
             )}
 
-            <div className="list-group overflow-scroll scrollable w-100">
+            <div className="list-group overflow-scroll scrollable scrollable-hidden w-100">
                 {playlist?.entry.map((s) => (
                     <PlaylistEntry
                         key={s.id}

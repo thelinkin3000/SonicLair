@@ -21,8 +21,6 @@ export default function EditPlaylist() {
     const { register, setValue, handleSubmit } = useForm<IPlaylistFormData>();
     const [formVisible, setFormVisible] = useState<boolean>(false);
     const hash = async (data: IPlaylistFormData) => {
-        console.log(playlist);
-        console.log({ ...playlist, ...data });
         const ret = await VLC.updatePlaylist({
             playlist: { ...playlist!, ...data },
         });
@@ -65,7 +63,7 @@ export default function EditPlaylist() {
                 </div>
                 <button
                     className="btn btn-primary"
-                    onClick={handleSubmit(hash,() => {console.log("onerror")})}
+                    onClick={handleSubmit(hash)}
                 >
                     Save
                 </button>

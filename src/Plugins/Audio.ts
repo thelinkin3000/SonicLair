@@ -274,10 +274,9 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 songId: [options.songId],
                 name: "New playlist",
             });
-            if(r.status === "ok"){
+            if (r.status === "ok") {
                 return this.OKResponse("");
-            }
-            else{
+            } else {
                 return this.ErrorResponse(r.error);
             }
         }
@@ -333,7 +332,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                     );
                 };
                 socket.onmessage = (message) => {
-                    console.log(message);
                     if (message.data === "soniclair") {
                         socket.close();
                     }
@@ -376,7 +374,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         }
     }
     async setSettings(options: ISettings): Promise<IBackendResponse<String>> {
-        console.log("setSettings", options);
         localStorage.setItem("settings", JSON.stringify(options));
         return this.OKResponse("");
     }
@@ -1205,7 +1202,6 @@ export class Backend extends WebPlugin implements IBackendPlugin {
     }
 
     seek(options: { time: number }): Promise<IBackendResponse<string>> {
-        console.log(options.time);
         this.audio.currentTime = options.time * this.currentTrack.duration;
         return Promise.resolve(this.OKResponse(""));
     }
