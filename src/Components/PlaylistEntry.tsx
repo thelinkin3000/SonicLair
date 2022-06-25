@@ -15,6 +15,7 @@ import { MenuContext } from "../AppContext";
 import { SecondsToHHSS } from "../Helpers";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 import { IPlaylist } from "../Models/API/Responses/IPlaylistsResponse";
+import AndroidTVPlugin from "../Plugins/AndroidTV";
 
 import VLC from "../Plugins/VLC";
 import "./PlaylistEntry.scss";
@@ -41,6 +42,7 @@ export function PlaylistEntry({
     const [downloadProgress, setDownloadProgress] = useState<number>(0);
     const vlcListener = useRef<PluginListenerHandle>();
     const [cached, setCached] = useState<boolean>(false);
+    const [androidTv, setAndroidTv] = useState<boolean>(false);
 
     const [coverArt, setCoverArt] = useState<string>("");
     useEffect(() => {
@@ -136,13 +138,20 @@ export function PlaylistEntry({
     }, [actionable, item, playlist.entry]);
 
     useEffect(() => {
-        if (currentTrack.id === item.id && selfRef.current && actionable) {
+        if (currentTrack.id === item.id && selfRef.current && (actionable || androidTv)) {
             selfRef.current.scrollIntoView({
                 behavior: "smooth",
                 block: "center",
             });
         }
-    }, [actionable, currentTrack, item.id]);
+    }, [actionable, androidTv, currentTrack, item.id]);
+
+    useEffect(() => {
+        const f = async () => {
+            setAndroidTv((await AndroidTVPlugin.get()).value);
+        };
+        f();
+    }, []);
 
     return (
         <div
@@ -173,7 +182,12 @@ export function PlaylistEntry({
                 {actionable && (
                     <div className="col-auto d-flex flex-row align-items-center justify-content-end">
                         {SecondsToHHSS(item.duration)}
-                        {cached && <FontAwesomeIcon icon={faArrowDown} className="p-2"></FontAwesomeIcon>}
+                        {cached && (
+                            <FontAwesomeIcon
+                                icon={faArrowDown}
+                                className="p-2"
+                            ></FontAwesomeIcon>
+                        )}
                     </div>
                 )}
                 {downloadProgress > 0 && downloadProgress < 100 && (

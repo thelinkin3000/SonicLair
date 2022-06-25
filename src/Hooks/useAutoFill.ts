@@ -64,7 +64,7 @@ export default function useAutoFill<T>(data: T[]) {
             setColumnCount(columns);
             setColumnWidth(w);
             setGridProps({
-                className: "scrollable-hidden",
+                className: "scrollable-hidden scrollable",
                 columnCount: columns,
                 columnWidth: w,
                 rowCount: rowCount,

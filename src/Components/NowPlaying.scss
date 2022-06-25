@@ -2,8 +2,9 @@
 
 .current-track-img-tv {
     max-height: 30vh;
+    max-width: 30vh;
     height: 500px;
-    width: auto;
+    width: 500px;
     margin: 0 0.5rem 0 0;
     border-radius: 5%;
     transition: 2s;
@@ -37,6 +38,14 @@
     background-color: $items-color-hover !important;
     transition: 0.5s;
     
+}
+
+.playlist{
+    // height:300px;
+    // width: 400px;
+    max-height: 35vh;
+    max-width: 45%;
+    overflow: scroll;
 }
 
 .shadow-down {

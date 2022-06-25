@@ -44,6 +44,11 @@ export default function TVSidebar() {
                     text="Search"
                 />
                 <TVSidebarButton
+                    path="/tvplaylists"
+                    icon={<i className="ri-play-list-line"></i>}
+                    text="Playlists"
+                />
+                <TVSidebarButton
                     path="/account"
                     icon={<i className="ri-user-fill icon-large-tv"></i>}
                     text="Account"

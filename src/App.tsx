@@ -46,6 +46,7 @@ import { TVTopBar } from "./Components/TVTopBar";
 import Playlists from "./Components/Playlists";
 import Playlist from "./Components/Playlist";
 import EditPlaylist from "./Components/EditPlaylist";
+import TVPlaylists from "./Components/TVPlaylists";
 
 function App() {
     const [context, setContext] = useState<IAccount>(AppContextDefValue);
@@ -291,6 +292,10 @@ function App() {
                                                         <Route
                                                             path="/search"
                                                             element={<Search />}
+                                                        />
+                                                        <Route
+                                                            path="/tvPlaylists"
+                                                            element={<TVPlaylists />}
                                                         />
                                                     </Routes>
                                                 </div>

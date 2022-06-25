@@ -10,6 +10,8 @@ import {
 import classnames from "classnames";
 import { IAlbumSongResponse } from "../Models/API/Responses/IArtistResponse";
 import { PluginListenerHandle } from "@capacitor/core";
+import { IPlaylist } from "../Models/API/Responses/IPlaylistsResponse";
+import { PlaylistEntry } from "./PlaylistEntry";
 // import AndroidTV from "../Plugins/AndroidTV";
 
 export default function NowPlaying() {
@@ -19,6 +21,7 @@ export default function NowPlaying() {
     const [playing, setPlaying] = useState<boolean>(false);
     const [playtime, setPlaytime] = useState<number>(0);
     const [coverArt, setCoverArt] = useState<string>("");
+    const [playlist, setPlaylist] = useState<IPlaylist>();
     const listeners = useRef<PluginListenerHandle[]>([]);
     const changePlayTime = useCallback(
         (e: ChangeEvent<HTMLInputElement>): void => {
@@ -34,6 +37,7 @@ export default function NowPlaying() {
             setCoverArt(
                 (await VLC.getAlbumArt({ id: currentTrack.coverArt })).value!
             );
+            setPlaylist((await VLC.getCurrentPlaylist()).value!!);
         };
         fetch();
     }, [currentTrack, coverArt]);
@@ -46,6 +50,7 @@ export default function NowPlaying() {
                 setPlaying(current.value?.playing!);
                 setPlaytime(current.value?.playtime!);
             }
+            setPlaylist((await VLC.getCurrentPlaylist()).value!!);
         };
         setTimeout(() => get(), 500);
     }, []);
@@ -109,37 +114,62 @@ export default function NowPlaying() {
     return (
         <div
             className={
-                "d-flex flex-column align-items-center justify-content-between h-100"
+                "d-flex flex-column align-items-center justify-content-between h-100 w-100"
             }
         >
             <div className="m-auto"></div>
-            <img
-                alt=""
-                className={classnames("current-track-img-tv")}
-                src={coverArt}
-            ></img>
             <div
-                className={`current-track-header flex-row align-items-center justify-content-start`}
+                className="d-flex flex-row justify-content-around align-items-center w-100"
+                style={{ height: "auto" }}
             >
-                <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-center fade-right">
-                    <span
-                        className="text-white no-wrap w-100"
-                        style={{
-                            overflow: "hidden",
-                            whiteSpace: "nowrap",
-                            fontWeight: 800,
-                        }}
+                <div className="d-flex flex-column align-items-center justify-content-center w-50">
+                    <img
+                        alt=""
+                        className={classnames("current-track-img-tv")}
+                        src={coverArt}
+                    ></img>
+                    <div
+                        className={`current-track-header flex-row align-items-center justify-content-start`}
                     >
-                        {currentTrack.title}
-                    </span>
-                    <span
-                        className="text-white no-wrap mb-0 w-100"
-                        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-                    >
-                        {currentTrack.album} by {currentTrack.artist}
-                    </span>
+                        <div className="ml-2 flex-shrink-5  h-100 d-flex flex-column align-items-start justify-content-end text-center fade-right">
+                            <span
+                                className="text-white no-wrap w-100"
+                                style={{
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    fontWeight: 800,
+                                }}
+                            >
+                                {currentTrack.title}
+                            </span>
+                            <span
+                                className="text-white no-wrap mb-0 w-100"
+                                style={{
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {currentTrack.album} by {currentTrack.artist}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div className="list-group playlist no-scrollable w-50">
+                    {playlist &&
+                        playlist.entry.length > 0 &&
+                        playlist.entry.map((s) => (
+                            <PlaylistEntry
+                                item={s}
+                                playlist={playlist}
+                                currentTrack={currentTrack}
+                                refreshPlaylist={() => {}}
+                                actionable={false}
+                                style={undefined}
+                            />
+                        ))}
                 </div>
             </div>
+
             <div className="m-auto"></div>
             <FocusContext.Provider value={focusKey}>
                 <div

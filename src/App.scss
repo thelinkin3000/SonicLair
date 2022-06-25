@@ -82,6 +82,11 @@
   border: none;
 }
 
+.no-scrollable::-webkit-scrollbar{
+  width: 0px;
+  height: 0px;
+}
+
 ::-webkit-scrollbar-corner {
   background: rgba(0, 0, 0, 0);
 }

@@ -1,3 +1,5 @@
+import { faCompactDisc } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecondsToHHSS } from "../Helpers";
@@ -5,7 +7,13 @@ import { IPlaylist } from "../Models/API/Responses/IPlaylistsResponse";
 import VLC from "../Plugins/VLC";
 import "./PlaylistEntry.scss";
 
-export function PlaylistItem({ item }: { item: IPlaylist }): JSX.Element {
+export function PlaylistItem({
+    item,
+    playing,
+}: {
+    item: IPlaylist;
+    playing: boolean;
+}): JSX.Element {
     const navigate = useNavigate();
     const [coverArt, setCoverArt] = useState<string>("");
     useEffect(() => {
@@ -34,7 +42,9 @@ export function PlaylistItem({ item }: { item: IPlaylist }): JSX.Element {
                 </div>
                 <div className="col d-flex flex-column align-items-start justify-content-around">
                     <span className="w-100 text-start">{item.name}</span>
-                    <span className="subtitle fst-italic w-100 text-start">{item.comment}</span>
+                    <span className="subtitle fst-italic w-100 text-start">
+                        {item.comment}
+                    </span>
                     {item.songCount > 0 && (
                         <span className="subtitle">
                             {item.songCount} songs totalling{" "}
@@ -42,6 +52,13 @@ export function PlaylistItem({ item }: { item: IPlaylist }): JSX.Element {
                         </span>
                     )}
                 </div>
+                {playing && (
+                    <div
+                        className="col-auto d-flex align-items-center justify-content-center"
+                    >
+                        <FontAwesomeIcon icon={faCompactDisc} size="2x" spin={true}/>
+                    </div>
+                )}
             </div>
         </div>
     );
