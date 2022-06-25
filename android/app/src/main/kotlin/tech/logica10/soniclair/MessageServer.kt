@@ -47,7 +47,7 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
         Globals.RegisterObserver(this)
     }
 
-    fun dispose(){
+    fun dispose() {
         Globals.UnregisterObserver(this)
     }
 
@@ -63,9 +63,10 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
     override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
         clients.add(conn)
         Globals.NotifyObservers("WS", "true")
-        if(mBound && binder!!.getCurrentState().currentTrack.id !== ""){
+        if (mBound && binder!!.getCurrentState().currentTrack.id !== "") {
             val currentTrackJson = gson.toJson(binder!!.getCurrentState().currentTrack)
-            val webSocketNotification = WebSocketNotification("currentTrack", "{\"currentTrack\": $currentTrackJson}")
+            val webSocketNotification =
+                WebSocketNotification("currentTrack", "{\"currentTrack\": $currentTrackJson}")
             val jsonNotification = gson.toJson(webSocketNotification)
             val webSocketMessage = WebSocketMessage(jsonNotification, "notification", "ok")
             val jsonMessage = gson.toJson(webSocketMessage)
@@ -76,7 +77,7 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
 
     override fun onClose(conn: WebSocket, code: Int, reason: String?, remote: Boolean) {
         clients.remove(conn)
-        if(clients.size == 0){
+        if (clients.size == 0) {
             Globals.NotifyObservers("WS", "false")
         }
     }
@@ -110,7 +111,12 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                             )
                         )
                     }
-                    conn.send(constructMessage("You're connected! Touch the TV icon in the upper left corner to disconnect.", "ok"))
+                    conn.send(
+                        constructMessage(
+                            "You're connected! Touch the TV icon in the upper left corner to disconnect.",
+                            "ok"
+                        )
+                    )
                     return
                 }
                 "command" -> {
@@ -120,6 +126,25 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                         "pause" -> if (mBound) binder!!.pause()
                         "next" -> if (mBound) binder!!.next()
                         "prev" -> if (mBound) binder!!.prev()
+                        "skipTo" -> {
+                            // This is still not used, but will someday.
+                            val track: Int
+                            try {
+                                track = parseInt(command.data)
+                            } catch (e: Exception) {
+                                conn.send(
+                                    constructMessage(
+                                        "The parameter track is empty or malformed",
+                                        "error"
+                                    )
+                                )
+                                return
+                            }
+                            if (mBound) {
+                                binder!!.skipTo(track)
+                            }
+
+                        }
                         "playAlbum" -> {
                             val id = command.data.substringBefore('|')
                             val track = parseInt(command.data.substringAfter('|'))
@@ -132,6 +157,23 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                             } else {
                                 val intent = Intent(context, MusicService::class.java)
                                 intent.action = Constants.SERVICE_PLAY_ALBUM
+                                intent.putExtra("id", id)
+                                intent.putExtra("track", track)
+                                context.startService(intent)
+                            }
+                        }
+                        "playPlaylist" -> {
+                            val id = command.data.substringBefore('|')
+                            val track = parseInt(command.data.substringAfter('|'))
+                            if (id.isBlank()) {
+                                conn.send(constructMessage("The parameter id is empty", "error"))
+                                return
+                            }
+                            if (mBound) {
+                                binder!!.playPlaylist(id, track)
+                            } else {
+                                val intent = Intent(context, MusicService::class.java)
+                                intent.action = Constants.SERVICE_PLAY_PLAYLIST
                                 intent.putExtra("id", id)
                                 intent.putExtra("track", track)
                                 context.startService(intent)
@@ -151,25 +193,32 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                                 context.startService(intent)
                             }
                         }
-                        "setPlaylistAndPlay" ->{
+                        "setPlaylistAndPlay" -> {
                             if (command.data.isBlank()) {
                                 conn.send(constructMessage("The parameters id is empty", "error"))
                                 return
                             }
                             val request: SetPlaylistAndPlayRequest
-                            try{
-                                request = gson.fromJson(command.data, SetPlaylistAndPlayRequest::class.java)
-                                if(request.track >= request.playlist.entry.size){
+                            try {
+                                request = gson.fromJson(
+                                    command.data,
+                                    SetPlaylistAndPlayRequest::class.java
+                                )
+                                if (request.track >= request.playlist.entry.size) {
                                     throw Exception("The track parameter was out of bounds")
                                 }
-                            }
-                            catch(e: Exception){
-                                Globals.NotifyObservers("EX",e.message)
+                            } catch (e: Exception) {
+                                Globals.NotifyObservers("EX", e.message)
                                 return
                             }
 
                             if (mBound) {
-                                binder!!.setPlaylistAndPlay(request.playlist, request.track, request.seek, request.playing)
+                                binder!!.setPlaylistAndPlay(
+                                    request.playlist,
+                                    request.track,
+                                    request.seek,
+                                    request.playing
+                                )
                             }
                         }
                         "seek" -> {

@@ -90,10 +90,10 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
             registered = true
             Globals.RegisterObserver(this)
         }
-        if(mBound){
+        if (mBound) {
             val state = binder!!.getCurrentState()
             notifyListeners("progress", JSObject("{\"time\": ${state.position}}"))
-            notifyListeners(if(state.playing) "play" else "pause", null)
+            notifyListeners(if (state.playing) "play" else "pause", null)
             notifyListeners(
                 "currentTrack",
                 JSObject("{\"currentTrack\": ${gson!!.toJson(state.currentTrack)}}")
@@ -847,6 +847,15 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     fun skipTo(call: PluginCall) {
         try {
             val track = call.getInt("track") ?: throw ParameterException("track")
+            if (webSocketConnected) {
+                // We're not syncing current playlist between devices yet, so implementing
+                // this is pointless. But doing anything when connected makes no sense either.
+//                val command = constructWebsocketCommand("skipTo", track.toString())
+//                val message = constructWebsocketMessage(gson!!.toJson(command))
+//                mWebSocket!!.send(gson!!.toJson(message))
+//                call.resolve(okResponse(""))
+                return
+            }
             if (mBound) {
                 binder!!.skipTo(track)
             }
@@ -861,6 +870,13 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         try {
             val track = call.getInt("track") ?: throw ParameterException("track")
             val id = call.getString("playlist") ?: throw ParameterException("playlist")
+            if (webSocketConnected) {
+                val command = constructWebsocketCommand("playPlaylist", "$id|${track}")
+                val message = constructWebsocketMessage(gson!!.toJson(command))
+                mWebSocket!!.send(gson!!.toJson(message))
+                call.resolve(okResponse(""))
+                return
+            }
             if (mBound) {
                 binder!!.playPlaylist(id, track)
             } else {
