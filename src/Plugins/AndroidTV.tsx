@@ -18,7 +18,7 @@ class AndroidTV extends WebPlugin implements IAndroidTVPlugin {
         const ret =
             window.navigator.userAgent.indexOf("Tizen") > -1 ||
             window.navigator.userAgent.indexOf("WebOS") > -1 ||
-            window.navigator.userAgent.indexOf("Xbox") > -1 || true;
+            window.navigator.userAgent.indexOf("Xbox") > -1;
         return Promise.resolve({ value: ret });
     }
     getIp(): Promise<IAndroidTVStringResponse> {
