@@ -98,7 +98,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     init {
-        Globals.RegisterObserver(this)
+
         mAudioManager.registerAudioDeviceCallback(DeviceCallback(), null)
     }
 
@@ -140,6 +140,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     override fun onCreate() {
         super.onCreate()
+        Globals.RegisterObserver(this)
         Log.i("MusicService", "Created")
         notificationManager.createNotificationChannel(channel)
         mLibVLC = LibVLC(App.context, args)
@@ -437,11 +438,28 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     }
 
     override fun update(action: String?, value: String?) {
-        if (action == "SLCANCEL") {
-            Log.i("MusicService", "Stopping signal received. Stopping.")
-            stopForeground(true)
-            stopSelf()
-            notificationManager.cancel(notifId)
+        if (action!!.startsWith("SL")) {
+            when (action) {
+                "SLPLAY", "SLPAUSE" -> {
+                    if (mMediaPlayer!!.isPlaying) {
+                        pause()
+                    } else {
+                        play()
+                    }
+                }
+                "SLPREV" -> prev()
+                "SLNEXT" -> next()
+                "SLPLAYID" -> playRadio(value!!)
+                "SLPLAYSEARCH" -> playSearch(value!!, SearchType.SONG)
+                "SLPLAYSEARCHARTIST" -> playSearch(value!!, SearchType.ARTIST)
+                "SLPLAYSEARCHALBUM" -> playSearch(value!!, SearchType.ALBUM)
+                "SLCANCEL" -> {
+                    Log.i("MusicService", "Stopping signal received. Stopping.")
+                    stopForeground(true)
+                    stopSelf()
+                    notificationManager.cancel(notifId)
+                }
+            }
         }
     }
 
@@ -861,7 +879,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             this@MusicService.playPlaylist(id, track)
         }
 
-        fun setPlaylistAndPlay(playlist: Playlist, track: Int, seek: Float, playing: Boolean){
+        fun setPlaylistAndPlay(playlist: Playlist, track: Int, seek: Float, playing: Boolean) {
             this@MusicService.setPlaylistAndPlay(playlist, track, seek, playing)
         }
 

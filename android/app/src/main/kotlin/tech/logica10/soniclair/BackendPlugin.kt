@@ -80,7 +80,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
 
     override fun handleOnPause() {
         super.handleOnDestroy()
-        Globals.RegisterObserver(this)
+        Globals.UnregisterObserver(this)
         registered = false
     }
 
@@ -89,6 +89,15 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         if (!registered) {
             registered = true
             Globals.RegisterObserver(this)
+        }
+        if(mBound){
+            val state = binder!!.getCurrentState()
+            notifyListeners("progress", JSObject("{\"time\": ${state.position}}"))
+            notifyListeners(if(state.playing) "play" else "pause", null)
+            notifyListeners(
+                "currentTrack",
+                JSObject("{\"currentTrack\": ${gson!!.toJson(state.currentTrack)}}")
+            )
         }
     }
 
@@ -750,8 +759,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     fun getPlaylists(call: PluginCall) {
         try {
             call.resolve(okArrayResponse(subsonicClient!!.getPlaylists()))
-        }
-        catch(e: Exception){
+        } catch (e: Exception) {
             call.resolve(errorResponse(e.message))
         }
     }
@@ -762,8 +770,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
             val id = call.getString("id") ?: throw ParameterException("id")
             val ret = subsonicClient!!.getPlaylist(id)
             call.resolve(okResponse(ret))
-        }
-        catch(e: Exception){
+        } catch (e: Exception) {
             call.resolve(errorResponse(e.message))
         }
     }
@@ -815,7 +822,8 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     @PluginMethod
     fun updatePlaylist(call: PluginCall) {
         try {
-            val playlist: Playlist = gson!!.fromJson(call.getObject("playlist").toString(), Playlist::class.java)
+            val playlist: Playlist =
+                gson!!.fromJson(call.getObject("playlist").toString(), Playlist::class.java)
             val ret = subsonicClient!!.updatePlaylist(playlist)
             call.resolve(okResponse(ret))
         } catch (e: Exception) {
@@ -883,100 +891,10 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
 
     override fun update(action: String, value: String?) {
         try {
-            if (action.startsWith("SL")) {
-                when (action) {
-                    "SLPLAY", "SLPAUSE" -> if (mBound) {
-                        binder!!.playpause()
-                    }
-                    "SLPREV" -> if (mBound) {
-                        binder!!.prev()
-                    }
-                    "SLNEXT" -> if (mBound) {
-                        binder!!.next()
-                    }
-                    "SLPLAYID" -> if (mBound) {
-                        binder!!.playRadio(value!!)
-                    } else {
-                        val intent = Intent(App.context, MusicService::class.java)
-                        intent.action = Constants.SERVICE_PLAY_RADIO
-                        intent.putExtra("id", value)
-                        App.context.startService(intent)
-                    }
-                    "SLPLAYSEARCH" -> {
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.SONG)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.ARTIST)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH_ARTIST
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.ALBUM)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH_ALBUM
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            App.context.unbindService(connection)
-                            mBound = false
-                            binder = null
-                        }
-                    }
-                    "SLPLAYSEARCHARTIST" -> {
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.ARTIST)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH_ARTIST
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.ALBUM)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH_ALBUM
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            App.context.unbindService(connection)
-                            mBound = false
-                            binder = null
-                        }
-                    }
-                    "SLPLAYSEARCHALBUM" -> {
-                        if (mBound) {
-                            binder!!.playSearch(value!!, SearchType.ALBUM)
-                        } else {
-                            val intent = Intent(App.context, MusicService::class.java)
-                            intent.action = Constants.SERVICE_PLAY_SEARCH_ALBUM
-                            intent.putExtra("query", value)
-                            App.context.startService(intent)
-                        }
-                        if (mBound) {
-                            App.context.unbindService(connection)
-                            mBound = false
-                            binder = null
-                        }
-                    }
-                    "SLCANCEL" -> if (mBound) {
-                        App.context.unbindService(connection)
-                        mBound = false
-                        binder = null
-                    }
-                }
+            if (action == "SLCANCEL" && mBound) {
+                App.context.unbindService(connection)
+                mBound = false
+                binder = null
             } else if (action.startsWith("MS")) {
                 if (value != null) {
                     notifyListeners(action.replace("MS", ""), JSObject(value))

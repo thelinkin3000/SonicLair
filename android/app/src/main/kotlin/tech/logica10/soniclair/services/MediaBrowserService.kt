@@ -20,24 +20,13 @@ import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
 
 class MediaBrowserService : MediaBrowserServiceCompat() {
     private val mediaSession: MediaSessionCompat? = Globals.GetMediaSession()
-    private val stateBuilder: PlaybackStateCompat.Builder = PlaybackStateCompat.Builder()
     private val subsonicClient: SubsonicClient = SubsonicClient(getActiveAccount())
 
 
     override fun onCreate() {
         super.onCreate()
-        // Create a MediaSessionCompat
-        stateBuilder.setState(
-            PlaybackStateCompat.STATE_PAUSED,
-            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-            1f
-        )
-        // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
-        mediaSession!!.setPlaybackState(stateBuilder.build())
-        // MySessionCallback() has methods that handle callbacks from a media controller
-        mediaSession.setCallback(SonicLairSessionCallbacks())
         // Set the session's token so that client activities can communicate with it.
-        sessionToken = mediaSession.sessionToken
+        sessionToken = mediaSession!!.sessionToken
     }
 
     override fun onGetRoot(

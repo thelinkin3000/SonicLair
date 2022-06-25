@@ -3,6 +3,7 @@ package tech.logica10.soniclair
 import android.content.Intent
 import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
+import android.util.Log
 import android.view.KeyEvent
 
 class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
@@ -19,6 +20,7 @@ class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
     override fun onSkipToNext() {
         super.onSkipToNext()
         Globals.NotifyObservers("SLNEXT", null)
+        Log.i("MediaSessionCallbacks", "OnSkipToNext")
     }
 
     override fun onSkipToPrevious() {
@@ -35,6 +37,7 @@ class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
                 }
                 KeyEvent.KEYCODE_MEDIA_NEXT -> {
                     Globals.NotifyObservers("SLNEXT", null)
+                    Log.i("MediaSessionCallbacks", "OnMediaButtonNext")
                 }
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                     Globals.NotifyObservers("SLPREV", null)

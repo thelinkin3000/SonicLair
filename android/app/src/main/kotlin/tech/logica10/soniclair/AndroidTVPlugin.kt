@@ -15,12 +15,12 @@ class AndroidTVPlugin : Plugin(), IBroadcastObserver {
 
     override fun handleOnDestroy() {
         super.handleOnDestroy()
-        Globals.RegisterObserver(this)
+        Globals.UnregisterObserver(this)
         registered = false;
     }
     override fun handleOnPause() {
         super.handleOnDestroy()
-        Globals.RegisterObserver(this)
+        Globals.UnregisterObserver(this)
         registered = false;
     }
 
