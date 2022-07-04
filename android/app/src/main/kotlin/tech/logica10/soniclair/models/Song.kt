@@ -14,6 +14,24 @@ class Song(
     var artist: String,
     var album: String,
     var albumId: String,
-    var coverArt: String
-)
+    var coverArt: String,
+) : ICardViewModel {
+    override fun firstLine(): String {
+        return title
+    }
+
+    override fun secondLine(): String {
+        return "by $artist"
+    }
+
+    private var _image: String = ""
+
+    override var image: String
+        get() {
+            return _image
+        }
+        set(value) {
+            _image = value
+        }
+}
 

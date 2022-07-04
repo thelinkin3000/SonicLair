@@ -36,6 +36,7 @@ import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import tech.logica10.soniclair.*
 import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
+import tech.logica10.soniclair.MainActivity
 import tech.logica10.soniclair.models.Playlist
 import tech.logica10.soniclair.models.SearchType
 import tech.logica10.soniclair.models.Song

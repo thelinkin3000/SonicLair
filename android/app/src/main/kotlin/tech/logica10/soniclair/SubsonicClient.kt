@@ -740,7 +740,7 @@ class SubsonicClient(var initialAccount: Account) {
     fun updatePlaylist(playlist: Playlist): Playlist {
         val params = getBasicParams().asMap()
         params["name"] = playlist.name
-        params["comment"] = playlist.comment
+        params["comment"] = playlist.comment ?: ""
         params["public"] = if (playlist.public) "true" else "false"
         params["playlistId"] = playlist.id
         makeSubsonicRequest<PlaylistResponse>(

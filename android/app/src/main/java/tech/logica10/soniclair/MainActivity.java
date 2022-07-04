@@ -1,7 +1,9 @@
 package tech.logica10.soniclair;
 
 import android.app.SearchManager;
+import android.app.UiModeManager;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.provider.MediaStore;
 
@@ -23,12 +25,30 @@ public class MainActivity extends BridgeActivity {
                         isGranted -> {
                             // Do nothing I guess?
                         });
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
+        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+            Intent intent = new Intent(this, TvLoginActivity.class);
+            startActivity(intent);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            finish();
+        }
+
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Globals.NotifyObservers("RESUMED","");
+        Globals.NotifyObservers("RESUMED", "");
     }
 
     @Override

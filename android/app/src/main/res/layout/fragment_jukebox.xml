@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/soniclair_background"
+    android:orientation="vertical"
+
+    tools:context=".fragments.JukeboxFragment">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="10dp"
+        android:layout_weight="0.1"
+        android:fontFamily="@font/montserrat"
+        android:gravity="center_horizontal"
+        android:text="@string/connect_you_phone_s_soniclair"
+        android:textColor="#fff"
+        android:textSize="30sp" />
+
+    <ImageView
+        android:id="@+id/iv_jukebox_qr"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="0.8"
+        android:layout_gravity="center"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/tv_jukebox_ip"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="10dp"
+        android:layout_weight="0.1"
+        android:fontFamily="@font/montserrat"
+        android:gravity="center_horizontal"
+        android:textColor="#fff"
+        android:textSize="30sp" />
+
+</LinearLayout>

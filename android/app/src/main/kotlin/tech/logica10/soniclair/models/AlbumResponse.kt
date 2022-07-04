@@ -11,7 +11,7 @@ class PlaylistResponse(val playlist: Playlist) : SubsonicResponse()
 class Playlist(
     val id: String,
     val name: String,
-    val comment: String,
+    val comment: String?,
     val owner: String,
     val public: Boolean,
     val songCount: Int,
@@ -19,4 +19,23 @@ class Playlist(
     val created: String,
     val coverArt: String,
     val entry: List<Song>
-)
+) : ICardViewModel {
+    override fun firstLine(): String {
+        return name
+    }
+
+    override fun secondLine(): String {
+        return if(comment.isNullOrBlank()) "by ${owner}" else comment
+    }
+
+    private var _image: String = "";
+
+    override var image: String
+        get() {
+            return _image
+        }
+        set(value) {
+            _image = value
+        }
+
+}

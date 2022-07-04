@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="tech.logica10.soniclair">
 
+    <uses-sdk tools:overrideLibrary="com.google.zxing.client.android" />
+
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />
@@ -11,8 +13,7 @@
         android:required="false" />
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="false" />
-    <!-- Permissions -->
+        android:required="false" /> <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -23,9 +24,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <uses-sdk tools:overrideLibrary="com.google.zxing.client.android" />
     <application
-        android:name="tech.logica10.soniclair.App"
+        android:name=".App"
         android:allowBackup="true"
         android:banner="@drawable/ic_app_banner"
         android:hardwareAccelerated="true"
@@ -35,10 +35,26 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name=".TvLoginActivity"
+            android:exported="true"
+            android:label="@string/title_activity_main"
+            android:launchMode="standard">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".TvActivity"
+            android:exported="false"
+            android:label="@string/title_activity_main"
+            android:launchMode="standard" />
+
         <meta-data
             android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
-        <!--Used by Android Auto-->
+            android:resource="@xml/automotive_app_desc" /> <!-- Used by Android Auto -->
         <meta-data
             android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@drawable/ic_stat_soniclair" />
@@ -51,21 +67,21 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
-
         <service
             android:name=".services.MusicService"
             android:enabled="true"
-            android:foregroundServiceType="mediaPlayback"
             android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
             tools:ignore="ExportedService">
-        <intent-filter>
+            <intent-filter>
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
 
         <activity
-            android:name="tech.logica10.soniclair.MainActivity"
+            android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:exported="true"
             android:label="@string/title_activity_main"
@@ -77,13 +93,9 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-
         </activity>
 
         <provider
@@ -95,8 +107,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-        <receiver android:name="NotificationBroadcastReceiver" />
-    </application>
 
+        <receiver android:name=".NotificationBroadcastReceiver" />
+    </application>
 
 </manifest>
