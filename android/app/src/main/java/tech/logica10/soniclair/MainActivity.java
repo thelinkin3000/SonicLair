@@ -23,12 +23,26 @@ public class MainActivity extends BridgeActivity {
                         isGranted -> {
                             // Do nothing I guess?
                         });
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, TvLoginActivity.class);
+        startActivity(intent);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        finish();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Globals.NotifyObservers("RESUMED","");
+        Globals.NotifyObservers("RESUMED", "");
     }
 
     @Override

@@ -4,4 +4,29 @@
     <string name="title_activity_main">SonicLair</string>
     <string name="package_name">tech.logica10.soniclair</string>
     <string name="custom_url_scheme">tech.logica10.soniclair</string>
+    <string name="app_logo_description">App logo</string>
+    <string name="home_button_content">Home</string>
+    <string name="search_button_content">Search</string>
+    <string name="playlists_button_content">Playlists</string>
+    <string name="account_button_content">Account</string>
+    <string name="jukebox_button_content">Jukebox</string>
+    <string name="playing_button_content">Playing</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="album_card_image">Album card image</string>
+    <string name="most_played_albums">Most Played Albums</string>
+    <string name="random_songs">Random Songs</string>
+    <string name="recently_played">Recently Played</string>
+    <string name="recently_added">Recently Added</string>
+    <string name="album_art_image_on_playing">Album Art Image on Playing</string>
+    <string name="button_content_description">Button</string>
+    <string name="connect_you_phone_s_soniclair">Connect you phone\'s SonicLair</string>
+    <string name="log_in">Log in</string>
+    <string name="show_qr">Show QR</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="url">Url</string>
+    <string name="search">Search...</string>
+<string name="albums_header">Albums</string>
+<string name="songs_header">Songs</string>
 </resources>

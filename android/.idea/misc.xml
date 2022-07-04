@@ -3,7 +3,29 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/background_color_selector.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_disc.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_home.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_logo.xml" value="0.159" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_pause.xml" value="0.3205" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_play.xml" value="0.3295" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_play_circle.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_play_list.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_search.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/ic_user.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/round_outline.xml" value="0.3195" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/round_outline_selected.xml" value="0.492" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/drawable/round_outline_selector.xml" value="0.395" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/font/montserrat.xml" value="0.25625" />
         <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/activity_main.xml" value="0.1734375" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/activity_tv.xml" value="0.15" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/activity_tv_login.xml" value="0.25" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/album_card.xml" value="0.24209575429087624" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/fragment_home.xml" value="0.24254742547425473" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/fragment_jukebox.xml" value="0.15876242095754292" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/fragment_now_playing.xml" value="0.1714092140921409" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/fragment_search.xml" value="0.15" />
+        <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/layout/playlist_item.xml" value="0.1714092140921409" />
         <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/mipmap-anydpi/ic_launcher.xml" value="0.1935" />
         <entry key="..\:/Users/carlo/Projects/SonicLair-Tauri/android/app/src/main/res/xml/automotive_app_desc.xml" value="0.2504528985507246" />
       </map>

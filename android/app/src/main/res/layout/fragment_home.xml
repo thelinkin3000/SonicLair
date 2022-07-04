@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context="tech.logica10.soniclair.fragments.HomeFragment">
+
+        <TextView
+            android:id="@+id/header_top_albums"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/montserrat"
+            android:text="@string/most_played_albums"
+            android:textColor="#fff"
+            android:textSize="25sp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_topAlbums"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_top_albums" />
+
+        <TextView
+            android:id="@+id/header_random_songs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/rv_topAlbums"
+            android:fontFamily="@font/montserrat"
+            android:text="@string/random_songs"
+            android:textColor="#fff"
+            android:textSize="25sp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_randomSongs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_random_songs" />
+
+        <TextView
+            android:id="@+id/header_recently_played"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/rv_randomSongs"
+            android:fontFamily="@font/montserrat"
+            android:text="@string/recently_played"
+            android:textColor="#fff"
+            android:textSize="25sp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+
+            android:id="@+id/rv_recentAlbums"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_recently_played" />
+
+        <TextView
+            android:id="@+id/header_recently_added"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/rv_recentAlbums"
+            android:fontFamily="@font/montserrat"
+            android:text="@string/recently_added"
+            android:textColor="#fff"
+            android:textSize="25sp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_newAlbums"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/header_recently_added" />
+
+
+    </RelativeLayout>
+</ScrollView>
