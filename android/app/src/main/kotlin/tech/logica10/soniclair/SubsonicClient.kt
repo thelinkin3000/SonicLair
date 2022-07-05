@@ -3,6 +3,7 @@
 package tech.logica10.soniclair
 
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
@@ -36,7 +37,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-
+@SuppressLint("NewApi")
 class SubsonicClient(var initialAccount: Account) {
     companion object {
         var account: Account = Account(null, "", "", "", false)
@@ -349,9 +350,8 @@ class SubsonicClient(var initialAccount: Account) {
         }
         if (parameters != null) {
             for (key in parameters.keys) {
-                if(parameters[key] == null)
-                {
-                    continue;
+                if (parameters[key] == null) {
+                    continue
                 }
                 if (parameters[key]!!.contains(",")) {
                     parameters[key]!!.split(",").forEach {
@@ -833,11 +833,11 @@ class SubsonicClient(var initialAccount: Account) {
     private fun download(spawn: Boolean) {
         if (downloadQueue.size > 0) {
             downloading = true
-            val index = if (spawn) 2 else 0;
+            val index = if (spawn) 2 else 0
             for (i in 0..index) {
                 CoroutineScope(IO).launch {
                     Thread.sleep(i.toLong() * 500)
-                    if(downloadQueue.size == 0){
+                    if (downloadQueue.size == 0) {
                         return@launch
                     }
                     val song = downloadQueue[0]

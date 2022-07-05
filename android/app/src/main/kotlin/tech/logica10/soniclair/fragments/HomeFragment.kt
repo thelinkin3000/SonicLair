@@ -42,7 +42,7 @@ class HomeFragment(val bind: TvActivity.TvActivityBind, val client: SubsonicClie
             topAlbums.forEach {
                 it.image = client.getAlbumArt(it.id)
             }
-            activity!!.runOnUiThread {
+            requireActivity().runOnUiThread {
                 topAlbumsAdapter.setNewDataSet(topAlbums)
             }
         }
@@ -52,7 +52,7 @@ class HomeFragment(val bind: TvActivity.TvActivityBind, val client: SubsonicClie
             randomSongs.forEach {
                 it.image = client.getAlbumArt(it.albumId)
             }
-            activity!!.runOnUiThread {
+            requireActivity().runOnUiThread {
                 randomSongsAdapter.setNewDataSet(randomSongs)
             }
         }
@@ -62,7 +62,7 @@ class HomeFragment(val bind: TvActivity.TvActivityBind, val client: SubsonicClie
             recentAlbums.forEach {
                 it.image = client.getAlbumArt(it.id)
             }
-            activity!!.runOnUiThread {
+            requireActivity().runOnUiThread {
                 recentAlbumsAdapter.setNewDataSet(recentAlbums)
             }
         }
@@ -72,7 +72,7 @@ class HomeFragment(val bind: TvActivity.TvActivityBind, val client: SubsonicClie
             newAlbums.forEach {
                 it.image = client.getAlbumArt(it.id)
             }
-            activity!!.runOnUiThread {
+            requireActivity().runOnUiThread {
                 newAlbumsAdapter.setNewDataSet(newAlbums)
             }
 

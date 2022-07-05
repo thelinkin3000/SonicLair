@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
 
-
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
@@ -47,7 +46,7 @@ android {
 
     lintOptions {
         warningsAsErrors true
-        disable 'UnusedResources', 'IconXmlAndPng', 'IconLauncherShape', 'IconDipSize', 'IconDuplicatesConfig', 'IconLocation', 'IconDensities', 'IconDuplicates'
+        disable 'VectorPath', 'Overdraw', 'TypographyEllipsis', 'InvalidSetHasFixedSize', 'UnusedResources', 'IconXmlAndPng', 'IconLauncherShape', 'IconDipSize', 'IconDuplicatesConfig', 'IconLocation', 'IconDensities', 'IconDuplicates'
     }
 
 }
@@ -69,6 +68,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    //noinspection GradleDependency
     implementation 'com.google.android.material:material:1.4.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
@@ -85,10 +85,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.2")
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    //noinspection GradleDependency
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
     implementation 'com.google.zxing:core:3.4.1'
-
-
 
 
     implementation "androidx.room:room-ktx:$roomVersion"
