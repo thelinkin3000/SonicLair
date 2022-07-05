@@ -1,11 +1,9 @@
 package tech.logica10.soniclair
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -13,6 +11,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,6 +46,16 @@ class TvActivity : AppCompatActivity() {
         override fun onServiceDisconnected(arg0: ComponentName) {
             Log.i("ServiceBinder", "Unbinding service")
             mBound = false
+        }
+    }
+
+    override fun onBackPressed() {
+        val count = supportFragmentManager.backStackEntryCount
+        if (count == 0) {
+            super.onBackPressed()
+            //additional code
+        } else {
+            supportFragmentManager.popBackStack()
         }
     }
 
@@ -95,6 +104,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _playingFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
 
@@ -112,6 +123,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _playingFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
 
@@ -130,6 +143,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _playingFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
 
@@ -164,6 +179,7 @@ class TvActivity : AppCompatActivity() {
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.fg_container, _homeFragment)
+            .addToBackStack(null)
             .commit()
         // Bind to LocalService
         val intent = Intent(App.context, MusicService::class.java)
@@ -179,6 +195,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _homeFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
         val playingButton: Button = findViewById(R.id.btn_playing)
@@ -186,6 +204,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _playingFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
         val jukeboxButton: Button = findViewById(R.id.btn_jukebox)
@@ -193,6 +213,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _jukeboxFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
         val searchButton: Button = findViewById(R.id.btn_search)
@@ -200,6 +222,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _searchFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
         val playlistsButton: Button = findViewById(R.id.btn_playlists)
@@ -207,6 +231,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _playlistFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
         val accountButton: Button = findViewById(R.id.btn_account)
@@ -214,6 +240,8 @@ class TvActivity : AppCompatActivity() {
             supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.fg_container, _accountFragment)
+                .addToBackStack(null)
+
                 .commit()
         }
     }
