@@ -25,6 +25,7 @@ open class Album(
         return year.toString()
     }
 
+    @Ignore
     private var _image: String = "";
 
     override var image: String

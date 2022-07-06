@@ -1,6 +1,7 @@
 package tech.logica10.soniclair.models
 
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 
 @Entity
@@ -24,6 +25,7 @@ class Song(
         return "by $artist"
     }
 
+    @Ignore
     private var _image: String = ""
 
     override var image: String

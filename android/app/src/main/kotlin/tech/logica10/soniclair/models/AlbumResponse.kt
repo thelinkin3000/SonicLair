@@ -1,5 +1,7 @@
 package tech.logica10.soniclair.models
 
+import androidx.room.Ignore
+
 class AlbumResponse(val album: AlbumWithSongs) : SubsonicResponse()
 
 class PlaylistsResponse(val playlists: PlaylistsInnerResponse) : SubsonicResponse()
@@ -28,6 +30,7 @@ class Playlist(
         return if(comment.isNullOrBlank()) "by ${owner}" else comment
     }
 
+    @Ignore
     private var _image: String = "";
 
     override var image: String
