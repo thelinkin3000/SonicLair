@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import tech.logica10.soniclair.R
+import tech.logica10.soniclair.extensions.loadUrl
 import tech.logica10.soniclair.models.ICardViewModel
 
 
@@ -56,9 +57,7 @@ class SoniclairPlaylistItemAdapter(
 
     // Replace the contents of a view (invoked by the layout manager)
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        fun ImageView.loadUrl(url: String) {
-            Glide.with(context).load(url).into(this)
-        }
+
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         viewHolder.firstLine.text = dataSet[position].firstLine()

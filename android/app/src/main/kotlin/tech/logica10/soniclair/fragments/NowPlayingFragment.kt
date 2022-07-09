@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.getcapacitor.JSObject
 import tech.logica10.soniclair.*
 import tech.logica10.soniclair.adapters.SoniclairPlaylistItemAdapter
+import tech.logica10.soniclair.extensions.loadUrl
 import tech.logica10.soniclair.models.ICardViewModel
 import kotlin.math.floor
 
@@ -42,10 +43,6 @@ class NowPlayingFragment(val bind: TvActivity.TvActivityBind, val client: Subson
     override fun onDestroy() {
         super.onDestroy()
         Globals.UnregisterObserver(observer)
-    }
-
-    private fun ImageView.loadUrl(url: String) {
-        Glide.with(context).load(url).into(this)
     }
 
     inner class NowPlayingObserver : IBroadcastObserver {

@@ -105,7 +105,7 @@ class SubsonicClient(var initialAccount: Account) {
                 } catch (e: Exception) {
                     val placeholder = Glide.with(App.context)
                         .asBitmap()
-                        .load(R.drawable.ic_album_art_fallback)
+                        .load(R.drawable.ic_album_art_placeholder)
                         .submit()
                     placeholder.get()
                 }
@@ -503,11 +503,20 @@ class SubsonicClient(var initialAccount: Account) {
                 if (!File(getLocalCoverArtUri(id)).exists()) {
                     Log.i("Image saver", "Fetching image $id")
                     saveImage(
-                        Glide.with(App.context)
-                            .asBitmap()
-                            .load(uriBuilder.toString()) // sample image
-                            .submit()
-                            .get(),
+                        try {
+
+                            Glide.with(App.context)
+                                .asBitmap()
+                                .load(uriBuilder.toString())
+                                .submit()
+                                .get()
+                        } catch (e: Exception) {
+                            Glide.with(App.context)
+                                .asBitmap()
+                                .load(R.drawable.ic_album_art_placeholder)
+                                .submit()
+                                .get()
+                        },
                         getCoverArtsDirectory(),
                         getLocalCoverArtUri(id)
                     )
