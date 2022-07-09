@@ -96,13 +96,19 @@ class SubsonicClient(var initialAccount: Account) {
             } else {
                 Log.i("BitmapMediaItem", "Loading from server")
                 val albumArtUri = Uri.parse(getAlbumArt(item.albumId))
-                val futureBitmap = Glide.with(App.context)
-                    .asBitmap()
-                    .load(albumArtUri)
-                    .fallback(R.drawable.ic_album_art_fallback)
-                    .error(R.drawable.ic_album_art_fallback)
-                    .submit()
-                futureBitmap.get()
+                try {
+                    val futureBitmap = Glide.with(App.context)
+                        .asBitmap()
+                        .load(albumArtUri)
+                        .submit()
+                    futureBitmap.get()
+                } catch (e: Exception) {
+                    val placeholder = Glide.with(App.context)
+                        .asBitmap()
+                        .load(R.drawable.ic_album_art_fallback)
+                        .submit()
+                    placeholder.get()
+                }
             }
             Log.i("BitmapMediaItem", "Loaded successfully")
             builder.setIconBitmap(albumArtBitmap)

@@ -7,8 +7,9 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class Globals{
+public class Globals {
     // Static variable reference of single_instance
     // of type Singleton
     private static Globals single_instance = null;
@@ -20,8 +21,7 @@ public class Globals{
     // Constructor
     // Here we will be creating private constructor
     // restricted to this class itself
-    private Globals()
-    {
+    private Globals() {
         observers = new ArrayList<>();
         // Create a media session. NotificationCompat.MediaStyle
         // PlayerService is your own Service or Activity responsible for media playback.
@@ -29,40 +29,41 @@ public class Globals{
         mediaSession.setCallback(new SonicLairSessionCallbacks());
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
         stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1);
-        stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE |  PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
+        stateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS);
         mediaSession.setPlaybackState(stateBuilder.build());
     }
 
     // Static method
     // Static method to create instance of Singleton class
-    public static Globals getInstance()
-    {
+    public static Globals getInstance() {
         if (single_instance == null)
             single_instance = new Globals();
 
         return single_instance;
     }
 
-    public static void RegisterObserver(IBroadcastObserver observer){
+    public static void RegisterObserver(IBroadcastObserver observer) {
         getInstance().observers.add(observer);
     }
 
-    public static void UnregisterObserver(IBroadcastObserver observer){
+    public static void UnregisterObserver(IBroadcastObserver observer) {
         getInstance().observers.remove(observer);
     }
 
     public static void NotifyObservers(String action, String value) {
+        if (Objects.equals(action, "EX")) {
+            Log.e("Soniclair Exception", value);
+        }
         for (IBroadcastObserver observer : getInstance().observers) {
-            try{
+            try {
                 observer.update(action, value);
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 Log.e("SonicLair Globals", e.getMessage());
             }
         }
     }
 
-    public static MediaSessionCompat GetMediaSession(){
+    public static MediaSessionCompat GetMediaSession() {
         return getInstance().mediaSession;
     }
 }
