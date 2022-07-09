@@ -99,6 +99,8 @@ class SubsonicClient(var initialAccount: Account) {
                 val futureBitmap = Glide.with(App.context)
                     .asBitmap()
                     .load(albumArtUri)
+                    .fallback(R.drawable.ic_album_art_fallback)
+                    .error(R.drawable.ic_album_art_fallback)
                     .submit()
                 futureBitmap.get()
             }

@@ -6,9 +6,9 @@ apply plugin: 'kotlin-kapt'
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-//    compileOptions{
-//        coreLibraryDesugaringEnabled true
-//    }
+    compileOptions{
+        coreLibraryDesugaringEnabled true
+    }
 
     defaultConfig {
         applicationId "tech.logica10.soniclair"
