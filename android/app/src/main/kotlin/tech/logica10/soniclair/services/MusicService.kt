@@ -633,6 +633,9 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     @Suppress("BlockingMethodInNonBlockingContext")
     private fun play() {
+        if(currentTrack == null){
+            return;
+        }
         wasPlaying = false
         if (mMediaPlayer!!.media != null) {
             mMediaPlayer!!.play()
