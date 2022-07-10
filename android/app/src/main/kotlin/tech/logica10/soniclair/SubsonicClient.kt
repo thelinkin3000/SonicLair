@@ -84,7 +84,7 @@ class SubsonicClient(var initialAccount: Account) {
         )
     }
 
-    fun getAsMediaItems(songs: List<Song>): List<MediaBrowserCompat.MediaItem> {
+    fun getSongsAsMediaItems(songs: List<Song>): List<MediaBrowserCompat.MediaItem> {
         val builder = MediaDescriptionCompat.Builder()
         val ret = mutableListOf<MediaBrowserCompat.MediaItem>()
         for (item in songs) {
@@ -112,7 +112,85 @@ class SubsonicClient(var initialAccount: Account) {
             }
             Log.i("BitmapMediaItem", "Loaded successfully")
             builder.setIconBitmap(albumArtBitmap)
-            builder.setMediaId(item.id)
+            builder.setMediaId("s${item.id}")
+            ret.add(
+                MediaBrowserCompat.MediaItem(
+                    builder.build(),
+                    MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                )
+            )
+        }
+        return ret
+    }
+
+    fun getPlaylistsAsMediaItems(playlists: List<Playlist>): List<MediaBrowserCompat.MediaItem> {
+        val builder = MediaDescriptionCompat.Builder()
+        val ret = mutableListOf<MediaBrowserCompat.MediaItem>()
+        for (item in playlists) {
+            builder.setTitle(item.name)
+            builder.setSubtitle(item.comment)
+            val albumArtBitmap: Bitmap = if (File(getLocalCoverArtUri(item.coverArt ?: "")).exists()) {
+                Log.i("BitmapMediaItem", "Loading from disk")
+                BitmapFactory.decodeFile(getLocalCoverArtUri(item.coverArt ?: ""))
+            } else {
+                Log.i("BitmapMediaItem", "Loading from server")
+                val albumArtUri = Uri.parse(getAlbumArt(item.coverArt ?: ""))
+                try {
+                    val futureBitmap = Glide.with(App.context)
+                        .asBitmap()
+                        .load(albumArtUri)
+                        .submit()
+                    futureBitmap.get()
+                } catch (e: Exception) {
+                    val placeholder = Glide.with(App.context)
+                        .asBitmap()
+                        .load(R.drawable.ic_album_art_placeholder)
+                        .submit()
+                    placeholder.get()
+                }
+            }
+            Log.i("BitmapMediaItem", "Loaded successfully")
+            builder.setIconBitmap(albumArtBitmap)
+            builder.setMediaId("p${item.id}")
+            ret.add(
+                MediaBrowserCompat.MediaItem(
+                    builder.build(),
+                    MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                )
+            )
+        }
+        return ret
+    }
+
+    fun getAlbumsAsPlaylistsItems(albums: List<Album>): List<MediaBrowserCompat.MediaItem> {
+        val builder = MediaDescriptionCompat.Builder()
+        val ret = mutableListOf<MediaBrowserCompat.MediaItem>()
+        for (item in albums) {
+            builder.setTitle(item.name)
+            builder.setSubtitle(String.format("by %s", item.artist))
+            val albumArtBitmap: Bitmap = if (File(getLocalCoverArtUri(item.id)).exists()) {
+                Log.i("BitmapMediaItem", "Loading from disk")
+                BitmapFactory.decodeFile(getLocalCoverArtUri(item.id))
+            } else {
+                Log.i("BitmapMediaItem", "Loading from server")
+                val albumArtUri = Uri.parse(getAlbumArt(item.id))
+                try {
+                    val futureBitmap = Glide.with(App.context)
+                        .asBitmap()
+                        .load(albumArtUri)
+                        .submit()
+                    futureBitmap.get()
+                } catch (e: Exception) {
+                    val placeholder = Glide.with(App.context)
+                        .asBitmap()
+                        .load(R.drawable.ic_album_art_placeholder)
+                        .submit()
+                    placeholder.get()
+                }
+            }
+            Log.i("BitmapMediaItem", "Loaded successfully")
+            builder.setIconBitmap(albumArtBitmap)
+            builder.setMediaId("a${item.id}")
             ret.add(
                 MediaBrowserCompat.MediaItem(
                     builder.build(),

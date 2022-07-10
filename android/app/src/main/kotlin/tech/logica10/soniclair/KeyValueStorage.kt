@@ -95,6 +95,53 @@ class KeyValueStorage {
             }
         }
 
+        fun getCachedPlaylists(): List<Playlist> {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            val activeAccount = sharedPref.getString("cachedPlaylists", "")
+            return try {
+                val mediaItems: List<Playlist> =
+                    Gson().fromJson(activeAccount, Array<Playlist>::class.java)
+                        .toList()
+                mediaItems
+            } catch (exception: Exception) {
+                emptyList()
+            }
+        }
+
+        fun setCachedPlaylists(accounts: List<Playlist>) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                val value = Gson().toJson(accounts)
+                putString("cachedPlaylists", value)
+                apply()
+            }
+        }
+        fun getCachedAlbums(): List<Album> {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            val activeAccount = sharedPref.getString("cachedAlbums", "")
+            return try {
+                val mediaItems: List<Album> =
+                    Gson().fromJson(activeAccount, Array<Album>::class.java)
+                        .toList()
+                mediaItems
+            } catch (exception: Exception) {
+                emptyList()
+            }
+        }
+
+        fun setCachedAlbums(accounts: List<Album>) {
+            val sharedPref =
+                App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                val value = Gson().toJson(accounts)
+                putString("cachedAlbums", value)
+                apply()
+            }
+        }
+
         fun getOfflineMode(): Boolean {
             val sharedPref =
                 App.context.getSharedPreferences("sonicLair", Context.MODE_PRIVATE)

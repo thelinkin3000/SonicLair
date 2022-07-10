@@ -28,6 +28,7 @@ import com.getcapacitor.JSObject
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import org.json.JSONException
@@ -450,10 +451,32 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 }
                 "SLPREV" -> prev()
                 "SLNEXT" -> next()
-                "SLPLAYID" -> playRadio(value!!)
-                "SLPLAYSEARCH" -> playSearch(value!!, SearchType.SONG)
-                "SLPLAYSEARCHARTIST" -> playSearch(value!!, SearchType.ARTIST)
-                "SLPLAYSEARCHALBUM" -> playSearch(value!!, SearchType.ALBUM)
+                "SLPLAYID" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val id = value!!.subSequence(1, value.length).toString()
+                        val type = value.subSequence(0, 1)
+                        when (type) {
+                            "s" -> playRadio(id)
+                            "a" -> playAlbum(id, 0)
+                            "p" -> playPlaylist(id, 0)
+                        }
+                    }
+                }
+                "SLPLAYSEARCH" -> {
+                    CoroutineScope(IO).launch {
+                        playSearch(value!!, SearchType.SONG)
+                    }
+                }
+                "SLPLAYSEARCHARTIST" -> {
+                    CoroutineScope(IO).launch {
+                        playSearch(value!!, SearchType.ARTIST)
+                    }
+                }
+                "SLPLAYSEARCHALBUM" -> {
+                    CoroutineScope(IO).launch {
+                        playSearch(value!!, SearchType.ALBUM)
+                    }
+                }
                 "SLCANCEL" -> {
                     Log.i("MusicService", "Stopping signal received. Stopping.")
                     stopForeground(true)
@@ -633,8 +656,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
     @Suppress("BlockingMethodInNonBlockingContext")
     private fun play() {
-        if(currentTrack == null){
-            return;
+        if (currentTrack == null) {
+            return
         }
         wasPlaying = false
         if (mMediaPlayer!!.media != null) {
