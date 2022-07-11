@@ -44,7 +44,7 @@ pipelines:
                 run_if: passed
             - exec:
                 arguments:
-                - ~/releasekey.jks
+                - /var/go/releasekey.jks
                 - android/app/releasekey.jks
                 command: cp
                 run_if: passed
@@ -67,6 +67,6 @@ pipelines:
             - exec:
                 arguments:
                 - android/app/build/outputs/apk/release/app-release.apk
-                - ~/soniclair.apk
+                - /var/go/soniclair.apk
                 command: cp
                 run_if: passed
