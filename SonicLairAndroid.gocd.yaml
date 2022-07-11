@@ -10,52 +10,52 @@ pipelines:
         git: https://github.com/thelinkin3000/SonicLair
         shallow_clone: false
         auto_update: true
-        branch: main
+        branch: dev
     stages:
       - Build:
-          fetch_materials: true
-          keep_artifacts: false
-          clean_workspace: false
-          approval:
-            type: success
-            allow_only_on_success: false
-          jobs:
-            Build:
-              timeout: 0
-              tasks:
-                - exec:
-                    arguments:
-                      - install
-                      - --legacy-peer-deps
-                    command: npm
-                    run_if: passed
-                - exec:
-                    arguments:
-                      - run
-                      - build
-                    command: npm
-                    run_if: passed
-                - exec:
-                    arguments:
-                      - cap
-                      - sync
-                      - android
-                    command: npx
-                    run_if: passed
-                - exec:
-                    arguments:
-                      - /var/go/releasekey.jks
-                      - android/app/releasekey.jks
-                    command: cp
-                    run_if: passed
-                - script: |
-                  cd android
-                  chmod +x ./gradlew
-                  ./gradlew :app:lintRelease
-                  ./gradlew assembleRelease
-                - exec:
-                    arguments:
-                      - android/app/build/outputs/apk/release/app-release.apk
-                      - /var/go/soniclair.apk
-                    command: cp
-                    run_if: passed
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+          allow_only_on_success: false
+        jobs:
+          Build:
+            timeout: 0
+            tasks:
+              - exec:
+                arguments:
+                  - install
+                  - --legacy-peer-deps
+                command: npm
+                run_if: passed
+              - exec:
+                arguments:
+                  - run
+                  - build
+                command: npm
+                run_if: passed
+              - exec:
+                arguments:
+                  - cap
+                  - sync
+                  - android
+                command: npx
+                run_if: passed
+              - exec:
+                arguments:
+                  - /var/go/releasekey.jks
+                  - android/app/releasekey.jks
+                command: cp
+                run_if: passed
+              - script: |
+                cd android
+                chmod +x ./gradlew
+                ./gradlew :app:lintRelease
+                ./gradlew assembleRelease
+              - exec:
+                arguments:
+                  - android/app/build/outputs/apk/release/app-release.apk
+                  - /var/go/soniclair.apk
+                command: cp
+                run_if: passed
