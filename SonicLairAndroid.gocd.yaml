@@ -51,13 +51,13 @@ pipelines:
                 - exec:
                     arguments:
                       - :app:lintRelease
-                    command: ./gradle
+                    command: ./gradlew
                     run_if: passed
                     working_directory: android
                 - exec:
                     arguments:
                       - assembleRelease
-                    command: ./gradle
+                    command: ./gradlew
                     run_if: passed
                     working_directory: android
                 - exec:
