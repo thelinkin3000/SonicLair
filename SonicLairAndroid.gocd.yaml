@@ -48,18 +48,10 @@ pipelines:
                       - android/app/releasekey.jks
                     command: cp
                     run_if: passed
-                - exec:
-                    working_directory: ./android
-                    arguments:
-                      - :app:lintRelease
-                    command: ./gradlew
-                    run_if: passed
-                - exec:
-                    working_directory: ./android
-                    arguments:
-                      - assembleRelease
-                    command: ./gradlew
-                    run_if: passed
+                - script: |
+                  cd android
+                  ./gradlew :app:lintRelease
+                  ./gradlew assembleRelease
                 - exec:
                     arguments:
                       - android/app/build/outputs/apk/release/app-release.apk
