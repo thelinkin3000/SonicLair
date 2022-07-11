@@ -49,17 +49,17 @@ pipelines:
                     command: cp
                     run_if: passed
                 - exec:
+                    working_directory: ./android
                     arguments:
                       - :app:lintRelease
                     command: ./gradlew
                     run_if: passed
-                    working_directory: android
                 - exec:
+                    working_directory: ./android
                     arguments:
                       - assembleRelease
                     command: ./gradlew
                     run_if: passed
-                    working_directory: android
                 - exec:
                     arguments:
                       - android/app/build/outputs/apk/release/app-release.apk
