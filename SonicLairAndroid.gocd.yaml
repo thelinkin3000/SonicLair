@@ -50,6 +50,7 @@ pipelines:
                     run_if: passed
                 - script: |
                   cd android
+                  chmod +x ./gradlew
                   ./gradlew :app:lintRelease
                   ./gradlew assembleRelease
                 - exec:
