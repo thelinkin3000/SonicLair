@@ -49,10 +49,10 @@ pipelines:
                 command: cp
                 run_if: passed
               - script: |
-                cd android
-                chmod +x ./gradlew
-                ./gradlew :app:lintRelease
-                ./gradlew assembleRelease
+                  cd android
+                  chmod +x ./gradlew
+                  ./gradlew :app:lintRelease
+                  ./gradlew assembleRelease
               - exec:
                 arguments:
                   - android/app/build/outputs/apk/release/app-release.apk
