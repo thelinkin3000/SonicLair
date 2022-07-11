@@ -50,16 +50,14 @@ pipelines:
                     run_if: passed
                 - exec:
                     arguments:
-                      - ./gradle
                       - :app:lintRelease
-                    command: cd
+                    command: ./gradle
                     run_if: passed
                     working_directory: android
                 - exec:
                     arguments:
-                      - ./gradle
                       - assembleRelease
-                    command: cd
+                    command: ./gradle
                     run_if: passed
                     working_directory: android
                 - exec:
