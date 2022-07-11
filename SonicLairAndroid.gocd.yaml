@@ -1,0 +1,72 @@
+format_version: 10
+pipelines:
+  SonicLairAndroid:
+    group: defaultGroup
+    label_template: ${COUNT}
+    lock_behavior: none
+    display_order: -1
+    materials:
+      git-89737ad:
+        git: https://github.com/thelinkin3000/SonicLair
+        shallow_clone: false
+        auto_update: true
+        branch: main
+    stages:
+    - Build:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+          allow_only_on_success: false
+        jobs:
+          Build:
+            timeout: 0
+            tasks:
+            - exec:
+                arguments:
+                - install
+                - --legacy-peer-deps
+                command: npm
+                run_if: passed
+            - exec:
+                arguments:
+                - run
+                - build
+                command: npm
+                run_if: passed
+            - exec:
+                arguments:
+                - cap
+                - sync
+                - android
+                command: npx
+                run_if: passed
+            - exec:
+                arguments:
+                - ~/releasekey.jks
+                - android/app/releasekey.jks
+                command: cp
+                run_if: passed
+            - exec:
+                arguments:
+                - android
+                - '&&'
+                - ./gradle
+                - :app:lintRelease
+                command: cd
+                run_if: passed
+            - exec:
+                arguments:
+                - android
+                - '&&'
+                - gradle
+                - assembleRelease
+                command: cd
+                run_if: passed
+            - exec:
+                arguments:
+                - android/app/build/outputs/apk/release/app-release.apk
+                - ~/soniclair.apk
+                command: cp
+                run_if: passed
