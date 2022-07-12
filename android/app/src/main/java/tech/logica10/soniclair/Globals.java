@@ -52,13 +52,18 @@ public class Globals {
 
     public static void NotifyObservers(String action, String value) {
         if (Objects.equals(action, "EX")) {
-            Log.e("Soniclair Exception", value);
+            Log.e("Soniclair Exception", value != null ? value : "Unknown error");
         }
         for (IBroadcastObserver observer : getInstance().observers) {
             try {
                 observer.update(action, value);
             } catch (Exception e) {
-                Log.e("SonicLair Globals", e.getMessage());
+                String message = e.getMessage();
+                if(message == null || message.isEmpty())
+                {
+                    message = "Unknown error";
+                }
+                Log.e("SonicLair Globals", message);
             }
         }
     }

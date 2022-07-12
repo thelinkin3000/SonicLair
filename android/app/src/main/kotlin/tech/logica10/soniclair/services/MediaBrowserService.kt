@@ -2,6 +2,7 @@ package tech.logica10.soniclair.services
 
 import android.app.PendingIntent
 import android.app.SearchManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -23,6 +24,7 @@ import tech.logica10.soniclair.KeyValueStorage.Companion.getActiveAccount
 class MediaBrowserService : MediaBrowserServiceCompat() {
     private val mediaSession: MediaSessionCompat? = Globals.GetMediaSession()
     private val subsonicClient: SubsonicClient = SubsonicClient(getActiveAccount())
+
 
 
     override fun onCreate() {
@@ -145,7 +147,7 @@ class MediaBrowserService : MediaBrowserServiceCompat() {
                 // We have nothing for the user at this time, returning an empty list so as to not block the UI.
                 result.sendResult(listOf())
             }
-        }else if (parentMediaId == "MOSTPLAYED") {
+        } else if (parentMediaId == "MOSTPLAYED") {
             // We're not logged in on a server, we bail
             if (getActiveAccount().username == null) {
                 result.sendResult(listOf())
@@ -195,7 +197,12 @@ class MediaBrowserService : MediaBrowserServiceCompat() {
             val albums = subsonicClient.getTopAlbums()
             KeyValueStorage.setCachedAlbums(albums)
             val playlists = subsonicClient.getPlaylists()
-            KeyValueStorage.setCachedPlaylists(playlists.subList(0, if(playlists.size > 9) 9 else playlists.size))
+            KeyValueStorage.setCachedPlaylists(
+                playlists.subList(
+                    0,
+                    if (playlists.size > 9) 9 else playlists.size
+                )
+            )
         } catch (e: Exception) {
             // Something _awful_ happened. The user doesn't need to know about it
             Log.e("MediaBrowser", e.message!!)
