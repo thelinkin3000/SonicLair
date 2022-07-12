@@ -1,31 +1,62 @@
 package tech.logica10.soniclair
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
 import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import android.view.KeyEvent
+import tech.logica10.soniclair.services.MusicService
 
 class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
+    private var mBound = false
+    private var binder: MusicService.LocalBinder? = null
+
+    private val connection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(
+            className: ComponentName,
+            service: IBinder
+        ) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            Log.i("ServiceBinder", "Binding service")
+            binder = service as MusicService.LocalBinder
+            mBound = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            Log.i("ServiceBinder", "Unbinding service")
+            mBound = false
+        }
+    }
+
     override fun onPlay() {
         super.onPlay()
-        Globals.NotifyObservers("SLPAUSE", null)
+        if (mBound) {
+            binder!!.play()
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        Globals.NotifyObservers("SLPAUSE", null)
+        if (mBound) {
+            binder!!.pause()
+        }
     }
 
     override fun onSkipToNext() {
         super.onSkipToNext()
-        Globals.NotifyObservers("SLNEXT", null)
-        Log.i("MediaSessionCallbacks", "OnSkipToNext")
+        if (mBound) {
+            binder!!.next()
+        }
     }
 
     override fun onSkipToPrevious() {
         super.onSkipToPrevious()
-        Globals.NotifyObservers("SLPREV", null)
+        if (mBound) {
+            binder!!.prev()
+        }
     }
 
     override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
@@ -33,14 +64,19 @@ class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
         if (ke != null && ke.action == KeyEvent.ACTION_DOWN) {
             when (ke.keyCode) {
                 KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
-                    Globals.NotifyObservers("SLPAUSE", null)
+                    if (mBound) {
+                        binder!!.playpause()
+                    }
                 }
                 KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                    Globals.NotifyObservers("SLNEXT", null)
-                    Log.i("MediaSessionCallbacks", "OnMediaButtonNext")
+                    if (mBound) {
+                        binder!!.next()
+                    }
                 }
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                    Globals.NotifyObservers("SLPREV", null)
+                    if (mBound) {
+                        binder!!.prev()
+                    }
                 }
             }
         }
@@ -48,7 +84,42 @@ class SonicLairSessionCallbacks : MediaSessionCompat.Callback() {
     }
 
     override fun onPlayFromMediaId(mediaId: String, extras: Bundle) {
-        Globals.NotifyObservers("SLPLAYID", mediaId)
+
+        val id = mediaId.subSequence(1, mediaId.length).toString()
+        when (mediaId.subSequence(0, 1)) {
+            "s" -> {
+                if (mBound) {
+                    binder!!.playRadio(id)
+                } else {
+                    val intent = Intent(App.context, MusicService::class.java)
+                    intent.action = Constants.SERVICE_PLAY_RADIO
+                    intent.putExtra("id", id)
+                    App.context.startService(intent)
+                }
+            }
+            "a" -> {
+                if (mBound) {
+                    binder!!.playAlbum(id, 0)
+                } else {
+                    val intent = Intent(App.context, MusicService::class.java)
+                    intent.action = Constants.SERVICE_PLAY_ALBUM
+                    intent.putExtra("id", id)
+                    intent.putExtra("track", 0)
+                    App.context.startService(intent)
+                }
+            }
+            "p" -> {
+                if (mBound) {
+                    binder!!.playPlaylist(id, 0)
+                } else{
+                    val intent = Intent(App.context, MusicService::class.java)
+                    intent.action = Constants.SERVICE_PLAY_PLAYLIST
+                    intent.putExtra("id", id)
+                    intent.putExtra("track", 0)
+                    App.context.startService(intent)
+                }
+            }
+        }
     }
 
     override fun onPlayFromSearch(query: String?, extras: Bundle?) {

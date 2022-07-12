@@ -27,6 +27,7 @@ class NowPlayingFragment(val bind: TvActivity.TvActivityBind, val client: Subson
     private lateinit var secondLine: TextView
     private lateinit var image: ImageView
     private lateinit var btnPlay: ImageButton
+    private lateinit var btnShuffle: ImageButton
     private lateinit var sbProgress: SeekBar
     private lateinit var playlistRecyclerView: RecyclerView
     private lateinit var playlistAdapter: SoniclairPlaylistItemAdapter
@@ -48,6 +49,9 @@ class NowPlayingFragment(val bind: TvActivity.TvActivityBind, val client: Subson
     inner class NowPlayingObserver : IBroadcastObserver {
         override fun update(action: String?, value: String?) {
             when (action) {
+                "MSplaylistUpdated" -> {
+                    getCurrentState()
+                }
                 "MScurrentTrack" -> {
                     getCurrentState()
                 }
@@ -111,6 +115,10 @@ class NowPlayingFragment(val bind: TvActivity.TvActivityBind, val client: Subson
         btnNext.setOnClickListener {
             bind.next()
         }
+        btnShuffle = view.findViewById<ImageButton>(R.id.btn_shuffle)
+        btnShuffle.setOnClickListener {
+            bind.shuffle()
+        }
         firstLine = view.findViewById(R.id.tv_now_playing_first_line)
         secondLine = view.findViewById(R.id.tv_now_playing_second_line)
         image = view.findViewById(R.id.img_now_playing_album_art)
@@ -170,6 +178,24 @@ class NowPlayingFragment(val bind: TvActivity.TvActivityBind, val client: Subson
                     ResourcesCompat.getDrawable(
                         resources,
                         R.drawable.ic_play,
+                        null
+                    )
+                )
+            }
+            if(currentState.shuffling){
+                btnShuffle.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        resources,
+                        R.drawable.ic_shuffle_fill_primary,
+                        null
+                    )
+                )
+            }
+            else{
+                btnShuffle.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        resources,
+                        R.drawable.ic_shuffle_fill,
                         null
                     )
                 )

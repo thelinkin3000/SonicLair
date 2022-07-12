@@ -20,7 +20,7 @@ class Playlist(
     val duration: Int,
     val created: String,
     val coverArt: String?,
-    val entry: List<Song>
+    var entry: List<Song>
 ) : ICardViewModel {
     override fun firstLine(): String {
         return name

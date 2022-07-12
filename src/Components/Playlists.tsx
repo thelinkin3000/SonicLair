@@ -70,7 +70,11 @@ export default function Playlists() {
                     </div>
                     <hr className="text-white w-100 mt-0" />
                     <div className="list-group w-100">
-                        <PlaylistItem item={playlists[0]} playing={true}/>
+                        <PlaylistItem
+                            item={{ ...playlists[0], id: "current" }}
+                            playing={true}
+                            key={"current"}
+                        />
                     </div>
                 </>
             )}
@@ -83,7 +87,11 @@ export default function Playlists() {
                     <div className="list-group w-100 h-100 scrollable overflow-scroll">
                         {playlists.slice(1, playlists.length).map((s) => (
                             <div className="d-flex flex-row align-items-center justify-content-between">
-                                <PlaylistItem item={s} key={s.id} playing={false} />
+                                <PlaylistItem
+                                    item={s}
+                                    key={s.id}
+                                    playing={false}
+                                />
                                 <div
                                     onClick={() => {
                                         areYouSure(s);

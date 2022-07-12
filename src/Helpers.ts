@@ -20,10 +20,20 @@ export function GetAsUrlParams(data: any): URLSearchParams {
 }
 
 export function SecondsToHHSS(data: number) {
-    try {
-        return new Date(data * 1000).toISOString().substr(14, 5);
-    } catch {
-        return "00:00";
+    if (data >= 3600) {
+        return `${Math.floor(data / 3600)
+            .toString()
+            .padStart(2, "0")}:${Math.floor((data % 3600) / 60)
+            .toString()
+            .padStart(2, "0")}:${((data % 3600) % 60)
+            .toString()
+            .padStart(2, "0")}`;
+    } else {
+        return `${Math.floor(data / 60)
+            .toString()
+            .padStart(2, "0")}:${Math.floor(data % 60)
+            .toString()
+            .padStart(2, "0")}`;
     }
 }
 

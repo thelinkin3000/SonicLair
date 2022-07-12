@@ -16,7 +16,7 @@ export default function Playlist() {
     const [currentTrack, setCurrentTrack] = useState<IAlbumSongResponse>(
         CurrentTrackContextDefValue
     );
-    const vlcListener = useRef<PluginListenerHandle>();
+    const vlcListener = useRef<PluginListenerHandle[]>();
     const navigate = useNavigate();
     const refreshPlaylist = useCallback(async () => {
         const ret =
@@ -35,21 +35,30 @@ export default function Playlist() {
     useEffect(() => {
         const f = async () => {
             if (vlcListener.current) {
-                await vlcListener.current.remove();
+                vlcListener.current.forEach(async (s) => {
+                    await s.remove();
+                });
             }
-            vlcListener.current = await VLC.addListener(
-                `currentTrack`,
-                (info: any) => {
+            vlcListener.current = [
+                await VLC.addListener(`currentTrack`, (info: any) => {
                     setCurrentTrack(info.currentTrack);
-                }
-            );
+                }),
+                await VLC.addListener("playlistUpdated", async (info: any) => {
+                    if (state.id === "current") {
+                        var pl = await VLC.getCurrentPlaylist();
+                        setPlaylist(pl.value!);
+                    }
+                    var ret = await VLC.getCurrentState();
+                    setCurrentTrack(ret.value?.currentTrack!);
+                }),
+            ];
             const ret = await VLC.getCurrentState();
             if (ret.status === "ok") {
                 setCurrentTrack(ret.value?.currentTrack!!);
             }
         };
         f();
-    }, []);
+    }, [state.id]);
 
     const getArtistNames = useCallback(() => {
         const artists = playlist?.entry.map((s) => s.artist).filter(onlyUnique);
@@ -128,6 +137,7 @@ export default function Playlist() {
                         refreshPlaylist={refreshPlaylist}
                         actionable={true}
                         style={undefined}
+                        state={state}
                     />
                 ))}
             </div>

@@ -2,6 +2,7 @@ import {
     faForwardStep,
     faPause,
     faPlay,
+    faShuffle,
     faVolumeHigh,
     faVolumeLow,
 } from "@fortawesome/free-solid-svg-icons";
@@ -24,6 +25,7 @@ export default function AudioControl() {
     );
     const [playing, setPlaying] = useState<boolean>(false);
     const [playtime, setPlaytime] = useState<number>(0);
+    const [shuffle, setShuffle] = useState<boolean>(false);
     const [coverArt, setCoverArt] = useState<string>("");
     const [androidTV, setAndroidTV] = useState<boolean>(false);
     const location = useLocation();
@@ -53,9 +55,7 @@ export default function AudioControl() {
                 if (Capacitor.isPluginAvailable("AndroidTV")) {
                     setAndroidTV((await AndroidTVPlugin.get()).value);
                 }
-            } catch (e: any) {
-                
-            }
+            } catch (e: any) {}
         };
         fetch();
     }, []);
@@ -93,6 +93,10 @@ export default function AudioControl() {
 
     const playPrev = useCallback(() => {
         VLC.prev();
+    }, []);
+
+    const shufflePlaylist = useCallback(() => {
+        VLC.shufflePlaylist();
     }, []);
 
     const togglePlaying = () => {
@@ -133,6 +137,12 @@ export default function AudioControl() {
                 }),
                 await VLC.addListener("progress", (info: any) => {
                     setPlaytime(info.time);
+                }),
+                await VLC.addListener("playlistUpdated", async (info: any) => {
+                    const state = await VLC.getCurrentState();
+                    if (state.status === "ok") {
+                        setShuffle(state.value!.shuffling);
+                    }
                 }),
             ];
         };
@@ -185,6 +195,18 @@ export default function AudioControl() {
                 {/* </div> */}
                 <div className="d-flex  flex-grow-1 flex-column align-items-end justify-content-end">
                     <div className="d-flex flex-row align-items-center justify-content-center p-0">
+                        <button
+                            type="button"
+                            className={classnames(
+                                "btn",
+                                "btn-link",
+                                "text-white",
+                                shuffle ? "btn-selected" : ""
+                            )}
+                            onClick={shufflePlaylist}
+                        >
+                            <FontAwesomeIcon icon={faShuffle}></FontAwesomeIcon>
+                        </button>
                         <button
                             type="button"
                             className="btn btn-link text-white"

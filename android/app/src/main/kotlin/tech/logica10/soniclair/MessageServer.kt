@@ -221,6 +221,11 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                                 )
                             }
                         }
+                        "shufflePlaylist"->{
+                            if(mBound){
+                                binder!!.shuffle()
+                            }
+                        }
                         "seek" -> {
                             if (command.data.isBlank()) {
                                 conn.send(constructMessage("The parameter time is empty", "error"))

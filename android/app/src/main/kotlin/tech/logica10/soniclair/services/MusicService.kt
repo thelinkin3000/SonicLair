@@ -54,6 +54,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
     val args = mutableListOf("-vvv")
     private var mLibVLC: LibVLC? = null
     private var currentTrack: Song? = null
+    private var shuffling: Boolean = false
     private val mAudioManager: AudioManager =
         App.context.getSystemService(AUDIO_SERVICE) as AudioManager
     private val mPlaybackAttributes: AudioAttributes = AudioAttributes.Builder()
@@ -77,6 +78,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         .setDescription("Currently playing notification")
         .build()
     private var playlist: Playlist = getDefaultPlaylist()
+    private var originalPlaylist: List<Song> = listOf()
     private var prevAction: NotificationCompat.Action? = null
     private var pauseAction: NotificationCompat.Action? = null
     private var playAction: NotificationCompat.Action? = null
@@ -221,6 +223,26 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         cancelAction = actionBuilder.build()
 
 
+    }
+
+    private fun shufflePlaylist() {
+        if (shuffling) {
+            this.playlist.entry = this.originalPlaylist.toList()
+        } else {
+            this.playlist.entry = shuffle(this.playlist.entry)
+        }
+        shuffling = !shuffling
+        notifyListeners("playlistUpdated", null);
+    }
+
+    private fun shuffle(list: List<Song>): List<Song> {
+        val ret = list.shuffled().toMutableList()
+        if (currentTrack != null) {
+            val index = ret.indexOf(currentTrack)
+            ret[index] = ret[0]
+            ret[0] = currentTrack!!
+        }
+        return ret
     }
 
 
@@ -551,6 +573,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 songs[0].albumId,
                 songs
             )
+            originalPlaylist = playlist.entry.toList()
             currentTrack = songs[0]
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                     ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
@@ -586,7 +609,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
         playlist = getDefaultPlaylist()
         try {
             playlist = subsonicClient.getPlaylist(id)
-
+            originalPlaylist = playlist.entry.toList()
             currentTrack = playlist.entry[track]
 
             if (connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
@@ -628,6 +651,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
                 songs[0].albumId,
                 songs
             )
+
+            originalPlaylist = playlist.entry.toList()
 
             currentTrack = songs[track]
 
@@ -854,7 +879,8 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             return CurrentState(
                 this@MusicService.mMediaPlayer!!.isPlaying,
                 this@MusicService.mMediaPlayer!!.position,
-                this@MusicService.currentTrack ?: Song("", "", "", 0, 0, "", "", "", "")
+                this@MusicService.currentTrack ?: Song("", "", "", 0, 0, "", "", "", ""),
+                this@MusicService.shuffling
             )
         }
 
@@ -872,6 +898,10 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
 
         fun pause() {
             this@MusicService.pause()
+        }
+
+        fun shuffle(){
+            this@MusicService.shufflePlaylist()
         }
 
         fun playpause() {

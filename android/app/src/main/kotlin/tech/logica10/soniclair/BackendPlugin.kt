@@ -302,6 +302,26 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     }
 
     @PluginMethod
+    fun shufflePlaylist(call: PluginCall){
+        try{
+            if (webSocketConnected) {
+                val command = constructWebsocketCommand("shufflePlaylist", "")
+                val message = constructWebsocketMessage(gson!!.toJson(command))
+                mWebSocket!!.send(gson!!.toJson(message))
+                call.resolve(okResponse(""))
+                return
+            }
+            if(mBound){
+                binder!!.shuffle()
+            }
+            call.resolve(okResponse(""))
+        } catch(e: Exception){
+            call.resolve(errorResponse(e.message))
+        }
+
+    }
+
+    @PluginMethod
     fun getOfflineMode(call: PluginCall) {
         try {
             val ret = okResponse(getOfflineMode())

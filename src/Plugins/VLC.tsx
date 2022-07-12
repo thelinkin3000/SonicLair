@@ -20,6 +20,7 @@ export interface ICurrentState {
     playing: boolean;
     playtime: number;
     currentTrack: IAlbumSongResponse;
+    shuffling: boolean;
 }
 
 export interface ISettings {
@@ -42,11 +43,9 @@ export interface IBackendPlugin extends Plugin {
         name: string;
     }): Promise<IBackendResponse<IPlaylist>>;
     updatePlaylist(options: {
-        playlist: IPlaylist
+        playlist: IPlaylist;
     }): Promise<IBackendResponse<IPlaylist>>;
-    removePlaylist(options: {
-        id: string
-    }): Promise<IBackendResponse<string>>;
+    removePlaylist(options: { id: string }): Promise<IBackendResponse<string>>;
     play(): Promise<IBackendResponse<string>>;
     pause(): Promise<IBackendResponse<string>>;
     setVolume(options: { volume: number }): Promise<IBackendResponse<string>>;
@@ -111,6 +110,7 @@ export interface IBackendPlugin extends Plugin {
     disconnectWebsocket(): Promise<IBackendResponse<string>>;
     getWebsocketStatus(): Promise<IBackendResponse<boolean>>;
     sendUdpBroadcast(): Promise<IBackendResponse<String>>;
+    shufflePlaylist(): Promise<IBackendResponse<string>>;
 }
 
 const VLC = registerPlugin<IBackendPlugin>("VLC", {

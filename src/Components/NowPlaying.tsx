@@ -159,6 +159,7 @@ export default function NowPlaying() {
                         playlist.entry.length > 0 &&
                         playlist.entry.map((s) => (
                             <PlaylistEntry
+                                state={undefined}
                                 item={s}
                                 playlist={playlist}
                                 currentTrack={currentTrack}

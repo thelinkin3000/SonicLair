@@ -1,6 +1,3 @@
-// This started as an audio backend, but is gonna mutate into a full audio-subsonic backend
-// In time.
-
 import { WebPlugin } from "@capacitor/core";
 import axios from "axios";
 import md5 from "js-md5";
@@ -58,12 +55,13 @@ function ValidateIPaddress(ipaddress: string): boolean {
 
 export class Backend extends WebPlugin implements IBackendPlugin {
     currentPlaylist: IPlaylist;
+    originalCurrentPlaylist: IAlbumSongResponse[];
     isPlaying: boolean;
     audio: HTMLAudioElement;
     context: IAppContext;
     _spotifyToken: string;
     currentTrack: IAlbumSongResponse;
-
+    isShuffle: boolean;
     constructor() {
         super();
         this.currentTrack = {
@@ -86,6 +84,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
         } else {
             this.context = JSON.parse(thisCreds);
         }
+        this.isShuffle = false;
         this.currentPlaylist = {
             comment: "",
             coverArt: "",
@@ -98,6 +97,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             public: false,
             songCount: 0,
         };
+        this.originalCurrentPlaylist = [];
         this.audio = new Audio();
         this.isPlaying = false;
 
@@ -159,6 +159,54 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             this._next();
         };
     }
+
+    shufflePlaylist(): Promise<IBackendResponse<string>> {
+        if (!this.isShuffle) {
+            this.currentPlaylist.entry = this.shuffle(
+                this.currentPlaylist.entry
+            );
+            const nowplayingindex = this.currentPlaylist.entry.indexOf(
+                this.currentTrack
+            );
+            // Gets the now playing item at the start of the playlist
+            [
+                this.currentPlaylist.entry[0],
+                this.currentPlaylist.entry[nowplayingindex],
+            ] = [
+                this.currentPlaylist.entry[nowplayingindex],
+                this.currentPlaylist.entry[0],
+            ];
+        } else {
+            this.currentPlaylist.entry = [];
+            this.originalCurrentPlaylist.forEach((s) =>
+                this.currentPlaylist.entry.push(s)
+            );
+        }
+        this.isShuffle = !this.isShuffle;
+        this.notifyListeners("playlistUpdated", null);
+        return Promise.resolve(this.OKResponse(""));
+    }
+
+    shuffle(array: any[]): any[] {
+        let currentIndex = array.length,
+            randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex !== 0) {
+            // Pick a remaining element.
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex],
+                array[currentIndex],
+            ];
+        }
+
+        return array;
+    }
+
     async removeFromPlaylist(options: {
         id: string;
         track: number;
@@ -389,6 +437,7 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 playing: this.isPlaying,
                 currentTrack: this.currentTrack,
                 playtime: this.audio.currentTime / this.audio.duration,
+                shuffling: this.isShuffle,
             })
         );
     }
@@ -827,6 +876,10 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             public: false,
             songCount: album.value!.song.length,
         };
+        this.originalCurrentPlaylist = [];
+        this.currentPlaylist.entry.forEach((s) =>
+            this.originalCurrentPlaylist.push(s)
+        );
 
         this.currentTrack = this.currentPlaylist.entry[options.track];
         this._playCurrent();
@@ -841,6 +894,10 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             return this.ErrorResponse(playlist.error);
         }
         this.currentPlaylist = playlist.value!;
+        this.originalCurrentPlaylist = [];
+        this.currentPlaylist.entry.forEach((s) =>
+            this.originalCurrentPlaylist.push(s)
+        );
         this.currentTrack = this.currentPlaylist.entry[options.track];
         this._playCurrent();
         return Promise.resolve(this.OKResponse(""));
@@ -882,6 +939,10 @@ export class Backend extends WebPlugin implements IBackendPlugin {
             public: false,
             songCount: [song.value!, ...songList.value!].length,
         };
+        this.originalCurrentPlaylist = [];
+        this.currentPlaylist.entry.forEach((s) =>
+            this.originalCurrentPlaylist.push(s)
+        );
         this.currentTrack = this.currentPlaylist.entry[0];
         this._playCurrent();
         return this.OKResponse("");

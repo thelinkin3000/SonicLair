@@ -13,9 +13,9 @@
         android:layout_height="0dp"
         android:layout_weight="0.7"
         android:baselineAligned="false"
-        android:gravity="center"
-        android:focusable="false"
         android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
+        android:gravity="center"
         android:orientation="horizontal"
         android:padding="30dp">
 
@@ -85,18 +85,32 @@
         android:gravity="center">
 
         <ImageButton
-            android:id="@+id/btn_rewind"
+            android:id="@+id/btn_shuffle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
             android:background="@drawable/round_outline_selector"
             android:contentDescription="@string/button_content_description"
             android:padding="5dp"
+            android:src="@drawable/ic_shuffle_fill" />
+
+        <ImageButton
+            android:id="@+id/btn_rewind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:background="@drawable/round_outline_selector"
+            android:contentDescription="@string/button_content_description"
+            android:padding="5dp"
+
             android:src="@drawable/ic_rewind" />
 
         <ImageButton
             android:id="@+id/btn_prev"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+
+            android:layout_marginHorizontal="10dp"
             android:background="@drawable/round_outline_selector"
             android:contentDescription="@string/button_content_description"
             android:padding="5dp"
@@ -106,6 +120,8 @@
             android:id="@+id/btn_play_pause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+
             android:background="@drawable/round_outline_selector"
             android:contentDescription="@string/button_content_description"
             android:padding="5dp"
@@ -115,6 +131,8 @@
             android:id="@+id/btn_next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+
             android:background="@drawable/round_outline_selector"
             android:contentDescription="@string/button_content_description"
             android:padding="5dp"
@@ -124,18 +142,20 @@
             android:id="@+id/btn_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
             android:background="@drawable/round_outline_selector"
             android:contentDescription="@string/button_content_description"
+
             android:padding="5dp"
             android:src="@drawable/ic_speed" />
     </LinearLayout>
 
     <LinearLayout
-        android:focusable="false"
-        android:descendantFocusability="blocksDescendants"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.15"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
         android:orientation="vertical">
 
         <RelativeLayout
@@ -165,13 +185,13 @@
 
         <SeekBar
             android:id="@+id/sb_now_playing_progress"
-            android:thumbTint="@color/soniclair_item_highlight"
-            android:progressTint="@color/soniclair_item_highlight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="100dp"
             android:focusable="false"
-            android:max="100" />
+            android:max="100"
+            android:progressTint="@color/soniclair_item_highlight"
+            android:thumbTint="@color/soniclair_item_highlight" />
     </LinearLayout>
 
 </LinearLayout>

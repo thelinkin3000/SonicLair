@@ -127,6 +127,7 @@ export default function DraggableList({ playlist }: { playlist: IPlaylist }) {
                                         ? playlist.entry[currentI]
                                         : CurrentTrackContextDefValue
                                 }
+                                state={undefined}
                                 playlist={playlist}
                                 refreshPlaylist={() => {}}
                                 actionable={false}

@@ -27,6 +27,7 @@ export function PlaylistEntry({
     refreshPlaylist,
     actionable,
     style,
+    state,
 }: {
     item: IAlbumSongResponse;
     playlist: IPlaylist;
@@ -34,6 +35,7 @@ export function PlaylistEntry({
     refreshPlaylist: () => void;
     actionable: boolean;
     style: CSSProperties | undefined;
+    state: any;
 }) {
     const listeners = useRef<{ event: string; listener: (ev: any) => void }[]>(
         []
@@ -138,7 +140,11 @@ export function PlaylistEntry({
     }, [actionable, item, playlist.entry]);
 
     useEffect(() => {
-        if (currentTrack.id === item.id && selfRef.current && (actionable || androidTv)) {
+        if (
+            currentTrack.id === item.id &&
+            selfRef.current &&
+            (actionable || androidTv)
+        ) {
             selfRef.current.scrollIntoView({
                 behavior: "smooth",
                 block: "center",
@@ -153,6 +159,14 @@ export function PlaylistEntry({
         f();
     }, []);
 
+    const onClick = useCallback(async () => {
+        if (state && state.id === "current") {
+            skipTo();
+        } else {
+            playPlaylist();
+        }
+    }, [skipTo, playPlaylist, state]);
+
     return (
         <div
             style={style}
@@ -163,9 +177,7 @@ export function PlaylistEntry({
                 "not-selectable",
                 currentTrack.id === item.id ? "highlight" : ""
             )}
-            onClick={async () => {
-                playlist.id === "current" ? skipTo() : playPlaylist();
-            }}
+            onClick={onClick}
         >
             <div className="row">
                 <div className="col-auto">
