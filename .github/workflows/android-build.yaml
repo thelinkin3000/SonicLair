@@ -2,8 +2,8 @@ name: Build Android
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main 
 
 jobs:
   build:
@@ -61,29 +61,17 @@ jobs:
         run: mv android/app/build/outputs/bundle/release/app-release.aab android/app/build/outputs/bundle/release/SonicLair-${{steps.tag.outputs.tag}}.aab
 
       - name: Upload release bundle as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          path: android/app/build/outputs/bundle/release/SonicLair-${{steps.tag.outputs.tag}}.aab
+          path: |
+            android/app/build/outputs/bundle/release/SonicLair-${{steps.tag.outputs.tag}}.aab
+            android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk
           retention-days: 60
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by github
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        name: Release ${{steps.tag.outputs.tag}}
         with:
-          tag_name: ${{steps.tag.outputs.tag}}
-          release_name: Release ${{steps.tag.outputs.tag}}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk
-          asset_name: SonicLair ${{steps.tag.outputs.tag}}.apk
-          asset_content_type: application/vnd.android.package-archive
+          body_path: changelog.md
+          files: android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk

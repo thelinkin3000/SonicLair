@@ -111,12 +111,6 @@ class MessageServer(port: Int) : WebSocketServer(InetSocketAddress(port)), IBroa
                             )
                         )
                     }
-                    conn.send(
-                        constructMessage(
-                            "You're connected! Touch the TV icon in the upper left corner to disconnect.",
-                            "ok"
-                        )
-                    )
                     return
                 }
                 "command" -> {

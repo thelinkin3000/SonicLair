@@ -706,7 +706,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                 mWebSocket!!.close(1000, "")
             }
             try {
-                connectWebSocket("ws://$ip:30001")
+                connectWebSocket("ws://$ip:30001", true)
             } catch (e: Exception) {
                 Globals.NotifyObservers("EX", "Failed to open websocket connection")
                 return
@@ -919,9 +919,9 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
         notifyListeners("webSocketConnection", ret)
     }
 
-    private fun connectWebSocket(url: String) {
+    private fun connectWebSocket(url: String, notifyOnConnect: Boolean) {
         val request: Request = Request.Builder().url(url).build()
-        val listener = EchoWebSocketListener()
+        val listener = EchoWebSocketListener(notifyOnConnect)
         mWebSocket = mClient.newWebSocket(request, listener)
     }
 
@@ -953,9 +953,8 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                         mWebSocket!!.close(1000, "")
                     }
                     try {
-                        connectWebSocket("ws://$lastIp:30001")
+                        connectWebSocket("ws://$lastIp:30001", false)
                     } catch (e: Exception) {
-                        Globals.NotifyObservers("EX", "Failed to open websocket connection")
                         return
                     }
                     mWebSocket!!.send(json)
@@ -971,9 +970,12 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
     }
 
     // Websockets handler for the client
-    private inner class EchoWebSocketListener : WebSocketListener() {
+    private inner class EchoWebSocketListener(val notifyOnConnect: Boolean) : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
             setWebsocketConnectionStatus(true)
+            if(notifyOnConnect){
+                Globals.NotifyObservers("EX", "You're connected! Tap the TV icon on the top right to disconnect your phone.")
+            }
             reconnect = true
         }
 
@@ -983,6 +985,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                 webSocket.close(1000, "")
                 mWebSocket = null
                 setWebsocketConnectionStatus(false)
+                reconnect = false
             } else {
                 try {
                     val message: WebSocketMessage =
@@ -996,7 +999,7 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
                             notifyListeners(notification.action, null)
                         }
                     } else if (message.type == "message") {
-                        Globals.NotifyObservers("EX", message.data)
+                         Globals.NotifyObservers("EX", message.data)
                     } else if (message.type == "acceptedConnection") {
                         // TODO we are in, display jukebox mode on client
                         Globals.NotifyObservers("EX", "JUKEBOX MODE ON, WE ARE GO")
@@ -1009,12 +1012,14 @@ class BackendPlugin : Plugin(), IBroadcastObserver {
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             webSocket.close(1000, null)
+            reconnect = false
             mWebSocket = null
             setWebsocketConnectionStatus(false)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             Globals.NotifyObservers("EX", "${t.message} ${response?.message}")
+            reconnect = false
             if (mWebSocket != null) {
                 try {
                     mWebSocket!!.close(1000, "")

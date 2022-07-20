@@ -232,7 +232,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             this.playlist.entry = shuffle(this.playlist.entry)
         }
         shuffling = !shuffling
-        notifyListeners("playlistUpdated", null);
+        notifyListeners("playlistUpdated", null)
     }
 
     private fun shuffle(list: List<Song>): List<Song> {
@@ -781,9 +781,14 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             if (mMediaPlayer!!.isPlaying) mMediaPlayer!!.pause()
             mMediaPlayer!!.media = media
             media.release()
-            CoroutineScope(IO).launch {
-                subsonicClient.scrobble(currentTrack!!.id)
-
+            if(!KeyValueStorage.getOfflineMode()){
+                CoroutineScope(IO).launch {
+                    try {
+                        subsonicClient.scrobble(currentTrack!!.id)
+                    } catch (ex: Exception) {
+                        Globals.NotifyObservers("EX", "Couldn't scrobble. Check your connection.")
+                    }
+                }
             }
         }
     }
@@ -900,7 +905,7 @@ class MusicService : Service(), IBroadcastObserver, MediaPlayer.EventListener {
             this@MusicService.pause()
         }
 
-        fun shuffle(){
+        fun shuffle() {
             this@MusicService.shufflePlaylist()
         }
 
