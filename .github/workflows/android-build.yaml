@@ -71,7 +71,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
-        name: Release ${{steps.tag.outputs.tag}}
         with:
+          name: Release ${{steps.tag.outputs.tag}}
           body_path: changelog.md
           files: android/app/build/outputs/apk/release/SonicLair-${{steps.tag.outputs.tag}}.apk
