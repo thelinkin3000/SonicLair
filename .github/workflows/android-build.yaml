@@ -23,7 +23,6 @@ jobs:
 
       - name: Set test tag
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        id: tag
         run: |
           echo "version_name=test" >> $GITHUB_ENV
 
