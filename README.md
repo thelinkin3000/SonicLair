@@ -49,8 +49,9 @@ Now available for [Xbox](https://github.com/thelinkin3000/SonicLairXbox) too!
 ### Android
 
 [<img src="./ghlogo.svg" width="150px">](https://github.com/thelinkin3000/SonicLair/releases/latest)
+[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="150px"/>](https://play.google.com/store/apps/details?id=tech.logica10.soniclair)
 
-Built by Github Actions from this very source code. No Google Play Store as of yet.
+Built by Github Actions from this very source code.
 
 ### Web
 
