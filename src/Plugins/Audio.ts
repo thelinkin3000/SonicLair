@@ -139,12 +139,12 @@ export class Backend extends WebPlugin implements IBackendPlugin {
                 navigator.mediaSession.setPositionState({
                     duration: this.currentTrack.duration,
                     playbackRate: 1,
-                    position: ev.path[0].currentTime,
+                    position: ev.target.currentTime,
                 });
             }
             if (this.listeners["progress"]) {
                 this.notifyListeners("progress", {
-                    time: ev.path[0].currentTime / this.currentTrack.duration,
+                    time: ev.target.currentTime / this.currentTrack.duration,
                 });
             }
         };
